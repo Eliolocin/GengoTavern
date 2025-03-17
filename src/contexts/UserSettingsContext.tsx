@@ -54,7 +54,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ chil
   // Load stored model choice from localStorage
   const [selectedModel, setSelectedModelState] = useState<string>(() => {
     const storedModel = localStorage.getItem('gengoTavern_selectedModel');
-    return storedModel || GEMINI_MODELS.FLASH_THINKING; // Default to flash-thinking-exp model
+    return storedModel || GEMINI_MODELS.FLASH_EXP; // Default to flash-thinking-exp model
   });
 
   // Update localStorage when apiKey changes

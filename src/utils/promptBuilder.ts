@@ -1,4 +1,4 @@
-import type { Character, Message, Chat } from '../types/interfaces';
+import type { Character, Chat } from '../types/interfaces';
 
 export interface PromptSettings {
   temperature?: number; // Controls randomness (0.0-2.0)

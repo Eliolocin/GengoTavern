@@ -195,11 +195,13 @@ const CharacterForm: FC<CharacterFormProps> = ({
         />
       )}
 
-      {showDeleteConfirmation && (
+    {showDeleteConfirmation && (
         <DeleteConfirmationModal
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteConfirmation(false)}
           characterName={character.name}
+          title="Delete Character"
+          message={`Are you sure you want to delete ${character.name}?`}
         />
       )}
 

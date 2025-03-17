@@ -9,7 +9,7 @@ Currently a WIP with plans to add multiple features that can assist Foreign Lang
 4. Pop-up Dictionaries
 5. ...and much more
 
-![GengoTavern Interface](public/gtscreenshot.png)
+![GengoTavern Interface](img/gtscreenshot.png)
 
 ### Installation
 ```bash

@@ -116,15 +116,15 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
 
   // Create a new character
   const createNewCharacter = useCallback(async () => {
+    const newCharacter: Character = {
+      id: Date.now(),
+      name: `New Character ${characters.length + 1}`,
+      image: placeholderImg,
+      description: '',
+      chats: [] // No default chat is created
+    };
+    
     try {
-      const newCharacter: Character = {
-        id: Date.now(),
-        name: `New Character ${characters.length + 1}`,
-        image: placeholderImg,
-        description: '',
-        chats: [] // No default chat is created
-      };
-      
       // Update state first for immediate UI feedback
       const newCharacters = [...characters, newCharacter];
       setCharacters(newCharacters);
