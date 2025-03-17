@@ -4,7 +4,7 @@ interface EditMessageModalProps {
   message: string;
   onSave: (newText: string) => void;
   onCancel: () => void;
-  sender: 'user' | 'character';
+  sender: 'user' | 'character' | 'system';
 }
 
 const EditMessageModal: React.FC<EditMessageModalProps> = ({

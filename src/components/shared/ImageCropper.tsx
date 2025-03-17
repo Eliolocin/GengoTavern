@@ -28,7 +28,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
   });
   const [completedCrop, setCompletedCrop] = useState<Crop | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const previewImgRef = useRef<HTMLImageElement>(null);
+  // const previewImgRef = useRef<HTMLImageElement>(null);
   
   // Store the original image dimensions
   const [originalImageDimensions, setOriginalImageDimensions] = useState<{width: number, height: number} | null>(null);
@@ -83,11 +83,11 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
     };
   }, [src, aspectRatio]);
 
-  const onCropChange = (newCrop: Crop, percentCrop: Crop) => {
+  const onCropChange = (_newCrop: Crop, percentCrop: Crop) => {
     setCrop(percentCrop);
   };
 
-  const onCropComplete = (crop: Crop, percentCrop: Crop) => {
+  const onCropComplete = (_crop: Crop, percentCrop: Crop) => {
     setCompletedCrop(percentCrop);
   };
 
@@ -95,6 +95,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
     if (!imgRef.current || !completedCrop || !originalImageDimensions) return;
 
     const canvas = document.createElement('canvas');
+    // @ts-ignore - Will be used in future implementations
     const image = imgRef.current;
     
     // Use the original dimensions instead of the displayed dimensions

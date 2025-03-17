@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Chat, Character } from '../../types/interfaces';
+import type { Character } from '../../types/interfaces';
 import EditChatModal from './EditChatModal';
 import NewChatModal from './NewChatModal';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';

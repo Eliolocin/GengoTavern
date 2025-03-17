@@ -109,7 +109,7 @@ export async function loadAllCharacters(): Promise<Character[]> {
     for await (const [filename, fileHandle] of dirHandle.entries()) {
       if (fileHandle.kind === 'file' && filename.toLowerCase().endsWith('.png')) {
         try {
-          const file = await fileHandle.getFile();
+          const file = await (fileHandle as FileSystemFileHandle).getFile();
           const character = await extractCharacterFromPng(file);
           
           // Store the original filename for future reference

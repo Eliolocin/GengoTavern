@@ -4,7 +4,7 @@ import '../styles/App.css';
 import type { Message, Chat } from '../types/interfaces';
 // Import our new utilities
 import { buildPrompt } from '../utils/promptBuilder';
-import { callGeminiAPI, sanitizeResponse, mockGeminiCall } from '../utils/geminiAPI';
+import { callGeminiAPI, sanitizeResponse } from '../utils/geminiAPI';
 import SidePanel from '../components/layout/SidePanel';
 import CharacterGrid from '../components/characterSelection/CharacterGrid';
 import ChatHeader from '../components/chatInterface/ChatHeader';
