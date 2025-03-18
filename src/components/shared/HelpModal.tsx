@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
 
 interface HelpModalProps {
   onClose: () => void;
+  onHideAtStartupChange?: (hideAtStartup: boolean) => void;
+  initialHideAtStartup?: boolean;
 }
 
-const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
+const HelpModal: React.FC<HelpModalProps> = ({ 
+  onClose, 
+  onHideAtStartupChange,
+  initialHideAtStartup = false 
+}) => {
+  const [hideAtStartup, setHideAtStartup] = useState(initialHideAtStartup);
+
+  const handleHideAtStartupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    setHideAtStartup(newValue);
+    if (onHideAtStartupChange) {
+      onHideAtStartupChange(newValue);
+    }
+  };
+
   const helpContent = `
 ## Welcome to GengoTavern!
 
@@ -44,6 +60,16 @@ Made with ❤️ by GengoTavern Team
           <MarkdownRenderer content={helpContent} />
         </div>
         <div className="modal-footer">
+          <div className="startup-preference">
+            <label className="hide-at-startup-label">
+              <input
+                type="checkbox"
+                checked={hideAtStartup}
+                onChange={handleHideAtStartupChange}
+              />
+              <span>Don't show at startup</span>
+            </label>
+          </div>
           <button className="confirm-button" onClick={onClose}>Close</button>
         </div>
       </div>

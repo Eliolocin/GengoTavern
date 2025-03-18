@@ -160,6 +160,8 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
           </div>
         </div>
         
+        
+        {/* Data Management section commented out
         <div className="data-management-zone">
           <h4>Data Management</h4>
           <div className="data-buttons">
@@ -180,6 +182,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
           </div>
           <p className="data-management-note">Export your data regularly to prevent loss.</p>
         </div>
+        */}
         
         <div className="danger-zone">
           <h4>Danger Zone</h4>

@@ -13,6 +13,7 @@ import ChatInput from '../components/chatInterface/ChatInput';
 import CharacterForm from '../components/characterCustomization/CharacterForm';
 import { CharacterProvider, useCharacters } from '../contexts/CharacterContext';
 import { UserSettingsProvider } from '../contexts/UserSettingsContext';
+import HelpModal from '../components/shared/HelpModal';
 
 // Main App Component wrapper with Providers
 const App: React.FC = () => {
@@ -45,7 +46,8 @@ const AppContent: React.FC = () => {
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
-  
+  const [showHelpModal, setShowHelpModal] = useState<boolean>(true); // Default to true to show at startup
+
   // Clear local error after 5 seconds
   useEffect(() => {
     if (localError) {
@@ -77,6 +79,14 @@ const AppContent: React.FC = () => {
       setActiveChat(null);
     }
   }, [selectedCharacter]);
+
+  useEffect(() => {
+    // Check if user has previously chosen to hide the help modal at startup
+    const hideAtStartup = localStorage.getItem('hideHelpAtStartup') === 'true';
+    if (hideAtStartup) {
+      setShowHelpModal(false);
+    }
+  }, []);
 
   const handleNewChat = (chatName: string, scenario: string, greeting: string, background: string) => {
     if (!selectedCharacter) return;
@@ -818,6 +828,7 @@ const AppContent: React.FC = () => {
           onDeleteChat={handleDeleteChat}
           onSelectChat={handleSelectChat}
           activeChatId={activeChatId}
+          setShowHelpModal={setShowHelpModal}
         />
         
         {selectedCharacter && selectedCharacter.chats.length === 0 ? (
@@ -873,6 +884,16 @@ const AppContent: React.FC = () => {
           <div className="no-character">Please select a character</div>
         )}
       </SidePanel>
+      {showHelpModal && (
+        <HelpModal 
+          onClose={() => setShowHelpModal(false)}
+          onHideAtStartupChange={(hide) => {
+            // You could save this preference to localStorage
+            localStorage.setItem('hideHelpAtStartup', JSON.stringify(hide));
+          }}
+          initialHideAtStartup={localStorage.getItem('hideHelpAtStartup') === 'true'}
+        />
+      )}
     </div>
   );
 };

@@ -1941,3 +1941,34 @@ body, html {
 .remove-background-button:hover {
   background-color: rgba(255, 77, 79, 1);
 }
+
+/* Help Modal Startup Preference */
+.startup-preference {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.hide-at-startup-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hide-at-startup-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #646cff;
+}
+
+/* Adjust the modal footer for the new layout */
+.help-modal .modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+}
