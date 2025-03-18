@@ -1,0 +1,56 @@
+.filesystem-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #444;
+}
+
+.filesystem-indicator span {
+  color: #eee;
+}
+
+.filesystem-indicator button {
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 8px;
+}
+
+.filesystem-indicator button:hover {
+  background-color: #555;
+}
+
+.filesystem-indicator.warning {
+  background-color: rgba(255, 200, 0, 0.1);
+  color: #ffcc00;
+}
+
+.filesystem-indicator.warning span {
+  color: #ffcc00;
+}
+
+.clear-storage-button {
+  background-color: #662222 !important;
+}
+
+.clear-storage-button:hover {
+  background-color: #8a3333 !important;
+}
+
+.filesystem-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.storage-buttons {
+  display: flex;
+  gap: 8px;
+}

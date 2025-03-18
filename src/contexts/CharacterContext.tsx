@@ -1,25 +1,27 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import type { ReactNode } from 'react';
-import type { Character, DialoguePair, Chat } from '../types/interfaces';
-import placeholderImg from '../assets/placeholder.jpg';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { Character, Chat, DialoguePair } from '../types/interfaces';
 import {
-  loadAllCharacters,
-  saveCharacterToDisk,
-  deleteCharacterFile,
-  isFileSystemAccessSupported,
-  BrowserFsStorage
+  isFileSystemAccessSupported, 
+  loadAllCharacters, 
+  deleteCharacterFile, 
+  saveCharacterToDisk
 } from '../utils/fileSystem';
-import { savePngAsBrowserDownload } from '../utils/pngMetadata';
+import { extractCharacterFromPng, savePngAsBrowserDownload } from '../utils/pngMetadata';
 import { saveCharacterAsJson } from '../utils/jsonExport';
+import { initializeFileSystem } from '../utils/fileSystem';
+import { loadAssetImage, DEFAULT_PLACEHOLDER } from '../utils/imageUtils';
 
-interface CharacterContextType {
+// Default placeholder image as base64
+const placeholderImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+interface CharacterContextValue {
   characters: Character[];
   selectedCharacter: Character | null;
   isLoading: boolean;
   error: string | null;
   createNewCharacter: () => Promise<Character>;
   selectCharacter: (id: number) => void;
-  updateCharacter: (id: number, field: string, value: string | DialoguePair[] | Chat[] | any, keepActiveChat?: boolean) => Promise<void>;
+  updateCharacter: (id: number, field: string, value: any, keepActiveChat?: boolean) => Promise<void>;
   deleteCharacter: (id: number) => Promise<boolean>;
   saveCharacter: (character: Character) => Promise<void>;
   importCharacter: () => Promise<Character | null>;
@@ -27,84 +29,75 @@ interface CharacterContextType {
   exportCharacterAsJson: (character: Character) => Promise<void>;
 }
 
-const CharacterContext = createContext<CharacterContextType | null>(null);
+const CharacterContext = createContext<CharacterContextValue | null>(null);
 
 export const useCharacters = () => {
   const context = useContext(CharacterContext);
-  if (!context) {
+  
+  if (context === null) {
     throw new Error('useCharacters must be used within a CharacterProvider');
   }
+  
   return context;
 };
 
-interface CharacterProviderProps {
-  children: ReactNode;
-}
-
-export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }) => {
+export const CharacterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [browserFs] = useState(new BrowserFsStorage());
-  const [fsSupported] = useState(isFileSystemAccessSupported());
   const [savingInProgress, setSavingInProgress] = useState(false);
+  const [fsSupported] = useState(isFileSystemAccessSupported());
 
   // Load characters on mount
   useEffect(() => {
     async function loadCharacters() {
-      setIsLoading(true);
       try {
-        let loadedCharacters: Character[] = [];
+        setIsLoading(true);
         
-        if (fsSupported) {
-          loadedCharacters = await loadAllCharacters();
-        } else {
-          loadedCharacters = await browserFs.loadAllCharacters();
+        if (!fsSupported) {
+          setError('Your browser does not support the required file system features. Please use a Chromium-based browser like Chrome or Edge.');
+          setIsLoading(false);
+          return;
         }
         
-        // If no characters were loaded, create a default character
-        if (loadedCharacters.length === 0) {
-          const defaultCharacter: Character = {
-            id: Date.now(),
-            name: 'Default Character',
-            image: placeholderImg,
-            description: 'Your first character',
-            chats: [] // No default chat is created for the default character either
-          };
-          loadedCharacters = [defaultCharacter];
-          
-          // Save default character
-          await saveCharacterInternal(defaultCharacter);
-        }
+        // Initialize file system and load characters
+        await initializeFileSystem();
+        const loadedCharacters = await loadAllCharacters();
         
         setCharacters(loadedCharacters);
-        setSelectedCharacter(loadedCharacters[0]);
+        if (loadedCharacters.length > 0) {
+          setSelectedCharacter(loadedCharacters[0]);
+        }
       } catch (err) {
-        setError('Failed to load characters');
-        console.error('Error loading characters:', err);
+        // Only set error if it's actually a critical failure
+        if (characters.length === 0) {
+          setError('Failed to load characters');
+          console.error('Critical error loading characters:', err);
+        } else {
+          console.warn('Non-critical error during character loading:', err);
+        }
       }
       setIsLoading(false);
     }
     
     loadCharacters();
-  }, [fsSupported, browserFs]);
+  }, [fsSupported]);
 
   // Save a character to disk
   const saveCharacterInternal = useCallback(async (character: Character) => {
     if (savingInProgress) {
       console.log('Save already in progress, waiting...');
-      return;
+      return false;
     }
     
     setSavingInProgress(true);
     try {
-      if (fsSupported) {
-        await saveCharacterToDisk(character, character.originalFilename);
-      } else {
-        await browserFs.saveCharacter(character);
-        // Don't download on every save, only when explicitly requested
-      }
+      // Ensure character has all required fields before saving
+      if (!character.name) character.name = "Unnamed Character";
+      
+      // Save to disk
+      await saveCharacterToDisk(character, character.originalFilename);
       return true;
     } catch (err) {
       console.error('Error saving character:', err);
@@ -112,32 +105,54 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     } finally {
       setSavingInProgress(false);
     }
-  }, [fsSupported, browserFs, savingInProgress]);
+  }, [savingInProgress]);
 
   // Create a new character
   const createNewCharacter = useCallback(async () => {
-    const newCharacter: Character = {
-      id: Date.now(),
-      name: `New Character ${characters.length + 1}`,
-      image: placeholderImg,
-      description: '',
-      chats: [] // No default chat is created
-    };
-    
+    // Get a placeholder image from assets folder for a new character
     try {
+      // Load the placeholder image
+      const imageUrl = await loadAssetImage('/assets/placeholder.png');
+      
+      // Create a new character with the placeholder image
+      const newCharacter: Character = {
+        id: Date.now(),
+        name: `New Character ${characters.length + 1}`,
+        image: imageUrl,
+        description: '',
+        chats: [] // No default chat is created
+      };
+      
       // Update state first for immediate UI feedback
       const newCharacters = [...characters, newCharacter];
       setCharacters(newCharacters);
       setSelectedCharacter(newCharacter);
       
-      // Then save to disk (this might take a moment)
+      // Save to disk
       await saveCharacterInternal(newCharacter);
       
       return newCharacter;
     } catch (err) {
       console.error('Failed to create new character:', err);
-      // Don't throw, we already updated UI
-      return newCharacter; // Still return the character even if saving fails
+      
+      // Fallback to default placeholder if asset loading fails
+      const newCharacter: Character = {
+        id: Date.now(),
+        name: `New Character ${characters.length + 1}`,
+        image: DEFAULT_PLACEHOLDER,
+        description: '',
+        chats: []
+      };
+      
+      // Update state first for immediate UI feedback
+      const newCharacters = [...characters, newCharacter];
+      setCharacters(newCharacters);
+      setSelectedCharacter(newCharacter);
+      
+      // Save to disk
+      await saveCharacterInternal(newCharacter);
+      
+      return newCharacter;
     }
   }, [characters, saveCharacterInternal]);
 
@@ -145,6 +160,10 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   const selectCharacter = useCallback((id: number) => {
     const character = characters.find(c => c.id === id);
     if (character) {
+      // Ensure character always has a chats array
+      if (!character.chats) {
+        character.chats = [];
+      }
       setSelectedCharacter(character);
     }
   }, [characters]);
@@ -159,38 +178,18 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     try {
       const characterIndex = characters.findIndex(c => c.id === id);
       if (characterIndex === -1) return;
-      
-      const oldCharacter = characters[characterIndex];
-      
-      // Process value based on field type
-      let processedValue = value;
-      
-      // Parse JSON string back to object if we're updating chats
-      if (field === 'chats' && typeof value === 'string') {
-        try {
-          processedValue = JSON.parse(value);
-        } catch (e) {
-          console.error('Failed to parse chats JSON:', e);
-        }
-      }
-      
-      // Create updated character
+
       const updatedCharacter = {
-        ...oldCharacter,
-        [field]: processedValue
+        ...characters[characterIndex],
+        [field]: value
       };
-      
-      // If name changed, update originalFilename
-      if (field === 'name') {
-        updatedCharacter.originalFilename = `${value}.png`;
-      }
-      
-      // Update state immediately for better UI responsiveness
+
+      // Update the characters array
       const newCharacters = [...characters];
       newCharacters[characterIndex] = updatedCharacter;
       setCharacters(newCharacters);
       
-      // Only update selected character if we should (when keepActiveChat is true)
+      // Handle selected character update
       if (keepActiveChat) {
         // If this is the selected character, update but keep current active chat
         if (selectedCharacter?.id === id) {
@@ -222,10 +221,11 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     try {
       let success = false;
       
-      if (fsSupported && character.originalFilename) {
+      if (character.originalFilename) {
         success = await deleteCharacterFile(character.originalFilename);
       } else {
-        success = await browserFs.deleteCharacter(id);
+        // Character hasn't been saved to disk yet
+        success = true;
       }
       
       if (success) {
@@ -243,7 +243,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
       setError(`Failed to delete character: ${err}`);
       return false;
     }
-  }, [characters, selectedCharacter, fsSupported, browserFs]);
+  }, [characters, selectedCharacter]);
 
   // Save character changes
   const saveCharacter = useCallback(async (character: Character) => {
@@ -275,7 +275,10 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   const exportCharacterAsPng = useCallback(async (character: Character): Promise<void> => {
     try {
       setError(null);
-      await savePngAsBrowserDownload(character);
+      
+      // Make sure we're exporting a copy to avoid any reference issues
+      const characterCopy = JSON.parse(JSON.stringify(character));
+      await savePngAsBrowserDownload(characterCopy);
     } catch (err) {
       console.error('Error exporting character as PNG:', err);
       setError(`Failed to export character: ${err}`);
@@ -286,7 +289,10 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   const exportCharacterAsJson = useCallback(async (character: Character): Promise<void> => {
     try {
       setError(null);
-      await saveCharacterAsJson(character);
+      
+      // Make sure we're exporting a copy to avoid any reference issues
+      const characterCopy = JSON.parse(JSON.stringify(character));
+      await saveCharacterAsJson(characterCopy);
     } catch (err) {
       console.error('Error exporting character as JSON:', err);
       setError(`Failed to export character as JSON: ${err}`);
@@ -296,41 +302,45 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   // Import a character from a PNG file
   const importCharacter = useCallback(async () => {
     try {
-      // Show file picker
+      setError(null);
+      
+      // Show file picker - only PNG files now
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/png';
+      input.accept = '.png'; // Only accept PNG files
       
       return new Promise<Character | null>((resolve) => {
         input.onchange = async (e) => {
-          const file = (e.target as HTMLInputElement).files?.[0];
-          if (!file) {
-            resolve(null);
-            return;
-          }
-          
           try {
-            // Extract character data
-            const { extractCharacterFromPng } = await import('../utils/pngMetadata');
-            const character = await extractCharacterFromPng(file);
-            
-            // Add to characters list
-            const exists = characters.some(c => c.id === character.id);
-            
-            if (exists) {
-              // Update existing character
-              const newCharacters = characters.map(c => 
-                c.id === character.id ? character : c
-              );
-              setCharacters(newCharacters);
-            } else {
-              // Add new character
-              setCharacters([...characters, character]);
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) {
+              resolve(null);
+              return;
             }
             
-            // Select the character
-            setSelectedCharacter(character);
-            resolve(character);
+            // Import from PNG
+            const character = await extractCharacterFromPng(file);
+            
+            // Generate a new ID to ensure uniqueness
+            character.id = Date.now();
+            
+            // Validate and fix character data
+            const validatedCharacter = validateAndFixCharacter(character);
+            
+            // Complete the import
+            const newCharacters = [...characters, validatedCharacter];
+            setCharacters(newCharacters);
+            setSelectedCharacter(validatedCharacter);
+            
+            // Important: Save character immediately after import
+            try {
+              await saveCharacterInternal(validatedCharacter);
+              console.log('Character imported and saved successfully');
+            } catch (err) {
+              console.error('Error saving imported character:', err);
+            }
+            
+            resolve(validatedCharacter);
           } catch (err) {
             console.error('Error importing character:', err);
             setError(`Failed to import character: ${err}`);
@@ -344,25 +354,48 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
       setError(`Failed to import character: ${err}`);
       return null;
     }
-  }, [characters]);
+  }, [characters, saveCharacterInternal]);
 
-  const value = {
-    characters,
-    selectedCharacter,
-    isLoading,
-    error,
-    createNewCharacter,
-    selectCharacter,
-    updateCharacter,
-    deleteCharacter,
-    saveCharacter,
-    importCharacter,
-    exportCharacterAsPng,
-    exportCharacterAsJson
+  /**
+   * Validates and fixes character data to ensure all required fields are present
+   */
+  const validateAndFixCharacter = (character: Character): Character => {
+    const validatedChar: Character = { ...character };
+    
+    // Ensure required fields exist
+    if (!validatedChar.id) validatedChar.id = Date.now();
+    if (!validatedChar.name) validatedChar.name = 'Unnamed Character';
+    if (!validatedChar.chats) validatedChar.chats = [];
+    
+    // Ensure chat structure is correct
+    validatedChar.chats = validatedChar.chats.map(chat => {
+      // Ensure chat has ID
+      if (!chat.id) chat.id = Date.now() + Math.floor(Math.random() * 1000);
+      // Ensure messages array exists
+      if (!chat.messages) chat.messages = [];
+      return chat;
+    });
+    
+    return validatedChar;
   };
 
   return (
-    <CharacterContext.Provider value={value}>
+    <CharacterContext.Provider
+      value={{
+        characters,
+        selectedCharacter,
+        isLoading,
+        error,
+        createNewCharacter,
+        selectCharacter,
+        updateCharacter,
+        deleteCharacter,
+        saveCharacter,
+        importCharacter,
+        exportCharacterAsPng,
+        exportCharacterAsJson
+      }}
+    >
       {children}
     </CharacterContext.Provider>
   );
