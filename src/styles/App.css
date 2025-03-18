@@ -1,3 +1,6 @@
+/* Import ReactCrop styles */
+@import 'react-image-crop/dist/ReactCrop.css';
+
 /* Reset and Base Styles */
 body, html {
   margin: 0;
@@ -1489,8 +1492,7 @@ body, html {
   opacity: 0.7;
 }
 
-/* Import ReactCrop styles */
-@import 'react-image-crop/dist/ReactCrop.css';
+
 
 /* Edit indicator styling */
 .edit-indicator {
@@ -1836,4 +1838,106 @@ body, html {
   margin-left: 8px;
   font-weight: bold;
   font-size: 18px;
+}
+
+/* Persona Modal Danger Zone */
+.danger-zone {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.danger-zone h4 {
+  color: #ff4d4f;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.reset-app-data-button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reset-app-data-button:hover {
+  background-color: #ff7875;
+}
+
+.danger-note {
+  color: #ff7875;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Data Management Zone */
+.data-management-zone {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(0, 119, 255, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 119, 255, 0.2);
+}
+
+.data-management-zone h4 {
+  color: #0077ff;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.data-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.export-data-button, .import-data-button {
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.export-data-button:hover, .import-data-button:hover {
+  background-color: #0066dd;
+}
+
+.data-management-note {
+  color: #0077ff;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Background Preview Container */
+.background-preview-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.remove-background-button {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(255, 77, 79, 0.8);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-background-button:hover {
+  background-color: rgba(255, 77, 79, 1);
 }

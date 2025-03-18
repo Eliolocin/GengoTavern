@@ -13,7 +13,6 @@ import ChatInput from '../components/chatInterface/ChatInput';
 import CharacterForm from '../components/characterCustomization/CharacterForm';
 import { CharacterProvider, useCharacters } from '../contexts/CharacterContext';
 import { UserSettingsProvider } from '../contexts/UserSettingsContext';
-import FileSystemIndicator from '../components/layout/FileSystemIndicator';
 
 // Main App Component wrapper with Providers
 const App: React.FC = () => {
@@ -874,7 +873,6 @@ const AppContent: React.FC = () => {
           <div className="no-character">Please select a character</div>
         )}
       </SidePanel>
-      <FileSystemIndicator />
     </div>
   );
 };

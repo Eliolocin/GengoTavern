@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bunx --bun vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && mv dist/index.html dist/GengoTavern.html",
     "lint": "eslint .",
     "preview": "vite preview"
   },
