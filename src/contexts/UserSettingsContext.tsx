@@ -1,29 +1,54 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loadUserSettings, saveUserSettings } from '../utils/fileSystem';
 
 interface UserPersona {
   name: string;
   description: string;
 }
 
-// Available Gemini model options
-export const GEMINI_MODELS = {
-  FLASH_EXP: 'gemini-2.0-flash-exp',
-  FLASH_LITE: 'gemini-2.0-flash-lite',
-  FLASH_THINKING: 'gemini-2.0-flash-thinking-exp-01-21',
-};
-
-interface UserSettingsContextType {
+interface UserSettings {
   apiKey: string;
-  setApiKey: (key: string) => void;
-  userPersona: UserPersona;
-  setUserPersona: (persona: UserPersona) => void;
-  isApiKeySet: boolean;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
+  persona: UserPersona;
+  model: string;
 }
 
-const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
+interface UserSettingsContextValue {
+  settings: UserSettings;
+  updateApiKey: (key: string) => void;
+  updatePersona: (persona: UserPersona) => void;
+  updateModel: (model: string) => void;
+  isLoading: boolean;
+}
+
+const DEFAULT_SETTINGS: UserSettings = {
+  apiKey: '',
+  persona: {
+    name: 'User',
+    description: ''
+  },
+  model: 'gemini-1.0-pro'
+};
+
+// Define the GEMINI_MODELS constant that is being imported elsewhere
+export const GEMINI_MODELS = [
+  { 
+    id: 'gemini-1.0-pro', 
+    name: 'Gemini Pro (Better for complex tasks)',
+    description: 'Best for complex reasoning tasks' 
+  },
+  { 
+    id: 'gemini-1.5-flash', 
+    name: 'Gemini Flash (Faster responses)',
+    description: 'Best for simple tasks and fast responses' 
+  },
+  { 
+    id: 'gemini-1.5-pro', 
+    name: 'Gemini 1.5 Pro (Most capable)',
+    description: 'Most capable, best for complex reasoning' 
+  }
+];
+
+const UserSettingsContext = createContext<UserSettingsContextValue | null>(null);
 
 export const useUserSettings = () => {
   const context = useContext(UserSettingsContext);
@@ -33,75 +58,93 @@ export const useUserSettings = () => {
   return context;
 };
 
-interface UserSettingsProviderProps {
-  children: ReactNode;
-}
+export const UserSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ children }) => {
-  // Load stored API key and user persona from localStorage
-  const [apiKey, setApiKeyState] = useState<string>(() => {
-    const storedKey = localStorage.getItem('gengoTavern_apiKey');
-    return storedKey || '';
-  });
-
-  const [userPersona, setUserPersonaState] = useState<UserPersona>(() => {
-    const storedPersona = localStorage.getItem('gengoTavern_userPersona');
-    return storedPersona 
-      ? JSON.parse(storedPersona) 
-      : { name: 'User', description: 'A friendly user chatting with characters.' };
-  });
-  
-  // Load stored model choice from localStorage
-  const [selectedModel, setSelectedModelState] = useState<string>(() => {
-    const storedModel = localStorage.getItem('gengoTavern_selectedModel');
-    return storedModel || GEMINI_MODELS.FLASH_EXP; // Default to flash-thinking-exp model
-  });
-
-  // Update localStorage when apiKey changes
-  const setApiKey = (key: string) => {
-    setApiKeyState(key);
-    localStorage.setItem('gengoTavern_apiKey', key);
-  };
-
-  // Update localStorage when userPersona changes
-  const setUserPersona = (persona: UserPersona) => {
-    setUserPersonaState(persona);
-    localStorage.setItem('gengoTavern_userPersona', JSON.stringify(persona));
-  };
-  
-  // Update localStorage when selectedModel changes
-  const setSelectedModel = (model: string) => {
-    setSelectedModelState(model);
-    localStorage.setItem('gengoTavern_selectedModel', model);
-  };
-
-  // Check if API key is set
-  const isApiKeySet = apiKey.length > 0;
-
-  const value = {
-    apiKey,
-    setApiKey,
-    userPersona,
-    setUserPersona,
-    isApiKeySet,
-    selectedModel,
-    setSelectedModel,
-  };
-  
-  // Make settings available globally for non-React components
+  // Load settings from file system on mount
   useEffect(() => {
-    // Set global variable to access settings outside of React context
-    (window as any).__gengoTavernUserSettings = value;
+    async function loadSettings() {
+      try {
+        const savedSettings = await loadUserSettings();
+        setSettings({
+          apiKey: savedSettings.apiKey || DEFAULT_SETTINGS.apiKey,
+          persona: savedSettings.persona || DEFAULT_SETTINGS.persona,
+          model: savedSettings.model || DEFAULT_SETTINGS.model
+        });
+      } catch (error) {
+        console.error('Failed to load user settings:', error);
+        // Use default settings on error
+        setSettings(DEFAULT_SETTINGS);
+      } finally {
+        setIsLoading(false);
+      }
+    }
     
-    // Cleanup when unmounted
-    return () => {
-      delete (window as any).__gengoTavernUserSettings;
-    };
-  }, [apiKey, userPersona, isApiKeySet, selectedModel]);
+    loadSettings();
+  }, []);
+
+  // Update API key and save
+  const updateApiKey = async (key: string) => {
+    const newSettings = { ...settings, apiKey: key };
+    setSettings(newSettings);
+    try {
+      await saveUserSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+    }
+  };
+
+  // Update persona and save
+  const updatePersona = async (persona: UserPersona) => {
+    const newSettings = { ...settings, persona };
+    setSettings(newSettings);
+    try {
+      await saveUserSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to save persona:', error);
+    }
+  };
+
+  // Update model and save
+  const updateModel = async (model: string) => {
+    const newSettings = { ...settings, model };
+    setSettings(newSettings);
+    try {
+      await saveUserSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to save model selection:', error);
+    }
+  };
+  
+  // Subscribe to settings changes for the global reference
+  useEffect(() => {
+    observeSettings(settings);
+  }, [settings]);
 
   return (
-    <UserSettingsContext.Provider value={value}>
+    <UserSettingsContext.Provider 
+      value={{ 
+        settings, 
+        updateApiKey, 
+        updatePersona, 
+        updateModel,
+        isLoading
+      }}
+    >
       {children}
     </UserSettingsContext.Provider>
   );
+};
+
+// Make settings available outside of React components
+let globalSettings: UserSettings = DEFAULT_SETTINGS;
+
+export const getGlobalSettings = (): UserSettings => {
+  return globalSettings;
+};
+
+// Observer to update global settings when context changes
+export const observeSettings = (settings: UserSettings) => {
+  globalSettings = settings;
 };

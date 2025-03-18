@@ -17,10 +17,11 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
 }) => {
   return (
     <div className="character-grid">
-      <CharacterTile isNew onClick={onNewCharacter} />
+      {/* Key added for New Character tile */}
+      <CharacterTile key="new-character" isNew onClick={onNewCharacter} />
       {characters.map((character) => (
         <CharacterTile
-          key={character.id}
+          key={character.id} // Ensure this key is present and unique
           character={character}
           onClick={() => onSelectCharacter(character)}
           isSelected={character.id === selectedCharacterId}
