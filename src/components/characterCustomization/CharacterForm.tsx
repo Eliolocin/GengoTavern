@@ -6,6 +6,7 @@ import { useCharacters } from '../../contexts/CharacterContext';
 import ImageCropper from '../shared/ImageCropper';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import EditFieldModal from '../shared/EditFieldModal';
+import { compressImage, getDataUrlSizeInKB } from '../../utils/imageUtils';
 
 interface CharacterFormProps {
   character: Character;
@@ -68,9 +69,30 @@ const CharacterForm: FC<CharacterFormProps> = ({
     }
   };
 
-  const handleCroppedImage = (croppedImageUrl: string) => {
-    // Update with cropped image
-    onUpdateCharacter('image', croppedImageUrl);
+  const handleCroppedImage = async (croppedImageUrl: string) => {
+    try {
+      // Compress the cropped image
+      const originalSizeKB = getDataUrlSizeInKB(croppedImageUrl);
+      
+      // Only compress if the image is large
+      if (originalSizeKB > 200) { // If larger than 200KB
+        const compressedImageUrl = await compressImage(croppedImageUrl, 800, 1200, 0.8);
+        const compressedSizeKB = getDataUrlSizeInKB(compressedImageUrl);
+        
+        console.log(`Image compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${Math.round((1 - compressedSizeKB/originalSizeKB) * 100)}% reduction)`);
+        
+        // Update with compressed image
+        onUpdateCharacter('image', compressedImageUrl);
+      } else {
+        // Use original if it's already small
+        onUpdateCharacter('image', croppedImageUrl);
+      }
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // Fallback to original image if compression fails
+      onUpdateCharacter('image', croppedImageUrl);
+    }
+    
     setCropImage(null);
     setIsUploading(false);
   };
@@ -80,12 +102,43 @@ const CharacterForm: FC<CharacterFormProps> = ({
     setIsUploading(false);
   };
 
-  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    const imageUrl = URL.createObjectURL(file);
-    onUpdateCharacter('defaultBackground', imageUrl);
+    // Create a FileReader to read the file as data URL
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const dataUrl = event.target?.result as string;
+        
+        // Compress background image
+        const originalSizeKB = getDataUrlSizeInKB(dataUrl);
+        
+        // Only compress if the image is large
+        if (originalSizeKB > 300) { // If larger than 300KB
+          const compressedDataUrl = await compressImage(dataUrl, 1920, 1080, 0.7);
+          const compressedSizeKB = getDataUrlSizeInKB(compressedDataUrl);
+          
+          console.log(`Background compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${Math.round((1 - compressedSizeKB/originalSizeKB) * 100)}% reduction)`);
+          
+          onUpdateCharacter('defaultBackground', compressedDataUrl);
+        } else {
+          // Use original if it's already small
+          onUpdateCharacter('defaultBackground', dataUrl);
+        }
+      } catch (error) {
+        console.error('Error processing background image:', error);
+        // Fallback to original image
+        const dataUrl = event.target?.result as string;
+        onUpdateCharacter('defaultBackground', dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBackground = () => {
+    onUpdateCharacter('defaultBackground', '');
   };
 
   const handleDialogueChange = (index: number, field: 'user' | 'character', value: string) => {
@@ -399,11 +452,20 @@ const CharacterForm: FC<CharacterFormProps> = ({
           Default Background Image:
           <div className="upload-preview">
             {character.defaultBackground && (
-              <img 
-                src={character.defaultBackground} 
-                alt="Background Preview" 
-                className="background-preview"
-              />
+              <div className="background-preview-container">
+                <img 
+                  src={character.defaultBackground} 
+                  alt="Background Preview" 
+                  className="background-preview"
+                />
+                <button 
+                  type="button" 
+                  className="remove-background-button"
+                  onClick={handleRemoveBackground}
+                >
+                  Remove Background
+                </button>
+              </div>
             )}
             <input
               id="background-upload"
