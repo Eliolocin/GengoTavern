@@ -6,7 +6,9 @@ import { useCharacters } from '../../contexts/CharacterContext';
 import ImageCropper from '../shared/ImageCropper';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import EditFieldModal from '../shared/EditFieldModal';
+import SaveAsOptionsModal from '../shared/SaveAsOptionsModal';
 import { compressImage, getDataUrlSizeInKB } from '../../utils/imageUtils';
+import { savePngAsBrowserDownload } from '../../utils/pngMetadata';
 
 interface CharacterFormProps {
   character: Character;
@@ -31,13 +33,14 @@ const CharacterForm: FC<CharacterFormProps> = ({
   onUpdateCharacter,
   onDeleteCharacter
 }) => {
-  const { exportCharacterAsPng, exportCharacterAsJson } = useCharacters();
+  const { exportCharacterAsJson } = useCharacters();
   const [dialogues, setDialogues] = useState<DialoguePair[]>(
     character.sampleDialogues || [{ user: '', character: '' }]
   );
   const [isUploading, setIsUploading] = useState(false);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showSaveOptions, setShowSaveOptions] = useState(false);
   const [editField, setEditField] = useState<EditFieldState>({
     isOpen: false,
     field: '',
@@ -167,11 +170,33 @@ const CharacterForm: FC<CharacterFormProps> = ({
     }
   };
 
+  // Updated to show options modal instead of saving directly
   const handleSaveAsPng = async () => {
+    setShowSaveOptions(true);
+  };
+  
+  // New handlers for the modal actions
+  const handleSaveBackup = async () => {
     try {
-      await exportCharacterAsPng(character);
+      await savePngAsBrowserDownload(character, {
+        includeChats: true,
+        includeBackground: true
+      });
+      setShowSaveOptions(false);
     } catch (error) {
-      console.error('Failed to save character:', error);
+      console.error('Failed to save character backup:', error);
+    }
+  };
+  
+  const handleSaveShare = async () => {
+    try {
+      await savePngAsBrowserDownload(character, {
+        includeChats: false,
+        includeBackground: false
+      });
+      setShowSaveOptions(false);
+    } catch (error) {
+      console.error('Failed to save character share copy:', error);
     }
   };
 
@@ -248,13 +273,22 @@ const CharacterForm: FC<CharacterFormProps> = ({
         />
       )}
 
-    {showDeleteConfirmation && (
+      {showDeleteConfirmation && (
         <DeleteConfirmationModal
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteConfirmation(false)}
           characterName={character.name}
           title="Delete Character"
           message={`Are you sure you want to delete ${character.name}?`}
+        />
+      )}
+
+      {showSaveOptions && (
+        <SaveAsOptionsModal
+          character={character}
+          onSaveBackup={handleSaveBackup}
+          onSaveShare={handleSaveShare}
+          onCancel={() => setShowSaveOptions(false)}
         />
       )}
 
