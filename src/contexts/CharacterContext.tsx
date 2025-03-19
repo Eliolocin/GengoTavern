@@ -2,14 +2,8 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import type { ReactNode } from 'react';
 import type { Character, DialoguePair, Chat } from '../types/interfaces';
 import placeholderImg from '../assets/placeholder.jpg';
-import {
-  loadAllCharacters,
-  saveCharacterToDisk,
-  deleteCharacterFile,
-  isFileSystemAccessSupported,
-  BrowserFsStorage
-} from '../utils/fileSystem';
-import { savePngAsBrowserDownload } from '../utils/pngMetadata';
+import { BrowserFsStorage } from '../utils/fileSystem';
+// import { savePngAsBrowserDownload } from '../utils/pngMetadata';
 import { saveCharacterAsJson } from '../utils/jsonExport';
 
 interface CharacterContextType {
@@ -47,7 +41,6 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [browserFs] = useState(new BrowserFsStorage());
-  const [fsSupported] = useState(isFileSystemAccessSupported());
   const [savingInProgress, setSavingInProgress] = useState(false);
 
   // Load characters on mount
@@ -57,11 +50,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
       try {
         let loadedCharacters: Character[] = [];
         
-        if (fsSupported) {
-          loadedCharacters = await loadAllCharacters();
-        } else {
-          loadedCharacters = await browserFs.loadAllCharacters();
-        }
+        loadedCharacters = await browserFs.loadAllCharacters();
         
         // If no characters were loaded, create a default character
         if (loadedCharacters.length === 0) {
@@ -88,9 +77,9 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     }
     
     loadCharacters();
-  }, [fsSupported, browserFs]);
+  }, [browserFs]);
 
-  // Save a character to disk
+  // Save a character to browser storage
   const saveCharacterInternal = useCallback(async (character: Character) => {
     if (savingInProgress) {
       console.log('Save already in progress, waiting...');
@@ -99,12 +88,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     
     setSavingInProgress(true);
     try {
-      if (fsSupported) {
-        await saveCharacterToDisk(character, character.originalFilename);
-      } else {
-        await browserFs.saveCharacter(character);
-        // Don't download on every save, only when explicitly requested
-      }
+      await browserFs.saveCharacter(character);
       return true;
     } catch (err) {
       console.error('Error saving character:', err);
@@ -112,7 +96,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     } finally {
       setSavingInProgress(false);
     }
-  }, [fsSupported, browserFs, savingInProgress]);
+  }, [browserFs, savingInProgress]);
 
   // Create a new character
   const createNewCharacter = useCallback(async () => {
@@ -220,13 +204,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
     if (!character) return false;
     
     try {
-      let success = false;
-      
-      if (fsSupported && character.originalFilename) {
-        success = await deleteCharacterFile(character.originalFilename);
-      } else {
-        success = await browserFs.deleteCharacter(id);
-      }
+      const success = await browserFs.deleteCharacter(id);
       
       if (success) {
         const newCharacters = characters.filter(c => c.id !== id);
@@ -243,7 +221,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
       setError(`Failed to delete character: ${err}`);
       return false;
     }
-  }, [characters, selectedCharacter, fsSupported, browserFs]);
+  }, [characters, selectedCharacter, browserFs]);
 
   // Save character changes
   const saveCharacter = useCallback(async (character: Character) => {
@@ -272,10 +250,12 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   }, [characters, selectedCharacter, saveCharacterInternal]);
 
   // Explicit function for "Save as PNG" button
-  const exportCharacterAsPng = useCallback(async (character: Character): Promise<void> => {
+  const exportCharacterAsPng = useCallback(async (_character: Character): Promise<void> => {
     try {
       setError(null);
-      await savePngAsBrowserDownload(character);
+      // No longer directly calling savePngAsBrowserDownload - we let the form handle it
+      // Instead we'll throw an error if this is directly called
+      throw new Error('Please use the Save as PNG button in the character form');
     } catch (err) {
       console.error('Error exporting character as PNG:', err);
       setError(`Failed to export character: ${err}`);
@@ -330,6 +310,10 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
             
             // Select the character
             setSelectedCharacter(character);
+            
+            // Explicitly save the imported character to browser storage
+            await saveCharacterInternal(character);
+            
             resolve(character);
           } catch (err) {
             console.error('Error importing character:', err);
@@ -344,7 +328,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
       setError(`Failed to import character: ${err}`);
       return null;
     }
-  }, [characters]);
+  }, [characters, saveCharacterInternal]);
 
   const value = {
     characters,

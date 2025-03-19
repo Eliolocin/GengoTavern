@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Character } from '../../types/interfaces';
+import { compressImage, getDataUrlSizeInKB } from '../../utils/imageUtils';
 
 interface NewChatModalProps {
   character: Character;
@@ -24,12 +25,41 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ character, onSave, onCancel
     return () => clearTimeout(timer);
   }, []);
 
-  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setBackground(imageUrl);
-      setBackgroundPreview(imageUrl);
+      // Create a FileReader to read the file as data URL
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const dataUrl = event.target?.result as string;
+          
+          // Compress background image
+          const originalSizeKB = getDataUrlSizeInKB(dataUrl);
+          
+          // Only compress if the image is large
+          if (originalSizeKB > 300) { // If larger than 300KB
+            const compressedDataUrl = await compressImage(dataUrl, 1920, 1080, 0.7);
+            const compressedSizeKB = getDataUrlSizeInKB(compressedDataUrl);
+            
+            console.log(`Background compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${Math.round((1 - compressedSizeKB/originalSizeKB) * 100)}% reduction)`);
+            
+            setBackground(compressedDataUrl);
+            setBackgroundPreview(compressedDataUrl);
+          } else {
+            // Use original if it's already small
+            setBackground(dataUrl);
+            setBackgroundPreview(dataUrl);
+          }
+        } catch (error) {
+          console.error('Error processing background image:', error);
+          // Fallback to original image
+          const dataUrl = event.target?.result as string;
+          setBackground(dataUrl);
+          setBackgroundPreview(dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 

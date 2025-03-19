@@ -147,7 +147,7 @@ export async function deleteCharacterFile(filename: string): Promise<boolean> {
  * Checks if the File System Access API is available in this browser
  */
 export function isFileSystemAccessSupported(): boolean {
-  return 'showDirectoryPicker' in window;
+  return false; // Always return false since we're not using File System API anymore
 }
 
 /**
