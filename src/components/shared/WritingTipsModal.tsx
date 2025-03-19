@@ -11,7 +11,7 @@ const WritingTipsModal: React.FC<WritingTipsModalProps> = ({ onClose }) => {
 ---
 - Use the '**Gemini 2.0 Flash Thinking**' model in the API settings for possibly better results, at the cost of slower responses.
 - If a message sent by the AI is unsatisfactory, use the **Regenerate** or **Edit** buttons located in the chat bubbles.
-    - Editing messages allow you to hard 'steer' the AI into performing actions you want them to take, in which it will play along.
+    - Editing messages allow you to hard 'steer' the AI into performing actions you want them to take, in which it will play along and learn from.
 - Enclose words ** to signify actions through text.
   - *Megumin slowly raised her hand*
   - Use parentheses（ ）instead for Japanese
