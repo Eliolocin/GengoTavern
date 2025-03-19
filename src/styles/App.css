@@ -952,6 +952,19 @@ body, html {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+    /* Add these properties to ensure proper positioning */
+    position: relative; /* Ensure it respects parent positioning */
+    margin: 0 auto; /* Center horizontally */
+    overflow: auto; /* Allow scrolling if content is too large */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Add responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    padding: 15px;
+  }
 }
 
 .edit-field-modal h3 {
@@ -1029,6 +1042,19 @@ body, html {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px; /* Add padding to ensure modal doesn't touch edges */
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Add specific styling when modal-content is inside edit-field-modal */
+.edit-field-modal .modal-content {
+  width: 100%; /* Take full width of parent */
+  max-width: none; /* Don't constrain width */
+  margin: 0; /* Remove margin */
+  padding: 0; /* Remove padding as parent already has it */
+  background-color: transparent; /* Use parent background */
+  box-shadow: none; /* Remove shadow as parent has it */
+  border-radius: 0; /* Remove border radius */
 }
 
 .edit-field-modal {
@@ -1567,8 +1593,16 @@ body, html {
 }
 
 .markdown-content a {
-  color: #646cff;
+  color: #8f96ff;
+  text-decoration: none;
+}
+
+/* Add hover effects */
+.markdown-content a:hover {
+  color: #8f96ff; /* Lighter shade when hovering */
   text-decoration: underline;
+  background-color: rgba(100, 108, 255, 0.1); /* Subtle background on hover */
+  border-radius: 2px;
 }
 
 /* Change italics style for actions - more subtle faded white instead of blue */
@@ -1579,6 +1613,15 @@ body, html {
 
 .markdown-content strong {
   font-weight: bold;
+}
+
+/* Special style for text with both bold and italics */
+.markdown-content strong em,
+.markdown-content em strong {
+  color: #c8ffc3; /* Orange-gold color */
+  font-weight: bold;
+  font-style: italic;
+  text-shadow: 0 0 2px rgba(255, 157, 0, 0.3);
 }
 
 /* Help modal */
@@ -1592,6 +1635,7 @@ body, html {
   overflow-y: auto;
   padding: 10px 20px;
   line-height: 1.6;
+  text-align: justify;
 }
 
 .help-content h2 {

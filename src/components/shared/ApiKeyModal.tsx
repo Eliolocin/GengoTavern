@@ -72,7 +72,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
         <div className="modal-body">
           <p className="modal-description">
             Configure your Google API key and model preferences. 
-            All settings are stored only on your device and never sent to our servers.
+            All settings are stored only on your browser and never sent to any server.
           </p>
           
           <div className="api-key-input-container">
@@ -95,6 +95,9 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               >
                 {showApiKey ? "👁️" : "👁️‍🗨️"}
               </button>
+            </div>
+            <div className="model-description">
+                <span>GengoTavern uses Google AI to power the Chatbots, requiring an API key. Do not share this key with anyone.</span>
             </div>
           </div>
           
@@ -123,7 +126,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               {selectedModel === GEMINI_MODELS.FLASH_LITE && 
                 <span>Faster responses with slightly reduced quality</span>}
               {selectedModel === GEMINI_MODELS.FLASH_THINKING && 
-                <span>More creative responses with improved reasoning</span>}
+                <span>More creative responses at the cost of speed</span>}
             </div>
           </div>
           
@@ -132,13 +135,13 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           )}
           
           <div className="info-box">
-            <p><strong>How to get an API key:</strong></p>
+            <p><strong>How to get a Free API key:</strong></p>
             <ol>
-              <li>Go to <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
-              <li>Sign in with your Google account</li>
-              <li>Navigate to the API keys section</li>
+              <li>Go to <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
+              <li>Sign in with any Google account</li>
+              <li>Click on "Get API Key" on the top-left</li>
               <li>Create a new API key</li>
-              <li>Copy and paste it here</li>
+              <li>Copy and paste the API key here</li>
             </ol>
           </div>
         </div>

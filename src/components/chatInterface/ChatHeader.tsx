@@ -44,7 +44,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           onClick={() => setShowPersonaModal(true)}
           title="User Persona Settings"
         >
-          👤
+          🎭
         </button>
         <button 
           className="header-action-button api-button" 
@@ -58,7 +58,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           onClick={handleHelpClick}
           title="Help"
         >
-          ?
+          ❔
         </button>
       </div>
       
