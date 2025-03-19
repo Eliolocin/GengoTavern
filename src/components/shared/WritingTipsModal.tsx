@@ -7,7 +7,7 @@ interface WritingTipsModalProps {
 
 const WritingTipsModal: React.FC<WritingTipsModalProps> = ({ onClose }) => {
   const writingTipsContent = `
-## Character Writing Tips
+Character Writing Tips
 
 ### Creating Compelling Characters
 - **Consistent Personality**: Define clear personality traits and ensure they remain consistent

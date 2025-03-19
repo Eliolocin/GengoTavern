@@ -2016,3 +2016,79 @@ body, html {
   align-items: center;
   padding: 15px 20px;
 }
+
+/* Save As Options Modal */
+.save-as-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.save-options {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+/* Vertical layout for save options */
+.save-options-vertical {
+  flex-direction: column;
+}
+
+.save-option {
+  flex: 1;
+  padding: 20px;
+  background-color: rgba(42, 42, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 15px;
+}
+
+.save-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.save-option-tag {
+  background-color: rgba(100, 108, 255, 0.3);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.save-option:last-child .save-option-tag {
+  background-color: rgba(76, 175, 80, 0.3);
+}
+
+.save-option:hover {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.save-option h4 {
+  margin: 0;
+  color: #fff;
+}
+
+.save-option p {
+  margin: 5px 0;
+  color: #ddd;
+}
+
+.save-option-note {
+  font-size: 0.9em;
+  color: #aaa !important;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .save-options {
+    flex-direction: column;
+  }
+}

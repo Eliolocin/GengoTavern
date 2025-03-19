@@ -118,9 +118,12 @@ export async function extractCharacterFromPng(pngFile: File): Promise<Character>
 }
 
 /**
- * Embeds character data into a PNG file
+ * Embeds character data into a PNG file with options for what to include
  */
-export async function embedCharacterIntoPng(character: Character): Promise<File> {
+export async function embedCharacterIntoPng(
+  character: Character,
+  options: { includeChats?: boolean; includeBackground?: boolean } = { includeChats: true, includeBackground: true }
+): Promise<File> {
   try {
     // First, ensure we have the character image in base64 format
     let imageBase64 = character.image;
@@ -157,9 +160,9 @@ export async function embedCharacterIntoPng(character: Character): Promise<File>
             description: character.description || '',
             defaultGreeting: character.defaultGreeting || '',
             defaultScenario: character.defaultScenario || '',
-            defaultBackground: character.defaultBackground || '',
+            defaultBackground: options.includeBackground ? character.defaultBackground || '' : '',
             sampleDialogues: character.sampleDialogues ? [...character.sampleDialogues] : [],
-            chats: character.chats ? [...character.chats] : [],
+            chats: options.includeChats ? character.chats ? [...character.chats] : [] : [],
           };
           
           // Convert to JSON
@@ -437,12 +440,14 @@ function insertMetadataIntoPng(data: Uint8Array, metadata: string): Uint8Array {
 }
 
 /**
- * Saves a character as a PNG file via browser download
- * This should only be used when the "Save as PNG" button is pressed
+ * Saves a character as a PNG file via browser download with options
  */
-export async function savePngAsBrowserDownload(character: Character): Promise<void> {
+export async function savePngAsBrowserDownload(
+  character: Character, 
+  options: { includeChats?: boolean; includeBackground?: boolean } = { includeChats: true, includeBackground: true }
+): Promise<void> {
   try {
-    const pngFile = await embedCharacterIntoPng(character);
+    const pngFile = await embedCharacterIntoPng(character, options);
     
     const a = document.createElement('a');
     a.download = `${character.name}.png`;

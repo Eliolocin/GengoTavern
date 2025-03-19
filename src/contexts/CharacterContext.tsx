@@ -253,7 +253,9 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   const exportCharacterAsPng = useCallback(async (character: Character): Promise<void> => {
     try {
       setError(null);
-      await savePngAsBrowserDownload(character);
+      // No longer directly calling savePngAsBrowserDownload - we let the form handle it
+      // Instead we'll throw an error if this is directly called
+      throw new Error('Please use the Save as PNG button in the character form');
     } catch (err) {
       console.error('Error exporting character as PNG:', err);
       setError(`Failed to export character: ${err}`);
