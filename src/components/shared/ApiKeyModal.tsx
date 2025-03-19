@@ -97,7 +97,10 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               </button>
             </div>
             <div className="model-description">
-                <span>GengoTavern uses Google AI to power the Chatbots, requiring an API key. Do not share this key with anyone.</span>
+                <span>GengoTavern uses Google AI to power the Chatbots, requiring an API key.</span>
+            </div>
+            <div className="input-hint">
+                <span>Do not share this key with anyone.</span>
             </div>
           </div>
           

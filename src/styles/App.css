@@ -1618,7 +1618,7 @@ body, html {
 /* Special style for text with both bold and italics */
 .markdown-content strong em,
 .markdown-content em strong {
-  color: #c8ffc3; /* Orange-gold color */
+  color: #ffffff; /* Orange-gold color */
   font-weight: bold;
   font-style: italic;
   text-shadow: 0 0 2px rgba(255, 157, 0, 0.3);
@@ -2091,4 +2091,11 @@ body, html {
   .save-options {
     flex-direction: column;
   }
+}
+
+/* Chat Dropdown Button Styles */
+.chat-dropdown-button.export-button {
+  font-size: 14px;
+  font-weight: bold;
+  padding-top: 2px; /* Adjust slightly for the arrow */
 }

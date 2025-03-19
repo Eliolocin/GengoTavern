@@ -200,6 +200,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
     }
   };
 
+  // @ts-ignore Used to export as Json for debugging
   const handleSaveAsJson = async () => {
     try {
       await exportCharacterAsJson(character);
@@ -231,8 +232,8 @@ const CharacterForm: FC<CharacterFormProps> = ({
   const openDialogueEditModal = (index: number, field: 'user' | 'character', value: string) => {
     const title = field === 'user' ? 'Edit User Message' : 'Edit Character Response';
     const description = field === 'user' 
-      ? 'Enter what the user might say to the character in this example dialogue.'
-      : 'Enter how the character would respond to the user message in this example dialogue.';
+      ? 'Enter what the user says or does to the character in this example dialogue.'
+      : 'Enter how the character would respond to the user in this example dialogue.';
     
     setEditField({
       isOpen: true,
@@ -338,11 +339,13 @@ const CharacterForm: FC<CharacterFormProps> = ({
 
       <div className="form-actions">
         <button type="button" className="save-character-button" onClick={handleSaveAsPng}>
-          Save as PNG
+          Export Character
         </button>
+        {/* JSON export button temporarily disabled
         <button type="button" className="save-json-button" onClick={handleSaveAsJson}>
           Save as JSON
         </button>
+        */}
       </div>
 
       <div className="form-group">
@@ -444,7 +447,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
               'defaultScenario', 
               character.defaultScenario || '', 
               'Edit Default Scenario', 
-              'The default scenario sets the context for new chats with this character.'
+              'This scenario sets the context for new chats with this character by default.'
             )}
           >
             <textarea
@@ -467,7 +470,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
               'defaultGreeting', 
               character.defaultGreeting || '', 
               'Edit Default Greeting', 
-              'The message this character will send at the beginning of each new chat.'
+              'The message this character will send at the beginning of each new chat by default.'
             )}
           >
             <textarea

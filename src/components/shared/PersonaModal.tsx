@@ -56,6 +56,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
     window.location.reload();
   };
 
+  // @ts-ignore Export all data of user
   const exportAllData = () => {
     try {
       // Collect all data from localStorage
@@ -85,6 +86,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
     }
   };
 
+    // @ts-ignore Import all user data
   const importAllData = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -156,7 +158,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
               rows={4}
             />
             <div className="input-hint">
-              This description will be provided to the AI to better understand who you are
+              This description will be provided to the AI to better understand your character
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import type { Character } from '../../types/interfaces';
 import EditChatModal from './EditChatModal';
 import NewChatModal from './NewChatModal';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
+import { saveChatAsJson } from '../../utils/chatExport';
 
 interface ChatDropdownProps {
   selectedCharacter: Character | null;
@@ -71,6 +72,17 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
     setShowNewModal(true);
   };
 
+  const handleExportClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent dropdown from toggling
+    if (selectedCharacter && activeChat) {
+      try {
+        saveChatAsJson(selectedCharacter, activeChat);
+      } catch (error) {
+        console.error('Failed to export chat:', error);
+      }
+    }
+  };
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent dropdown from toggling
     if (activeChatId !== null) {
@@ -124,12 +136,22 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
           </button>
           <button 
             type="button" 
+            className="chat-dropdown-button export-button"
+            onClick={handleExportClick}
+            title="Export chat as JSON"
+            disabled={!activeChatId || hasNoChats}
+          >
+            ⏏
+          </button>
+          <button 
+            type="button" 
             className="chat-dropdown-button new-button"
             onClick={handleNewClick}
             title="New chat"
           >
             +
           </button>
+          
           <button 
             type="button" 
             className="chat-dropdown-button delete-button"
