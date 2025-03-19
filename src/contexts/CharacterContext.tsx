@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Character, DialoguePair, Chat } from '../types/interfaces';
 import placeholderImg from '../assets/placeholder.jpg';
 import { BrowserFsStorage } from '../utils/fileSystem';
-import { savePngAsBrowserDownload } from '../utils/pngMetadata';
+// import { savePngAsBrowserDownload } from '../utils/pngMetadata';
 import { saveCharacterAsJson } from '../utils/jsonExport';
 
 interface CharacterContextType {
@@ -250,7 +250,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({ children }
   }, [characters, selectedCharacter, saveCharacterInternal]);
 
   // Explicit function for "Save as PNG" button
-  const exportCharacterAsPng = useCallback(async (character: Character): Promise<void> => {
+  const exportCharacterAsPng = useCallback(async (_character: Character): Promise<void> => {
     try {
       setError(null);
       // No longer directly calling savePngAsBrowserDownload - we let the form handle it
