@@ -4,6 +4,7 @@ import type { Character } from '../../types/interfaces';
 import ChatDropdown from './ChatDropdown';
 import ApiKeyModal from '../shared/ApiKeyModal';
 import PersonaModal from '../shared/PersonaModal';
+import WritingTipsModal from '../shared/WritingTipsModal';
 import { useUserSettings } from '../../contexts/UserSettingsContext';
 
 interface ChatHeaderProps {
@@ -29,9 +30,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [showWritingTipsModal, setShowWritingTipsModal] = useState(false);
 
   const handleHelpClick = () => {
     setShowHelpModal(true);
+  };
+
+  const handleWritingTipsClick = () => {
+    setShowWritingTipsModal(true);
   };
 
   return (
@@ -54,6 +60,13 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           🔑
         </button>
         <button 
+          className="header-action-button writing-tips-button" 
+          onClick={handleWritingTipsClick}
+          title="Writing Tips"
+        >
+          ✍️
+        </button>
+        <button 
           className="header-action-button help-button" 
           onClick={handleHelpClick}
           title="Help"
@@ -73,6 +86,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         />
       )}
 
+      {showWritingTipsModal && (
+        <WritingTipsModal
+          onClose={() => setShowWritingTipsModal(false)}
+        />
+      )}
+      
       {showApiKeyModal && (
         <ApiKeyModal 
           onClose={() => setShowApiKeyModal(false)}
