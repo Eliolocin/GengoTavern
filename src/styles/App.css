@@ -1,3 +1,6 @@
+/* Import ReactCrop styles */
+@import 'react-image-crop/dist/ReactCrop.css';
+
 /* Reset and Base Styles */
 body, html {
   margin: 0;
@@ -949,6 +952,19 @@ body, html {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+    /* Add these properties to ensure proper positioning */
+    position: relative; /* Ensure it respects parent positioning */
+    margin: 0 auto; /* Center horizontally */
+    overflow: auto; /* Allow scrolling if content is too large */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Add responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    padding: 15px;
+  }
 }
 
 .edit-field-modal h3 {
@@ -1026,6 +1042,19 @@ body, html {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px; /* Add padding to ensure modal doesn't touch edges */
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Add specific styling when modal-content is inside edit-field-modal */
+.edit-field-modal .modal-content {
+  width: 100%; /* Take full width of parent */
+  max-width: none; /* Don't constrain width */
+  margin: 0; /* Remove margin */
+  padding: 0; /* Remove padding as parent already has it */
+  background-color: transparent; /* Use parent background */
+  box-shadow: none; /* Remove shadow as parent has it */
+  border-radius: 0; /* Remove border radius */
 }
 
 .edit-field-modal {
@@ -1489,8 +1518,7 @@ body, html {
   opacity: 0.7;
 }
 
-/* Import ReactCrop styles */
-@import 'react-image-crop/dist/ReactCrop.css';
+
 
 /* Edit indicator styling */
 .edit-indicator {
@@ -1565,8 +1593,16 @@ body, html {
 }
 
 .markdown-content a {
-  color: #646cff;
+  color: #8f96ff;
+  text-decoration: none;
+}
+
+/* Add hover effects */
+.markdown-content a:hover {
+  color: #8f96ff; /* Lighter shade when hovering */
   text-decoration: underline;
+  background-color: rgba(100, 108, 255, 0.1); /* Subtle background on hover */
+  border-radius: 2px;
 }
 
 /* Change italics style for actions - more subtle faded white instead of blue */
@@ -1577,6 +1613,15 @@ body, html {
 
 .markdown-content strong {
   font-weight: bold;
+}
+
+/* Special style for text with both bold and italics */
+.markdown-content strong em,
+.markdown-content em strong {
+  color: #ffffff; /* Orange-gold color */
+  font-weight: bold;
+  font-style: italic;
+  text-shadow: 0 0 2px rgba(255, 157, 0, 0.3);
 }
 
 /* Help modal */
@@ -1590,6 +1635,7 @@ body, html {
   overflow-y: auto;
   padding: 10px 20px;
   line-height: 1.6;
+  text-align: justify;
 }
 
 .help-content h2 {
@@ -1836,4 +1882,220 @@ body, html {
   margin-left: 8px;
   font-weight: bold;
   font-size: 18px;
+}
+
+/* Persona Modal Danger Zone */
+.danger-zone {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.danger-zone h4 {
+  color: #ff4d4f;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.reset-app-data-button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reset-app-data-button:hover {
+  background-color: #ff7875;
+}
+
+.danger-note {
+  color: #ff7875;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Data Management Zone */
+.data-management-zone {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(0, 119, 255, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 119, 255, 0.2);
+}
+
+.data-management-zone h4 {
+  color: #0077ff;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.data-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.export-data-button, .import-data-button {
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.export-data-button:hover, .import-data-button:hover {
+  background-color: #0066dd;
+}
+
+.data-management-note {
+  color: #0077ff;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Background Preview Container */
+.background-preview-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.remove-background-button {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(255, 77, 79, 0.8);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-background-button:hover {
+  background-color: rgba(255, 77, 79, 1);
+}
+
+/* Help Modal Startup Preference */
+.startup-preference {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.hide-at-startup-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hide-at-startup-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #646cff;
+}
+
+/* Adjust the modal footer for the new layout */
+.help-modal .modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+}
+
+/* Save As Options Modal */
+.save-as-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.save-options {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+/* Vertical layout for save options */
+.save-options-vertical {
+  flex-direction: column;
+}
+
+.save-option {
+  flex: 1;
+  padding: 20px;
+  background-color: rgba(42, 42, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 15px;
+}
+
+.save-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.save-option-tag {
+  background-color: rgba(100, 108, 255, 0.3);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.save-option:last-child .save-option-tag {
+  background-color: rgba(76, 175, 80, 0.3);
+}
+
+.save-option:hover {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.save-option h4 {
+  margin: 0;
+  color: #fff;
+}
+
+.save-option p {
+  margin: 5px 0;
+  color: #ddd;
+}
+
+.save-option-note {
+  font-size: 0.9em;
+  color: #aaa !important;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .save-options {
+    flex-direction: column;
+  }
+}
+
+/* Chat Dropdown Button Styles */
+.chat-dropdown-button.export-button {
+  font-size: 14px;
+  font-weight: bold;
+  padding-top: 2px; /* Adjust slightly for the arrow */
 }

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type React from 'react';
 import type { Character } from '../../types/interfaces';
 import ChatDropdown from './ChatDropdown';
-import HelpModal from '../shared/HelpModal';
 import ApiKeyModal from '../shared/ApiKeyModal';
 import PersonaModal from '../shared/PersonaModal';
+import WritingTipsModal from '../shared/WritingTipsModal';
 import { useUserSettings } from '../../contexts/UserSettingsContext';
 
 interface ChatHeaderProps {
@@ -14,6 +14,7 @@ interface ChatHeaderProps {
   onDeleteChat: (chatId: number) => void;
   onSelectChat: (chatId: number) => void;
   activeChatId: number | null;
+  setShowHelpModal: (show: boolean) => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ 
@@ -22,13 +23,22 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   onEditChat,
   onDeleteChat,
   onSelectChat,
-  activeChatId
+  activeChatId,
+  setShowHelpModal
 }) => {
   const { apiKey, setApiKey, userPersona, setUserPersona, selectedModel, setSelectedModel } = useUserSettings();
   
-  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [showWritingTipsModal, setShowWritingTipsModal] = useState(false);
+
+  const handleHelpClick = () => {
+    setShowHelpModal(true);
+  };
+
+  const handleWritingTipsClick = () => {
+    setShowWritingTipsModal(true);
+  };
 
   return (
     <div className="chat-header">
@@ -40,7 +50,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           onClick={() => setShowPersonaModal(true)}
           title="User Persona Settings"
         >
-          👤
+          🎭
         </button>
         <button 
           className="header-action-button api-button" 
@@ -50,11 +60,18 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           🔑
         </button>
         <button 
-          className="header-action-button help-button" 
-          onClick={() => setShowHelpModal(true)}
-          title="Help & Information"
+          className="header-action-button writing-tips-button" 
+          onClick={handleWritingTipsClick}
+          title="Writing Tips"
         >
-          ?
+          ✍️
+        </button>
+        <button 
+          className="header-action-button help-button" 
+          onClick={handleHelpClick}
+          title="Help"
+        >
+          ❔
         </button>
       </div>
       
@@ -69,7 +86,11 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         />
       )}
 
-      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
+      {showWritingTipsModal && (
+        <WritingTipsModal
+          onClose={() => setShowWritingTipsModal(false)}
+        />
+      )}
       
       {showApiKeyModal && (
         <ApiKeyModal 

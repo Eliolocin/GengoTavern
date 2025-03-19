@@ -6,6 +6,9 @@ import { useCharacters } from '../../contexts/CharacterContext';
 import ImageCropper from '../shared/ImageCropper';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import EditFieldModal from '../shared/EditFieldModal';
+import SaveAsOptionsModal from '../shared/SaveAsOptionsModal';
+import { compressImage, getDataUrlSizeInKB } from '../../utils/imageUtils';
+import { savePngAsBrowserDownload } from '../../utils/pngMetadata';
 
 interface CharacterFormProps {
   character: Character;
@@ -30,13 +33,14 @@ const CharacterForm: FC<CharacterFormProps> = ({
   onUpdateCharacter,
   onDeleteCharacter
 }) => {
-  const { exportCharacterAsPng, exportCharacterAsJson } = useCharacters();
+  const { exportCharacterAsJson } = useCharacters();
   const [dialogues, setDialogues] = useState<DialoguePair[]>(
     character.sampleDialogues || [{ user: '', character: '' }]
   );
   const [isUploading, setIsUploading] = useState(false);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showSaveOptions, setShowSaveOptions] = useState(false);
   const [editField, setEditField] = useState<EditFieldState>({
     isOpen: false,
     field: '',
@@ -68,9 +72,30 @@ const CharacterForm: FC<CharacterFormProps> = ({
     }
   };
 
-  const handleCroppedImage = (croppedImageUrl: string) => {
-    // Update with cropped image
-    onUpdateCharacter('image', croppedImageUrl);
+  const handleCroppedImage = async (croppedImageUrl: string) => {
+    try {
+      // Compress the cropped image
+      const originalSizeKB = getDataUrlSizeInKB(croppedImageUrl);
+      
+      // Only compress if the image is large
+      if (originalSizeKB > 200) { // If larger than 200KB
+        const compressedImageUrl = await compressImage(croppedImageUrl, 800, 1200, 0.8);
+        const compressedSizeKB = getDataUrlSizeInKB(compressedImageUrl);
+        
+        console.log(`Image compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${Math.round((1 - compressedSizeKB/originalSizeKB) * 100)}% reduction)`);
+        
+        // Update with compressed image
+        onUpdateCharacter('image', compressedImageUrl);
+      } else {
+        // Use original if it's already small
+        onUpdateCharacter('image', croppedImageUrl);
+      }
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // Fallback to original image if compression fails
+      onUpdateCharacter('image', croppedImageUrl);
+    }
+    
     setCropImage(null);
     setIsUploading(false);
   };
@@ -80,12 +105,43 @@ const CharacterForm: FC<CharacterFormProps> = ({
     setIsUploading(false);
   };
 
-  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    const imageUrl = URL.createObjectURL(file);
-    onUpdateCharacter('defaultBackground', imageUrl);
+    // Create a FileReader to read the file as data URL
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const dataUrl = event.target?.result as string;
+        
+        // Compress background image
+        const originalSizeKB = getDataUrlSizeInKB(dataUrl);
+        
+        // Only compress if the image is large
+        if (originalSizeKB > 300) { // If larger than 300KB
+          const compressedDataUrl = await compressImage(dataUrl, 1920, 1080, 0.7);
+          const compressedSizeKB = getDataUrlSizeInKB(compressedDataUrl);
+          
+          console.log(`Background compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${Math.round((1 - compressedSizeKB/originalSizeKB) * 100)}% reduction)`);
+          
+          onUpdateCharacter('defaultBackground', compressedDataUrl);
+        } else {
+          // Use original if it's already small
+          onUpdateCharacter('defaultBackground', dataUrl);
+        }
+      } catch (error) {
+        console.error('Error processing background image:', error);
+        // Fallback to original image
+        const dataUrl = event.target?.result as string;
+        onUpdateCharacter('defaultBackground', dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBackground = () => {
+    onUpdateCharacter('defaultBackground', '');
   };
 
   const handleDialogueChange = (index: number, field: 'user' | 'character', value: string) => {
@@ -114,14 +170,37 @@ const CharacterForm: FC<CharacterFormProps> = ({
     }
   };
 
+  // Updated to show options modal instead of saving directly
   const handleSaveAsPng = async () => {
+    setShowSaveOptions(true);
+  };
+  
+  // New handlers for the modal actions
+  const handleSaveBackup = async () => {
     try {
-      await exportCharacterAsPng(character);
+      await savePngAsBrowserDownload(character, {
+        includeChats: true,
+        includeBackground: true
+      });
+      setShowSaveOptions(false);
     } catch (error) {
-      console.error('Failed to save character:', error);
+      console.error('Failed to save character backup:', error);
+    }
+  };
+  
+  const handleSaveShare = async () => {
+    try {
+      await savePngAsBrowserDownload(character, {
+        includeChats: false,
+        includeBackground: false
+      });
+      setShowSaveOptions(false);
+    } catch (error) {
+      console.error('Failed to save character share copy:', error);
     }
   };
 
+  // @ts-ignore Used to export as Json for debugging
   const handleSaveAsJson = async () => {
     try {
       await exportCharacterAsJson(character);
@@ -153,8 +232,8 @@ const CharacterForm: FC<CharacterFormProps> = ({
   const openDialogueEditModal = (index: number, field: 'user' | 'character', value: string) => {
     const title = field === 'user' ? 'Edit User Message' : 'Edit Character Response';
     const description = field === 'user' 
-      ? 'Enter what the user might say to the character in this example dialogue.'
-      : 'Enter how the character would respond to the user message in this example dialogue.';
+      ? 'Enter what the user says or does to the character in this example dialogue.'
+      : 'Enter how the character would respond to the user in this example dialogue.';
     
     setEditField({
       isOpen: true,
@@ -195,13 +274,22 @@ const CharacterForm: FC<CharacterFormProps> = ({
         />
       )}
 
-    {showDeleteConfirmation && (
+      {showDeleteConfirmation && (
         <DeleteConfirmationModal
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteConfirmation(false)}
           characterName={character.name}
           title="Delete Character"
           message={`Are you sure you want to delete ${character.name}?`}
+        />
+      )}
+
+      {showSaveOptions && (
+        <SaveAsOptionsModal
+          character={character}
+          onSaveBackup={handleSaveBackup}
+          onSaveShare={handleSaveShare}
+          onCancel={() => setShowSaveOptions(false)}
         />
       )}
 
@@ -251,11 +339,13 @@ const CharacterForm: FC<CharacterFormProps> = ({
 
       <div className="form-actions">
         <button type="button" className="save-character-button" onClick={handleSaveAsPng}>
-          Save as PNG
+          Export Character
         </button>
+        {/* JSON export button temporarily disabled
         <button type="button" className="save-json-button" onClick={handleSaveAsJson}>
           Save as JSON
         </button>
+        */}
       </div>
 
       <div className="form-group">
@@ -357,7 +447,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
               'defaultScenario', 
               character.defaultScenario || '', 
               'Edit Default Scenario', 
-              'The default scenario sets the context for new chats with this character.'
+              'This scenario sets the context for new chats with this character by default.'
             )}
           >
             <textarea
@@ -380,7 +470,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
               'defaultGreeting', 
               character.defaultGreeting || '', 
               'Edit Default Greeting', 
-              'The message this character will send at the beginning of each new chat.'
+              'The message this character will send at the beginning of each new chat by default.'
             )}
           >
             <textarea
@@ -399,11 +489,20 @@ const CharacterForm: FC<CharacterFormProps> = ({
           Default Background Image:
           <div className="upload-preview">
             {character.defaultBackground && (
-              <img 
-                src={character.defaultBackground} 
-                alt="Background Preview" 
-                className="background-preview"
-              />
+              <div className="background-preview-container">
+                <img 
+                  src={character.defaultBackground} 
+                  alt="Background Preview" 
+                  className="background-preview"
+                />
+                <button 
+                  type="button" 
+                  className="remove-background-button"
+                  onClick={handleRemoveBackground}
+                >
+                  Remove Background
+                </button>
+              </div>
             )}
             <input
               id="background-upload"

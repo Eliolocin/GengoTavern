@@ -56,61 +56,83 @@ function calculateCRC(data: Uint8Array, offset: number, length: number): number 
  */
 export async function extractCharacterFromPng(pngFile: File): Promise<Character> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      if (!e.target?.result) {
-        reject(new Error('Failed to read file'));
-        return;
-      }
+    // First, create a data URL for the image (as fallback if no metadata found)
+    const imageReader = new FileReader();
+    imageReader.onload = (imageEvent) => {
+      const imageDataUrl = imageEvent.target?.result as string;
       
-      try {
-        // Convert to Uint8Array for processing
-        const buffer = e.target.result as ArrayBuffer;
-        const dataView = new Uint8Array(buffer);
-        
-        // Verify PNG signature
-        if (!verifyPNGSignature(dataView)) {
-          throw new Error('Not a valid PNG file');
+      // Now read the file as array buffer to extract metadata
+      const metadataReader = new FileReader();
+      metadataReader.onload = (e) => {
+        if (!e.target?.result) {
+          reject(new Error('Failed to read file'));
+          return;
         }
         
-        // Parse chunks to find our metadata
-        const metadata = extractMetadataFromPng(dataView);
-        const imageUrl = URL.createObjectURL(pngFile);
-        
-        if (metadata) {
-          // Return character data with the image URL
-          resolve({
-            ...metadata,
-            image: imageUrl,
-            originalFilename: pngFile.name
-          });
-        } else {
-          // If no metadata found, create a new character from this image
-          resolve({
-            id: Date.now(),
-            name: pngFile.name.replace(/\.[^/.]+$/, ''), // Filename without extension
-            image: imageUrl,
-            chats: [],
-            originalFilename: pngFile.name
-          });
+        try {
+          // Convert to Uint8Array for processing
+          const buffer = e.target.result as ArrayBuffer;
+          const dataView = new Uint8Array(buffer);
+          
+          // Verify PNG signature
+          if (!verifyPNGSignature(dataView)) {
+            throw new Error('Not a valid PNG file');
+          }
+          
+          // Parse chunks to find our metadata
+          const metadata = extractMetadataFromPng(dataView);
+          
+          if (metadata) {
+            // If we have metadata with an image in base64 format, preserve it
+            const originalImage = metadata.image && typeof metadata.image === 'string' && 
+                                 metadata.image.startsWith('data:') ? metadata.image : imageDataUrl;
+            
+            // Return character data, preserving the original base64 image
+            resolve({
+              ...metadata,
+              image: originalImage,
+              originalFilename: pngFile.name
+            });
+          } else {
+            // If no metadata found, create a new character from this image
+            resolve({
+              id: Date.now(),
+              name: pngFile.name.replace(/\.[^/.]+$/, ''), // Filename without extension
+              image: imageDataUrl, // Use data URL instead of blob
+              chats: [],
+              originalFilename: pngFile.name
+            });
+          }
+        } catch (error) {
+          reject(new Error(`Failed to parse character data: ${error}`));
         }
-      } catch (error) {
-        reject(new Error(`Failed to parse character data: ${error}`));
-      }
+      };
+      
+      metadataReader.onerror = () => reject(new Error('Error reading file'));
+      metadataReader.readAsArrayBuffer(pngFile);
     };
     
-    reader.onerror = () => reject(new Error('Error reading file'));
-    reader.readAsArrayBuffer(pngFile);
+    imageReader.onerror = () => reject(new Error('Error reading image file'));
+    imageReader.readAsDataURL(pngFile);
   });
 }
 
 /**
- * Embeds character data into a PNG file
+ * Embeds character data into a PNG file with options for what to include
  */
-export async function embedCharacterIntoPng(character: Character): Promise<File> {
+export async function embedCharacterIntoPng(
+  character: Character,
+  options: { includeChats?: boolean; includeBackground?: boolean } = { includeChats: true, includeBackground: true }
+): Promise<File> {
   try {
-    // First, get the image data
+    // First, ensure we have the character image in base64 format
+    let imageBase64 = character.image;
+    if (!imageBase64.startsWith('data:')) {
+      // Convert to base64 if not already
+      imageBase64 = await imageUrlToBase64(character.image);
+    }
+    
+    // Get the image data
     const imageBlob = await fetchImage(character.image);
     
     // Convert to PNG if not already a PNG
@@ -130,9 +152,21 @@ export async function embedCharacterIntoPng(character: Character): Promise<File>
           const buffer = e.target.result as ArrayBuffer;
           const dataView = new Uint8Array(buffer);
           
-          // Create a clone of character data without the image URL (to avoid circular references)
-          const { image, originalFilename, ...characterData } = character;
-          const metadataText = JSON.stringify(characterData);
+          // Create a clone of character data, including the base64 image
+          const characterDataToEmbed = {
+            id: character.id,
+            name: character.name,
+            image: imageBase64, // Include the base64 image data
+            description: character.description || '',
+            defaultGreeting: character.defaultGreeting || '',
+            defaultScenario: character.defaultScenario || '',
+            defaultBackground: options.includeBackground ? character.defaultBackground || '' : '',
+            sampleDialogues: character.sampleDialogues ? [...character.sampleDialogues] : [],
+            chats: options.includeChats ? character.chats ? [...character.chats] : [] : [],
+          };
+          
+          // Convert to JSON
+          const metadataText = JSON.stringify(characterDataToEmbed);
           
           // Insert metadata into the PNG
           const newPngData = insertMetadataIntoPng(dataView, metadataText);
@@ -154,6 +188,33 @@ export async function embedCharacterIntoPng(character: Character): Promise<File>
     });
   } catch (error) {
     throw new Error(`Failed to process image: ${error}`);
+  }
+}
+
+/**
+ * Convert an image URL (blob or regular) to a base64 data URL
+ */
+async function imageUrlToBase64(imageUrl: string): Promise<string> {
+  // If it's already a data URL, return it
+  if (imageUrl.startsWith('data:')) {
+    return imageUrl;
+  }
+  
+  // Otherwise, fetch it and convert to base64
+  try {
+    const blob = await fetchImage(imageUrl);
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to convert image to base64'));
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    throw new Error(`Failed to convert image to base64: ${error}`);
   }
 }
 
@@ -379,12 +440,14 @@ function insertMetadataIntoPng(data: Uint8Array, metadata: string): Uint8Array {
 }
 
 /**
- * Saves a character as a PNG file via browser download
- * This should only be used when the "Save as PNG" button is pressed
+ * Saves a character as a PNG file via browser download with options
  */
-export async function savePngAsBrowserDownload(character: Character): Promise<void> {
+export async function savePngAsBrowserDownload(
+  character: Character, 
+  options: { includeChats?: boolean; includeBackground?: boolean } = { includeChats: true, includeBackground: true }
+): Promise<void> {
   try {
-    const pngFile = await embedCharacterIntoPng(character);
+    const pngFile = await embedCharacterIntoPng(character, options);
     
     const a = document.createElement('a');
     a.download = `${character.name}.png`;
