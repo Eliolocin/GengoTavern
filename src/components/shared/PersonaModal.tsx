@@ -128,12 +128,13 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
-          <p className="modal-description">
-            Customize how you appear in chats. This information will be used when generating responses.
-          </p>
+            <p className="modal-description">
+            Customize how the Chatbots refer to you / your character, 
+            as well as what information you want them to remember.
+            </p>
           
           <div className="form-group">
-            <label htmlFor="persona-name-input">Your Name:</label>
+            <label htmlFor="persona-name-input">User's Name:</label>
             <input
               id="persona-name-input"
               type="text"
@@ -145,7 +146,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
           </div>
           
           <div className="form-group">
-            <label htmlFor="persona-description-input">Description (optional):</label>
+            <label htmlFor="persona-description-input">User's Description:</label>
             <textarea
               id="persona-description-input"
               value={description}
