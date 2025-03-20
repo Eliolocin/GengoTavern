@@ -32,7 +32,7 @@ const WritingTipsModal: React.FC<WritingTipsModalProps> = ({ onClose }) => {
 ### Character Creation Tips
 ---
 - **Descriptions**: For simple characters, a single sentence description is enough. 
-For more complex characters, the more detailed the better. 
+For more complex characters, be as detailed as you want them to be. 
 - **Sample Dialogues**: Write how the character would react to certain questions or actions you do, which the AI will mimic.
 It also further gives the AI an idea on your character's personality.
   - To further reinforce the Description, add an example where the {{user}} asks the {{char}} to introduce themselves. 
@@ -45,9 +45,11 @@ very important along with the Scenario as it sets the context.
 - Use the sample characters provided by the developer as reference if needed.
 ### Language Learning Tips
 ---
+- Install [Yomitan](https://yomitan.wiki/getting-started/) for easy pop-up dictionaries during chat.
+- Follow this [Tofugu guide](https://www.tofugu.com/japanese/how-to-install-japanese-keyboard/) to gain Japanese input.
 - Descriptions and Scenarios can be English, but Sample Dialogues and Greetings have to be written
 in your desired Foreign Language in order for the AI to speak it.
-  - Writing everything using your desired Foreign Language may or may not improve its capabilities.
+  - Writing everything using your desired Foreign Language will minimize cases where the AI will mix up languages.
 - Play with Sample Dialogues in order to create a character that speaks in a way matching your current language proficiency.
 - Add parenthesized instructions in the Scenario such as (Use easy Japanese) to further encourage the AI
 to communicate at a comprehensible level.
