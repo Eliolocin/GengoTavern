@@ -447,11 +447,14 @@ const AppContent: React.FC = () => {
       // Create the regenerated message
       const regeneratedMessages = activeMessages.map(msg => {
         if (msg.id === messageId) {
+          const currentUpdatedMsg = updatedMessages.find(u => u.id === messageId);
           return {
             ...msg,
             text: sanitizedResponse,
             isGenerating: false,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            // Preserve the regenHistory from the updated message
+            regenHistory: currentUpdatedMsg?.regenHistory || []
           };
         }
         return msg;
