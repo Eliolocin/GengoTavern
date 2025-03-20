@@ -15,7 +15,13 @@ export async function saveChatAsJson(character: Character, chat: Chat): Promise<
       scenario: chat.scenario || '',
       background: chat.background || '',
       messages: chat.messages,
+      // Include deletedMessages if they exist
+      deletedMessages: chat.deletedMessages || [],
       lastActivity: chat.lastActivity,
+      // Include any other chat properties that might be useful
+      pinned: chat.pinned,
+      tags: chat.tags,
+      settings: chat.settings,
       exportDate: new Date().toISOString(),
     };
 
