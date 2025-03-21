@@ -47,4 +47,6 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
-          args: '🎉 **New Release**: GengoTavern v${{ steps.package-version.outputs.version }} is now available.\n📥 Download: ${{ steps.create_release.outputs.html_url }}'
+          args: |
+            🎉 **New Release**: GengoTavern v${{ steps.package-version.outputs.version }} is now available.
+            📥 Download: ${{ steps.create_release.outputs.html_url }}
