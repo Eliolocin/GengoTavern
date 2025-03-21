@@ -49,4 +49,4 @@ jobs:
         with:
           args: |
             🎉 **New Release**: GengoTavern v${{ steps.package-version.outputs.version }} is now available.
-            📥 Download: ${{ steps.create_release.outputs.html_url }}
+            📥 Download: [Github Link](https://github.com/Eliolocin/GengoTavern/releases)

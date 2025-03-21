@@ -37,7 +37,7 @@ GengoTavern is a (beta) chat application that lets you create and interact with 
 
 ### Problems?
 - Join the [Discord Server](https://discord.gg/whT3mRNAGs) for instant support regarding usage and bugs.
-- Visit the [GitHub Repository](https://github.com/eliolocin/gengotavern) for updates on new versions.
+- Visit the [GitHub Repository](https://github.com/Eliolocin/GengoTavern/releases) for updates on new versions.
 - Contact head developer [@bredrumb](https://telegram.me/bredrumb) directly on Telegram.
   `;
 
