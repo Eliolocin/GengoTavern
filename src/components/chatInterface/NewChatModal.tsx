@@ -10,8 +10,8 @@ interface NewChatModalProps {
 
 const NewChatModal: React.FC<NewChatModalProps> = ({ character, onSave, onCancel }) => {
   const [chatName, setChatName] = useState('New Chat');
-  const [scenario, setScenario] = useState('');
-  const [greeting, setGreeting] = useState('');
+  const [scenario, setScenario] = useState(character.defaultScenario || '');
+  const [greeting, setGreeting] = useState(character.defaultGreeting || '');
   const [background, setBackground] = useState('');
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
   const [validationError, setValidationError] = useState('');
@@ -118,46 +118,52 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ character, onSave, onCancel
 
           <div className="form-group">
             <label htmlFor="new-chat-scenario">
-              Scenario: 
-              {character.defaultScenario && (
-                <span className="default-note">
-                  (Default available)
-                </span>
-              )}
+              Scenario:
             </label>
+            <span className="default-note">
+                  The scenario sets the context for this new chat. Can be in any language.
+                </span>
             <textarea
               id="new-chat-scenario"
               value={scenario}
               onChange={(e) => setScenario(e.target.value)}
-              placeholder={character.defaultScenario ? "Using character default scenario" : "Enter scenario or context for this chat"}
+              placeholder="Enter scenario or context for this chat"
               rows={3}
             />
-            {!character.defaultScenario && (
+            {character.defaultScenario ? (
+              <div className="default-filled-hint">
+                Pre-filled from this character's defaults
+              </div>
+            ) : (
               <div className="input-hint">
-                This or the character default is required
+                This is required
               </div>
             )}
           </div>
 
           <div className="form-group">
             <label htmlFor="new-chat-greeting">
-              Greeting: 
-              {character.defaultGreeting && (
-                <span className="default-note">
-                  (Default available)
-                </span>
-              )}
+              Greeting:
             </label>
+              <p className="default-note">
+                The very first message sent in the chat by your Character. 
+                Should be based on the Scenario for consistency, and written in the language you want your Character to speak in.
+              </p>
+
             <textarea
               id="new-chat-greeting"
               value={greeting}
               onChange={(e) => setGreeting(e.target.value)}
-              placeholder={character.defaultGreeting ? "Using character default greeting" : "Enter greeting message from character"}
+              placeholder="Enter greeting message from character"
               rows={3}
             />
-            {!character.defaultGreeting && (
+            {character.defaultGreeting ? (
+              <div className="default-filled-hint">
+                Pre-filled from this character's defaults
+              </div>
+            ) : (
               <div className="input-hint">
-                This or the character default is required
+                This is required
               </div>
             )}
           </div>
