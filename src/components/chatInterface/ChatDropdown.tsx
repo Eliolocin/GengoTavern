@@ -125,6 +125,14 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
           {dropdownTitle}
         </span>
         <div className="chat-dropdown-icons">
+        <button 
+            type="button" 
+            className="chat-dropdown-button new-button"
+            onClick={handleNewClick}
+            title="New chat"
+          >
+            +
+          </button>
           <button 
             type="button" 
             className="chat-dropdown-button edit-button"
@@ -143,14 +151,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
           >
             ⏏
           </button>
-          <button 
-            type="button" 
-            className="chat-dropdown-button new-button"
-            onClick={handleNewClick}
-            title="New chat"
-          >
-            +
-          </button>
+          
           
           <button 
             type="button" 
