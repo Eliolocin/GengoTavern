@@ -30,13 +30,14 @@ GengoTavern is a (beta) chat application that lets you create and interact with 
 ### Getting Started:
 1. **Input an API Key**: Head over to the 🔑 **API Tab**  for instructions
 2. **Modify your Profile**: Add your name/description at the 🎭 **Persona Tab**
-3. **Create a Character**: Refer to the ✍️ **Writing Tips Tab** for help
-4. **Start Chatting**: Create a new chat of your character to start messaging
-5. **Import/Export**: Share characters as PNG files with other users
+3. **Create a Character**: Click the ➕ on the lefthand **Selection Panel**
+4. **Edit your Character**: Add traits and attributes on the righthand **Edit Panel**
+5. **Start Chatting**: Select your Character and Create a New Chat
+6. **Import/Export**: Share characters as PNG files with other users
 
 ### Problems?
 - Join the [Discord Server](https://discord.gg/whT3mRNAGs) for instant support regarding usage and bugs.
-- Visit the [GitHub Repository](https://github.com/eliolocin/gengotavern) for updates on new versions.
+- Visit the [GitHub Repository](https://github.com/Eliolocin/GengoTavern/releases) for updates on new versions.
 - Contact head developer [@bredrumb](https://telegram.me/bredrumb) directly on Telegram.
   `;
 
