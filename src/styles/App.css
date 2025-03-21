@@ -1206,7 +1206,6 @@ body, html {
   background-color: transparent;
   border: none;
   color: #ccc;
-  font-size: 16px;
   padding: 4px;
   min-width: 28px;
   min-height: 28px;
@@ -1215,17 +1214,60 @@ body, html {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease; /* Changed to 'all' for smoother transitions */
 }
 
 .chat-dropdown-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
   color: #fff;
+  transform: scale(1.1); /* Add slight scale effect on hover */
 }
 
-.chat-dropdown-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* Specific button styles to control size independently */
+.chat-dropdown-button.new-button {
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 20px;
+  margin-bottom: 3px; /* Add margin to move it down further */
+  position: relative;
+  top: 0px; /* Push it down slightly */
+}
+
+.chat-dropdown-button.new-button:hover {
+  color: #4caf50; /* Green hover color */
+}
+
+.chat-dropdown-button.edit-button {
+  font-size: 16px;
+}
+
+.chat-dropdown-button.edit-button:hover {
+  color: #2196F3; /* Blue hover color */
+}
+
+.chat-dropdown-button.export-button {
+  font-size: 22px; /* Increased size to match other buttons */
+  font-weight: bold;
+  line-height: 23px; /* Higher line-height to move it down */
+  margin-bottom: 3px; /* Add margin to move it down further */
+  position: relative;
+  top: 3px; /* Push it down slightly */
+  transform: scale(1.4); /* Add slight scale effect on hover */
+}
+
+.chat-dropdown-button.export-button:hover {
+  color: #ff9800; /* Orange hover color */
+  transform: scale(1.5); /* Add slight scale effect on hover */
+}
+
+.chat-dropdown-button.delete-button {
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 20px;
+}
+
+.chat-dropdown-button.delete-button:hover {
+  color: #f44336; /* Red hover color */
 }
 
 .chat-dropdown-arrow {
