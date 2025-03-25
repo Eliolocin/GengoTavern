@@ -46,7 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
     <div className="chat-input">
       <textarea
         ref={textareaRef}
-        placeholder="Type your message... (Shift+Enter for new line)"
+        placeholder="Type your message..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Chat } from '../../types/interfaces';
 import { compressImage, getDataUrlSizeInKB } from '../../utils/imageUtils';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface EditChatModalProps {
   chat: Chat;
@@ -21,8 +22,15 @@ const EditChatModal: React.FC<EditChatModalProps> = ({ chat, onSave, onCancel })
       const nameInput = document.getElementById('edit-chat-name');
       if (nameInput) nameInput.focus();
     }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    // Set up back button handler
+    const backButtonCleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Return combined cleanup function
+    return () => {
+      clearTimeout(timer);
+      backButtonCleanup();
+    };
+  }, [onCancel]); // Add onCancel to dependencies
 
   const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
