@@ -47,6 +47,7 @@ const AppContent: React.FC = () => {
   const [localError, setLocalError] = useState<string | null>(null);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [showHelpModal, setShowHelpModal] = useState<boolean>(true); // Default to true to show at startup
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   // Clear local error after 5 seconds
   useEffect(() => {
@@ -86,6 +87,24 @@ const AppContent: React.FC = () => {
     if (hideAtStartup) {
       setShowHelpModal(false);
     }
+  }, []);
+
+  // Add this alongside your other useEffect hooks in AppContent
+  useEffect(() => {
+    // Function to check if we're in mobile mode
+    const checkMobileMode = () => {
+      const isMobileView = window.innerWidth <= 768; // Match your CSS breakpoint
+      setIsMobile(isMobileView);
+    };
+
+    // Check initially
+    checkMobileMode();
+
+    // Set up event listener for window resize
+    window.addEventListener('resize', checkMobileMode);
+
+    // Clean up
+    return () => window.removeEventListener('resize', checkMobileMode);
   }, []);
 
   const handleNewChat = (chatName: string, scenario: string, greeting: string, background: string) => {
@@ -808,6 +827,7 @@ const AppContent: React.FC = () => {
         side="left"
         isCollapsed={isLeftCollapsed}
         setIsCollapsed={setIsLeftCollapsed}
+        isMobile={isMobile}
       >
         <div className="character-actions">
           <button type="button" className="import-button" onClick={importCharacter}>
@@ -823,7 +843,7 @@ const AppContent: React.FC = () => {
       </SidePanel>
 
       {/* Center Chat Pane */}
-      <main className="chat-pane">
+      <main className={`chat-pane ${isMobile && (!isLeftCollapsed || !isRightCollapsed) ? 'hidden' : ''}`}>
         <ChatHeader
           selectedCharacter={selectedCharacter}
           onNewChat={handleNewChat}
@@ -876,6 +896,7 @@ const AppContent: React.FC = () => {
         side="right"
         isCollapsed={isRightCollapsed}
         setIsCollapsed={setIsRightCollapsed}
+        isMobile={isMobile}
       >
         {selectedCharacter ? (
           <CharacterForm

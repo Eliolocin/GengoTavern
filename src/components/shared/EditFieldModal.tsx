@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface EditFieldModalProps {
   title: string;
@@ -22,6 +23,15 @@ const EditFieldModal: React.FC<EditFieldModalProps> = ({
   useEffect(() => {
     setEditValue(value);
   }, [value]);
+
+  // New effect for back button handling
+  useEffect(() => {
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+  }, [onCancel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {

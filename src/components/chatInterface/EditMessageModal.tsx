@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface EditMessageModalProps {
   message: string;
@@ -21,8 +22,15 @@ const EditMessageModal: React.FC<EditMessageModalProps> = ({
       const textArea = document.getElementById('edit-message-text');
       if (textArea) textArea.focus();
     }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    // Set up back button handler
+    const backButtonCleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Return combined cleanup function
+    return () => {
+      clearTimeout(timer);
+      backButtonCleanup();
+    };
+  }, [onCancel]); // Add onCancel to dependencies
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
