@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 import { ReactCrop } from 'react-image-crop';
 import type { Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -82,6 +83,16 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
       setCompletedCrop(newCrop);
     };
   }, [src, aspectRatio]);
+
+  // Add new useEffect for back button handling
+  useEffect(() => {
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+  }, [onCancel]);
+
 
   const onCropChange = (_newCrop: Crop, percentCrop: Crop) => {
     setCrop(percentCrop);

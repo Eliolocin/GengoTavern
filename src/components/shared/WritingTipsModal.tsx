@@ -1,11 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface WritingTipsModalProps {
   onClose: () => void;
 }
 
 const WritingTipsModal: React.FC<WritingTipsModalProps> = ({ onClose }) => {
+    useEffect(() => {
+      // Set up back button handler
+      const cleanup = setupModalBackButtonHandler(onClose);
+      
+      // Cleanup when component unmounts
+      return cleanup;
+    }, [onClose]);
   const writingTipsContent = `
 ### General Tips:
 ---

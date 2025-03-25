@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface PersonaProps {
   name: string;
@@ -20,7 +21,12 @@ const PersonaModal: React.FC<PersonaModalProps> = ({ onClose, onSave, currentPer
   useEffect(() => {
     const nameInput = document.getElementById('persona-name-input');
     if (nameInput) nameInput.focus();
-  }, []);
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onClose);
+        
+    // Return cleanup function
+    return cleanup;
+    }, [onClose]); // Add onClose to dependencies
 
   const handleSave = () => {
     // Basic validation

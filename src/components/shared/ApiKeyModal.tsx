@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GEMINI_MODELS } from '../../contexts/UserSettingsContext';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface ApiKeyModalProps {
   onClose: () => void;
@@ -21,10 +22,17 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [validationMessage, setValidationMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState(currentModel);
 
+  // Update the useEffect in ApiKeyModal
   useEffect(() => {
     const keyInput = document.getElementById('api-key-input');
     if (keyInput) keyInput.focus();
-  }, []);
+    
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onClose);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+}, [onClose]);
 
   const handleSave = () => {
     // Basic validation - API keys are typically long strings

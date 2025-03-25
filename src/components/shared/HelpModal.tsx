@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
+
 
 interface HelpModalProps {
   onClose: () => void;
@@ -13,6 +15,15 @@ const HelpModal: React.FC<HelpModalProps> = ({
   initialHideAtStartup = false 
 }) => {
   const [hideAtStartup, setHideAtStartup] = useState(initialHideAtStartup);
+
+  // Add useEffect for back button handling
+  useEffect(() => {
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onClose);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+  }, [onClose]);
 
   const handleHideAtStartupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
