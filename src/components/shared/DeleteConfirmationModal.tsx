@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface DeleteConfirmationModalProps {
   onConfirm: () => void;
@@ -20,6 +21,14 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   const displayMessage = message || (characterName ? 
     `Are you sure you want to delete <strong>${characterName}</strong>?` : 
     "Are you sure you want to delete this item?");
+    // Add useEffect for back button handling
+  useEffect(() => {
+    // Set up back button handler that calls onCancel when back is pressed
+    const cleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+  }, [onCancel]);
 
   return (
     <div className="modal-overlay">

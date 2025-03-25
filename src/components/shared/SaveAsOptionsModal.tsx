@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { Character } from '../../types/interfaces';
+import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
 
 interface SaveAsOptionsModalProps {
   character: Character;
@@ -14,6 +15,15 @@ const SaveAsOptionsModal: React.FC<SaveAsOptionsModalProps> = ({
   onSaveShare,
   onCancel
 }) => {
+  // Add useEffect for back button handling
+  useEffect(() => {
+    // Set up back button handler
+    const cleanup = setupModalBackButtonHandler(onCancel);
+    
+    // Cleanup when component unmounts
+    return cleanup;
+  }, [onCancel]);
+
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal-content save-as-modal" onClick={(e) => e.stopPropagation()}>
