@@ -65,6 +65,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
         return "Gemini 2.0 Flash Lite (Faster)";
       case GEMINI_MODELS.FLASH_THINKING:
         return "Gemini 2.0 Flash Thinking (More Creative)";
+      case GEMINI_MODELS.PRO_25_EXP:
+        return "Gemini Pro 2.5 Experimental (Latest, 2 Uses per Minute)";
       default:
         return modelId;
     }
@@ -129,6 +131,9 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               <option value={GEMINI_MODELS.FLASH_THINKING}>
                 {getModelDisplayName(GEMINI_MODELS.FLASH_THINKING)}
               </option>
+              <option value={GEMINI_MODELS.PRO_25_EXP}>
+                {getModelDisplayName(GEMINI_MODELS.PRO_25_EXP)}
+              </option>
             </select>
             
             <div className="model-description">
@@ -138,6 +143,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 <span>Faster responses with slightly reduced quality</span>}
               {selectedModel === GEMINI_MODELS.FLASH_THINKING && 
                 <span>More creative responses at the cost of speed</span>}
+              {selectedModel === GEMINI_MODELS.PRO_25_EXP && 
+                <span>Latest experimental model with enhanced capabilities (2 Requests per Minute only)</span>}
             </div>
           </div>
           

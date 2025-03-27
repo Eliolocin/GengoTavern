@@ -11,6 +11,7 @@ export const GEMINI_MODELS = {
   FLASH_EXP: 'gemini-2.0-flash-exp',
   FLASH_LITE: 'gemini-2.0-flash-lite',
   FLASH_THINKING: 'gemini-2.0-flash-thinking-exp-01-21',
+  PRO_25_EXP: 'gemini-2.5-pro-exp-03-25',
 };
 
 interface UserSettingsContextType {
