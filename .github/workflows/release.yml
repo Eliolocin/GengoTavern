@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 10  # Fetch more commits to include in the changelog
       
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -27,12 +29,23 @@ jobs:
         id: package-version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
       
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CHANGELOG=$(git log -5 --pretty=format:"• %s" --no-merges)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.package-version.outputs.version }}
           name: Release v${{ steps.package-version.outputs.version }}
+          body: |
+            ## Changes in this release:
+            ${{ steps.changelog.outputs.changelog }}
           files: |
             dist/GengoTavern.html
           draft: false
@@ -41,12 +54,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-      # Add this Discord notification step
+      # Updated Discord notification with changelog
       - name: Discord Notification
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
           args: |
-            🎉 **New Release**: GengoTavern v${{ steps.package-version.outputs.version }} is now available.
+            # GengoTavern v${{ steps.package-version.outputs.version }}
+            
+            📋 **What's new**:
+            ${{ steps.changelog.outputs.changelog }}
+            
             📥 **Download**: [Github Link](https://github.com/Eliolocin/GengoTavern/releases)

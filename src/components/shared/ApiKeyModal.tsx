@@ -8,6 +8,8 @@ interface ApiKeyModalProps {
   currentApiKey: string;
   currentModel: string;
   onModelChange: (model: string) => void;
+  currentTemperature: number;
+  onTemperatureChange: (temp: number) => void;
 }
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ 
@@ -15,35 +17,35 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   onSave, 
   currentApiKey, 
   currentModel,
-  onModelChange
+  onModelChange,
+  currentTemperature = 1.5, // Provide default value here
+  onTemperatureChange
 }) => {
   const [apiKey, setApiKey] = useState(currentApiKey);
   const [showApiKey, setShowApiKey] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState(currentModel);
+  // Ensure temperature always has a fallback value of 1.5
+  const [temperature, setTemperature] = useState(typeof currentTemperature === 'number' ? currentTemperature : 1.5);
 
-  // Update the useEffect in ApiKeyModal
   useEffect(() => {
     const keyInput = document.getElementById('api-key-input');
     if (keyInput) keyInput.focus();
     
-    // Set up back button handler
     const cleanup = setupModalBackButtonHandler(onClose);
     
-    // Cleanup when component unmounts
     return cleanup;
-}, [onClose]);
+  }, [onClose]);
 
   const handleSave = () => {
-    // Basic validation - API keys are typically long strings
     if (apiKey.length < 10) {
       setValidationMessage('API key appears to be too short. Please check and try again.');
       return;
     }
     
-    // Save both API key and model
     onSave(apiKey);
     onModelChange(selectedModel);
+    onTemperatureChange(temperature);
     onClose();
   };
 
@@ -56,7 +58,6 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     }
   };
 
-  // Function to get a friendly name for the model
   const getModelDisplayName = (modelId: string) => {
     switch(modelId) {
       case GEMINI_MODELS.FLASH_EXP:
@@ -70,6 +71,15 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       default:
         return modelId;
     }
+  };
+  
+  // Function to get temperature label - ensure it handles undefined by using a default
+  const getTemperatureLabel = (temp: number = 1.5) => {
+    if (temp <= 1.1) return "Normal";
+    if (temp <= 1.4) return "Slightly Creative";
+    if (temp <= 1.6) return "Creative";
+    if (temp <= 1.8) return "More Creative";
+    return "Schizo";
   };
 
   return (
@@ -145,6 +155,35 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 <span>More creative responses at the cost of speed</span>}
               {selectedModel === GEMINI_MODELS.PRO_25_EXP && 
                 <span>Latest experimental model with enhanced capabilities (2 Requests per Minute only)</span>}
+            </div>
+          </div>
+          
+          <div className="temperature-selection-container">
+            <label htmlFor="temperature-slider">
+              Creativity: <span className="temperature-value">
+                {/* Guard against undefined temperature */}
+                {(temperature || 1.5).toFixed(1)} - {getTemperatureLabel(temperature)}
+              </span>
+            </label>
+            <div className="temperature-slider-container">
+              <input
+                id="temperature-slider"
+                type="range"
+                min="1.0"
+                max="2.0"
+                step="0.1"
+                value={temperature || 1.5} // Guard against undefined
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                className="temperature-slider"
+              />
+              <div className="temperature-labels">
+                <span className="temp-label-min">Normal</span>
+                <span className="temp-label-mid">Creative</span>
+                <span className="temp-label-max">Schizo</span>
+              </div>
+            </div>
+            <div className="model-description">
+              <span>Also known as the model's Temperature. Lower values make responses more predictable while higher values make responses more varied.</span>
             </div>
           </div>
           

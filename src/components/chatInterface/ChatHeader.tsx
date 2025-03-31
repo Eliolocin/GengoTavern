@@ -26,7 +26,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   activeChatId,
   setShowHelpModal
 }) => {
-  const { apiKey, setApiKey, userPersona, setUserPersona, selectedModel, setSelectedModel } = useUserSettings();
+  const { apiKey, setApiKey, userPersona, setUserPersona, selectedModel, setSelectedModel, temperature, setTemperature } = useUserSettings();
   
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
@@ -99,6 +99,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           currentApiKey={apiKey}
           currentModel={selectedModel}
           onModelChange={setSelectedModel}
+          currentTemperature={temperature}
+          onTemperatureChange={setTemperature}
         />
       )}
       
