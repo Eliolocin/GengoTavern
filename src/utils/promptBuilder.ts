@@ -7,11 +7,11 @@ export interface PromptSettings {
   maxTokens?: number; // Maximum length of output
 }
 
+// Default settings will be used if no chat-specific settings are provided
 const DEFAULT_SETTINGS: PromptSettings = {
-  temperature: 1.5,
   topK: 1,
   topP: 0.9,
-  maxTokens: 1024,
+  maxTokens: 8192,
 };
 
 /**
@@ -25,7 +25,7 @@ export function buildPrompt(
   // Start building the prompt
   let prompt = '';
   
-  // Get user persona from global settings if available
+  // Get user settings including temperature
   const userSettings = (window as any).__gengoTavernUserSettings;
   const userPersona = userSettings?.userPersona || { 
     name: userName, 
@@ -75,7 +75,9 @@ export function buildPrompt(
   prompt += `<|im_start|>assistant\n${character.name}: `;
   
   // Use custom settings if available in the chat, otherwise use defaults
-  const settings = chat.settings || DEFAULT_SETTINGS;
+  // Note: We don't copy temperature from chat settings here, as that will be applied
+  // at the API call level from global user settings
+  let settings = { ...DEFAULT_SETTINGS, ...chat.settings };
   
   return { prompt, settings };
 }

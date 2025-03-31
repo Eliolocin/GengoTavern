@@ -4,7 +4,7 @@ import { PromptSettings } from './promptBuilder';
 export interface GeminiResponse {
   text: string;
   error?: string;
-  errorType?: 'RATE_LIMIT' | 'BLOCKED_CONTENT' | 'API_KEY' | 'CONNECTION' | 'MODEL_ERROR' | 'UNKNOWN';
+  errorType?: 'RATE_LIMIT' | 'BLOCKED_CONTENT' | 'API_KEY' | 'CONNECTION' | 'MODEL_ERROR' | 'TIMEOUT' | 'EMPTY_RESPONSE' | 'UNKNOWN';
 }
 
 /**
@@ -25,11 +25,17 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
 
   const apiKey = userSettings.apiKey;
   const MODEL_NAME = userSettings.selectedModel || 'gemini-2.0-flash-exp';
+  
+  // Use temperature from user settings if available, otherwise from passed settings
+  const temperature = userSettings.temperature !== undefined 
+    ? userSettings.temperature 
+    : (settings.temperature || 1.5);
 
   try {
     // Debug print the prompt being sent
+    console.log(`Using model: ${MODEL_NAME} with temperature: ${temperature}`);
     console.log("%c=== PROMPT SENT TO GEMINI ===", "color: blue; font-weight: bold");
-    console.log(`Using model: ${MODEL_NAME}`);
+
     console.log(prompt);
     console.log("%c=== END OF PROMPT ===", "color: blue; font-weight: bold");
     
@@ -58,7 +64,7 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
     
     // Configure generation parameters from settings
     const generationConfig = {
-      temperature: settings.temperature,
+      temperature: temperature,  // Use the temperature from user settings
       topP: settings.topP,
       topK: settings.topK,
       maxOutputTokens: settings.maxTokens,
@@ -72,9 +78,23 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
     });
     
     try {
-      // Generate content
-      const result = await model.generateContent(prompt);
+      // Create a timeout promise that rejects after 20 seconds
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out after 20 seconds')), 20000);
+      });
+      
+      // Race between the API call and timeout
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise
+      ]);
+      
       const response = result.response;
+
+      // Debug print the raw response before sanitization
+      console.log("%c=== RAW GEMINI RESPONSE ===", "color: green; font-weight: bold");
+      console.log(response);
+      console.log("%c=== END OF RAW RESPONSE ===", "color: green; font-weight: bold");
       
       // Check if there are any blocked prompts
       if (response.promptFeedback && response.promptFeedback.blockReason) {
@@ -87,36 +107,51 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
       
       const text = response.text();
       
-      // Debug print the raw response before sanitization
-      console.log("%c=== RAW GEMINI RESPONSE ===", "color: green; font-weight: bold");
-      console.log(text);
-      console.log("%c=== END OF RAW RESPONSE ===", "color: green; font-weight: bold");
+      // Check if response text is empty
+      if (!text || text.trim() === '') {
+        return {
+          text: '',
+          error: 'Gemini API returned an empty response. Try rephrasing your message.',
+          errorType: 'EMPTY_RESPONSE'
+        };
+      }
       
       return { text };
     } catch (apiError: any) {
-      // Handle specific API errors
-      if (apiError.message?.includes('RESOURCE_EXHAUSTED') || apiError.message?.includes('rate limit')) {
+      const errorMessage = apiError.message || 'Unknown API error';
+      
+      // Handle timeout error
+      if (errorMessage.includes('timed out')) {
         return {
           text: '',
-          error: 'Rate limit exceeded. Try using a different model for now or please wait a moment before trying again.',
+          error: 'Request timed out after 20 seconds. The server might be busy. Please try again.',
+          errorType: 'TIMEOUT'
+        };
+      }
+      
+      // Handle specific API errors
+      if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('rate limit')) {
+        return {
+          text: '',
+          error: `Rate limit exceeded. Try using a different model for now or please wait a moment before trying again. API Error: ${errorMessage}`,
           errorType: 'RATE_LIMIT'
         };
-      } else if (apiError.message?.includes('INVALID_ARGUMENT') || apiError.message?.includes('blocked')) {
+      } else if (errorMessage.includes('INVALID_ARGUMENT') || errorMessage.includes('blocked')) {
         return {
           text: '',
-          error: 'Content was blocked by Gemini API safety filters. Try rephrasing your message.',
+          error: `Content was blocked by Gemini API safety filters. Try rephrasing your message. API Error: ${errorMessage}`,
           errorType: 'BLOCKED_CONTENT'
         };
-      } else if (apiError.message?.includes('PERMISSION_DENIED') || apiError.message?.includes('API key')) {
+      } else if (errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('API key')) {
         return {
           text: '',
-          error: 'Invalid or expired API key. Please check your API key in settings.',
+          error: `Invalid or expired API key. Please check your API key in settings. API Error: ${errorMessage}`,
           errorType: 'API_KEY'
         };
-      } else if (apiError.message?.includes('model not found') || apiError.message?.includes('MODEL_NOT_FOUND')) {
+      } else if (errorMessage.includes('model not found') || errorMessage.includes('MODEL_NOT_FOUND')) {
         return {
           text: '',
-          error: `Model "${MODEL_NAME}" is not available. Try selecting a different model in API settings.`,
+          error: `Model "${MODEL_NAME}" is not available. Try selecting a different model in API settings. API Error: ${errorMessage}`,
           errorType: 'MODEL_ERROR'
         };
       }
@@ -126,12 +161,13 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
     }
   } catch (error) {
     console.error('Gemini API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes('network')) {
+    if (error instanceof TypeError && errorMessage.includes('network')) {
       return {
         text: '',
-        error: 'Network error. Please check your internet connection.',
+        error: `Network error. Please check your internet connection. Error: ${errorMessage}`,
         errorType: 'CONNECTION'
       };
     }
@@ -139,7 +175,7 @@ export async function callGeminiAPI(prompt: string, settings: PromptSettings): P
     // General error handling
     return { 
       text: '', 
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: `Error: ${errorMessage}`,
       errorType: 'UNKNOWN'
     };
   }

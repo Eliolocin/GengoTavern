@@ -380,7 +380,7 @@ const AppContent: React.FC = () => {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
       const errorMessage: Message = {
         id: Date.now() + 2,
-        text: `Failed to generate response: ${errorMsg}. Please try again.`,
+        text: `Failed to generate response: ${errorMsg}.`,
         sender: 'system',
         timestamp: Date.now() + 2000,
         isError: true
@@ -503,7 +503,7 @@ const AppContent: React.FC = () => {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
       const errorMessage: Message = {
         id: Date.now(),
-        text: `Failed to regenerate response: ${errorMsg}. Please try again.`,
+        text: `Failed to regenerate response: ${errorMsg}.`,
         sender: 'system',
         timestamp: Date.now(),
         isError: true
@@ -616,7 +616,7 @@ const AppContent: React.FC = () => {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
       const errorMessage: Message = {
         id: Date.now(),
-        text: `Failed to continue response: ${errorMsg}. Please try again.`,
+        text: `Failed to continue response: ${errorMsg}.`,
         sender: 'system',
         timestamp: Date.now(),
         isError: true
