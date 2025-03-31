@@ -1578,7 +1578,85 @@ body, html {
   opacity: 0.7;
 }
 
+/* Temperature slider styling */
+.temperature-selection-container {
+  margin-bottom: 20px;
+}
 
+.temperature-selection-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.temperature-value {
+  font-weight: normal;
+  color: #646cff;
+}
+
+.temperature-slider-container {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.temperature-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #3a3a3a 0%, #646cff 50%, #ff7875 100%);
+  outline: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.temperature-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: 2px solid #646cff;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.temperature-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: 2px solid #646cff;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.temperature-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #aaa;
+  position: relative; /* Add position relative to allow absolute positioning of middle label */
+}
+
+.temp-label-min {
+  text-align: left;
+}
+
+.temp-label-mid {
+  position: absolute; /* Position absolutely */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Adjust for element width */
+  text-align: center;
+}
+
+.temp-label-max {
+  text-align: right;
+}
 
 /* Edit indicator styling */
 .edit-indicator {

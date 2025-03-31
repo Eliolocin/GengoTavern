@@ -22,6 +22,8 @@ interface UserSettingsContextType {
   isApiKeySet: boolean;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
+  temperature: number;
+  setTemperature: (temp: number) => void;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
@@ -57,6 +59,12 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ chil
     const storedModel = localStorage.getItem('gengoTavern_selectedModel');
     return storedModel || GEMINI_MODELS.FLASH_EXP; // Default to flash-thinking-exp model
   });
+  
+  // Load stored temperature setting from localStorage
+  const [temperature, setTemperatureState] = useState<number>(() => {
+    const storedTemp = localStorage.getItem('gengoTavern_temperature');
+    return storedTemp ? parseFloat(storedTemp) : 1.5; // Default to 1.5 (creative)
+  });
 
   // Update localStorage when apiKey changes
   const setApiKey = (key: string) => {
@@ -75,6 +83,12 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ chil
     setSelectedModelState(model);
     localStorage.setItem('gengoTavern_selectedModel', model);
   };
+  
+  // Update localStorage when temperature changes
+  const setTemperature = (temp: number) => {
+    setTemperatureState(temp);
+    localStorage.setItem('gengoTavern_temperature', temp.toString());
+  };
 
   // Check if API key is set
   const isApiKeySet = apiKey.length > 0;
@@ -87,6 +101,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ chil
     isApiKeySet,
     selectedModel,
     setSelectedModel,
+    temperature,
+    setTemperature,
   };
   
   // Make settings available globally for non-React components
@@ -98,7 +114,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ chil
     return () => {
       delete (window as any).__gengoTavernUserSettings;
     };
-  }, [apiKey, userPersona, isApiKeySet, selectedModel]);
+  }, [apiKey, userPersona, isApiKeySet, selectedModel, temperature]);
 
   return (
     <UserSettingsContext.Provider value={value}>
