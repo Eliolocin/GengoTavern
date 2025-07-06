@@ -25,3 +25,8 @@ dist-ssr
 
 memory-bank
 user
+.rooignore
+.roo
+.roorules
+.github/copilot-instructions.md
+.github/prompts/*
