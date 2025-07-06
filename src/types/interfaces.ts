@@ -3,6 +3,11 @@ export interface DialoguePair {
   character: string;
 }
 
+export interface Sprite {
+  emotion: string;
+  filename: string;
+}
+
 export interface Message {
   id: number;
   text: string;
@@ -16,6 +21,7 @@ export interface Message {
   reactions?: string[];
   meta?: Record<string, any>;
   isError?: boolean; // Flag for error messages that should be displayed differently
+  emotion?: string; // Detected emotion for character messages, used for sprite selection
 }
 
 export interface Chat {
@@ -41,6 +47,7 @@ export interface Character {
   defaultScenario?: string;
   defaultBackground?: string;
   sampleDialogues?: DialoguePair[];
+  sprites?: Sprite[]; // Array of emotion-based sprites for VN mode
   chats: Chat[];
 }
 
