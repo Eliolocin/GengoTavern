@@ -36,6 +36,8 @@ interface UserSettingsContextType {
 	setSelectedModel: (model: string) => void;
 	temperature: number;
 	setTemperature: (temp: number) => void;
+	visualNovelMode: boolean;
+	setVisualNovelMode: (enabled: boolean) => void;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
@@ -68,6 +70,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		GEMINI_MODELS.FLASH_EXP,
 	);
 	const [temperature, setTemperatureState] = useState<number>(1.5);
+	const [visualNovelMode, setVisualNovelModeState] = useState<boolean>(false);
 	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
 	// Use refs to always get current values without stale closures
@@ -80,6 +83,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		},
 		selectedModel: GEMINI_MODELS.FLASH_EXP,
 		temperature: 1.5,
+		visualNovelMode: false,
 	});
 
 	// Update refs whenever state changes
@@ -90,8 +94,16 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			userPersona,
 			selectedModel,
 			temperature,
+			visualNovelMode,
 		};
-	}, [apiKey, huggingFaceApiKey, userPersona, selectedModel, temperature]);
+	}, [
+		apiKey,
+		huggingFaceApiKey,
+		userPersona,
+		selectedModel,
+		temperature,
+		visualNovelMode,
+	]);
 
 	// Unified save function that always uses current values
 	const saveCurrentSettings = useCallback(async () => {
@@ -128,13 +140,19 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 				setUserPersonaState(settings.userPersona);
 				setSelectedModelState(settings.selectedModel);
 				setTemperatureState(settings.temperature);
+				setVisualNovelModeState(settings.visualNovelMode || false);
 
-				// 5. If huggingFaceApiKey is missing from loaded settings, re-save to add it
-				if (!settings.huggingFaceApiKey && Object.keys(settings).length > 1) {
-					console.log("🔄 Adding huggingFaceApiKey field to existing settings");
+				// 5. If new fields are missing from loaded settings, re-save to add them
+				if (
+					(!settings.huggingFaceApiKey ||
+						settings.visualNovelMode === undefined) &&
+					Object.keys(settings).length > 1
+				) {
+					console.log("🔄 Adding missing fields to existing settings");
 					const updatedSettings = {
 						...settings,
-						huggingFaceApiKey: "", // Add the missing field
+						huggingFaceApiKey: settings.huggingFaceApiKey || "",
+						visualNovelMode: settings.visualNovelMode || false,
 					};
 					await storageManager.saveSettings(updatedSettings);
 				}
@@ -205,10 +223,24 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		[saveCurrentSettings],
 	);
 
-	// Check if API key is set
-	const isApiKeySet = apiKey.length > 0;
+	const setVisualNovelMode = useCallback(
+		(enabled: boolean) => {
+			console.log(
+				"📚 Setting Visual Novel Mode:",
+				enabled ? "enabled" : "disabled",
+			);
+			setVisualNovelModeState(enabled);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
 
-	const value = useMemo(
+	// Compute derived state
+	const isApiKeySet = useMemo(() => apiKey.trim().length > 0, [apiKey]);
+
+	// Expose the context value
+	const contextValue = useMemo(
 		() => ({
 			apiKey,
 			setApiKey,
@@ -221,6 +253,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			setSelectedModel,
 			temperature,
 			setTemperature,
+			visualNovelMode,
+			setVisualNovelMode,
 		}),
 		[
 			apiKey,
@@ -234,25 +268,35 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			setSelectedModel,
 			temperature,
 			setTemperature,
+			visualNovelMode,
+			setVisualNovelMode,
 		],
 	);
 
-	// Make settings available globally for non-React components
+	// Make settings available globally for components that can't use context
 	useEffect(() => {
-		// Only set global variable once settings are loaded
 		if (isLoaded) {
-			(globalThis as Record<string, unknown>).__gengoTavernUserSettings = value;
+			(globalThis as Record<string, unknown>).__gengoTavernUserSettings = {
+				apiKey,
+				huggingFaceApiKey,
+				userPersona,
+				selectedModel,
+				temperature,
+				visualNovelMode,
+			};
 		}
-
-		// Cleanup when unmounted
-		return () => {
-			(globalThis as Record<string, unknown>).__gengoTavernUserSettings =
-				undefined;
-		};
-	}, [value, isLoaded]);
+	}, [
+		isLoaded,
+		apiKey,
+		huggingFaceApiKey,
+		userPersona,
+		selectedModel,
+		temperature,
+		visualNovelMode,
+	]);
 
 	return (
-		<UserSettingsContext.Provider value={value}>
+		<UserSettingsContext.Provider value={contextValue}>
 			{children}
 		</UserSettingsContext.Provider>
 	);

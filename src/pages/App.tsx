@@ -13,7 +13,10 @@ import ChatMessages from "../components/chatInterface/ChatMessages";
 import ChatInput from "../components/chatInterface/ChatInput";
 import CharacterForm from "../components/characterCustomization/CharacterForm";
 import { CharacterProvider, useCharacters } from "../contexts/CharacterContext";
-import { UserSettingsProvider } from "../contexts/UserSettingsContext";
+import {
+	UserSettingsProvider,
+	useUserSettings,
+} from "../contexts/UserSettingsContext";
 import { AppProvider, useAppContext } from "../contexts/AppContext";
 import HelpModal from "../components/shared/HelpModal";
 import FileSystemSetupModal from "../components/shared/FileSystemSetupModal";
@@ -51,7 +54,15 @@ const AppContent: React.FC = () => {
 		openSetupModal,
 		closeSetupModal,
 		setStorageStrategy,
+		userSettings,
 	} = useAppContext();
+	const {
+		apiKey,
+		huggingFaceApiKey,
+		selectedModel,
+		temperature,
+		visualNovelMode,
+	} = useUserSettings();
 
 	const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
 	const [isRightCollapsed, setIsRightCollapsed] = useState(false);
@@ -173,9 +184,6 @@ const AppContent: React.FC = () => {
 			// Add greeting message from character if provided
 			if (greeting) {
 				// 1. Classify emotion for character greeting message (if HF API key is available)
-				const { huggingFaceApiKey } =
-					((globalThis as Record<string, unknown>)
-						.__gengoTavernUserSettings as { huggingFaceApiKey?: string }) || {};
 				const greetingEmotion = huggingFaceApiKey
 					? await emotionClassifier.classify(greeting, huggingFaceApiKey)
 					: null;
@@ -429,32 +437,52 @@ const AppContent: React.FC = () => {
 			// Process the response
 			const sanitizedResponse = sanitizeResponse(response.text);
 
-			// 1. Classify emotion for character response (if HF API key is available)
-			const { huggingFaceApiKey } =
-				(globalThis as Record<string, unknown>).__gengoTavernUserSettings || {};
-			const detectedEmotion = huggingFaceApiKey
-				? await emotionClassifier.classify(
-						sanitizedResponse,
-						huggingFaceApiKey as string,
-					)
-				: null;
-			console.log(
-				`Character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
-			);
+			// Only classify emotion if in Visual Novel mode or if HF API key is not available
+			const detectedEmotion =
+				visualNovelMode && huggingFaceApiKey
+					? await emotionClassifier.classify(
+							sanitizedResponse,
+							huggingFaceApiKey,
+						)
+					: null;
 
-			// Create the real response message with emotion classification
-			const responseMessage: Message = {
+			if (visualNovelMode) {
+				console.log(
+					`Character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
+				);
+			} else {
+				console.log(
+					"Emotion classification skipped (not in Visual Novel mode)",
+				);
+			}
+
+			// First, immediately show the message without waiting for emotion classification
+			const initialResponseMessage: Message = {
 				id: generatingMsgId, // Replace the generating message
 				text: sanitizedResponse,
 				sender: "character",
 				timestamp: Date.now() + 1000,
-				emotion: detectedEmotion || undefined, // 2. Store detected emotion or undefined if model not ready
 			};
 
-			// Update messages without the generating placeholder
-			const finalMessages = [...updatedMessages, responseMessage];
-			setActiveMessages(finalMessages);
-			updateChatMessages(finalMessages, false);
+			// Update messages immediately without waiting for emotion classification
+			const initialMessages = [...updatedMessages, initialResponseMessage];
+			setActiveMessages(initialMessages);
+			await updateChatMessagesAsync(initialMessages, false);
+
+			// Then update with emotion once classification is complete
+			if (detectedEmotion) {
+				const responseWithEmotion: Message = {
+					...initialResponseMessage,
+					emotion: detectedEmotion,
+				};
+
+				const finalMessages = initialMessages.map((msg) =>
+					msg.id === generatingMsgId ? responseWithEmotion : msg,
+				);
+
+				setActiveMessages(finalMessages);
+				updateChatMessages(finalMessages, false);
+			}
 		} catch (err) {
 			console.error("Message generation error:", err);
 
@@ -483,61 +511,38 @@ const AppContent: React.FC = () => {
 		if (!selectedCharacter || activeChatId === null) return;
 
 		try {
-			// Find the message to regenerate
-			const messageToRegenerate = activeMessages.find(
-				(msg) => msg.id === messageId,
-			);
-			if (!messageToRegenerate || messageToRegenerate.sender !== "character") {
-				return;
-			}
-
-			// Create a copy of the current messages
-			const updatedMessages = activeMessages.map((msg) => {
-				if (msg.id === messageId) {
-					// Save current text in regenHistory
-					const currentRegenHistory = msg.regenHistory || [];
-					return {
-						...msg,
-						isGenerating: true, // Show loading state
-						regenHistory: [...currentRegenHistory, msg.text],
-					};
-				}
-				return msg;
-			});
-
-			// Update UI to show generating state
-			setActiveMessages(updatedMessages);
-			await updateChatMessagesAsync(updatedMessages, false);
-
-			// Find the active chat after it's been updated
+			// Find the active chat
 			const activeChat = selectedCharacter.chats.find(
 				(chat) => chat.id === activeChatId,
 			);
 			if (!activeChat) throw new Error("Chat not found");
 
-			// Find the last user message before the message we're regenerating
-			const messageIndex = activeMessages.findIndex(
+			// Find the message to regenerate
+			const messageToRegenerate = activeChat.messages.find(
 				(msg) => msg.id === messageId,
 			);
-			const previousMessages = activeMessages.slice(0, messageIndex);
-			const lastUserMessage = [...previousMessages]
-				.reverse()
-				.find((msg) => msg.sender === "user");
+			if (!messageToRegenerate) throw new Error("Message not found");
 
-			// If we couldn't find a user message, we can't regenerate
-			if (!lastUserMessage) {
-				throw new Error("No user message found to base regeneration on");
-			}
-
-			// Build prompt for regeneration
-			const messagesForPrompt = activeMessages.filter((msg) => {
-				// Include all messages up to the one being regenerated
-				return (
-					msg.id !== messageId &&
-					msg.timestamp <= messageToRegenerate.timestamp &&
-					!msg.isError
-				);
+			// Show loading state
+			const updatedMessages = activeMessages.map((msg) => {
+				if (msg.id === messageId) {
+					return {
+						...msg,
+						isGenerating: true,
+					};
+				}
+				return msg;
 			});
+
+			setActiveMessages(updatedMessages);
+
+			// Find the index of the message to regenerate
+			const messageIndex = activeChat.messages.findIndex(
+				(msg) => msg.id === messageId,
+			);
+
+			// Create a copy of messages up to the message we're regenerating
+			const messagesForPrompt = activeChat.messages.slice(0, messageIndex);
 
 			// Create a temporary chat object for prompt building
 			const tempChat = {
@@ -563,30 +568,35 @@ const AppContent: React.FC = () => {
 			// Process the response
 			const sanitizedResponse = sanitizeResponse(response.text);
 
-			// 1. Classify emotion for regenerated character response (if HF API key is available)
-			const { huggingFaceApiKey } =
-				((globalThis as Record<string, unknown>).__gengoTavernUserSettings as {
-					huggingFaceApiKey?: string;
-				}) || {};
-			const detectedEmotion = huggingFaceApiKey
-				? await emotionClassifier.classify(sanitizedResponse, huggingFaceApiKey)
-				: null;
-			console.log(
-				`Regenerated character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
-			);
+			// Only classify emotion if in Visual Novel mode
+			const detectedEmotion =
+				visualNovelMode && huggingFaceApiKey
+					? await emotionClassifier.classify(
+							sanitizedResponse,
+							huggingFaceApiKey,
+						)
+					: null;
 
-			// Create the regenerated message with emotion classification
-			const regeneratedMessages = activeMessages.map((msg) => {
+			if (visualNovelMode) {
+				console.log(
+					`Regenerated character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
+				);
+			} else {
+				console.log(
+					"Emotion classification skipped (not in Visual Novel mode)",
+				);
+			}
+
+			// First, immediately update with the regenerated message without emotion
+			const currentUpdatedMsg = updatedMessages.find((u) => u.id === messageId);
+
+			const initialRegeneratedMessages = activeMessages.map((msg) => {
 				if (msg.id === messageId) {
-					const currentUpdatedMsg = updatedMessages.find(
-						(u) => u.id === messageId,
-					);
 					return {
 						...msg,
 						text: sanitizedResponse,
 						isGenerating: false,
 						timestamp: Date.now(),
-						emotion: detectedEmotion || undefined, // 2. Store detected emotion or undefined if model not ready
 						// Preserve the regenHistory from the updated message
 						regenHistory: currentUpdatedMsg?.regenHistory || [],
 					};
@@ -594,9 +604,28 @@ const AppContent: React.FC = () => {
 				return msg;
 			});
 
-			// Update the UI and save
-			setActiveMessages(regeneratedMessages);
-			await updateChatMessagesAsync(regeneratedMessages, false);
+			// Update the UI immediately
+			setActiveMessages(initialRegeneratedMessages);
+			await updateChatMessagesAsync(initialRegeneratedMessages, false);
+
+			// Then update with emotion once classification is complete
+			if (detectedEmotion) {
+				const regeneratedMessagesWithEmotion = initialRegeneratedMessages.map(
+					(msg) => {
+						if (msg.id === messageId) {
+							return {
+								...msg,
+								emotion: detectedEmotion,
+							};
+						}
+						return msg;
+					},
+				);
+
+				// Update the UI with emotion data
+				setActiveMessages(regeneratedMessagesWithEmotion);
+				await updateChatMessagesAsync(regeneratedMessagesWithEmotion, false);
+			}
 		} catch (err) {
 			console.error("Message regeneration error:", err);
 
@@ -635,43 +664,36 @@ const AppContent: React.FC = () => {
 		if (!selectedCharacter || activeChatId === null) return;
 
 		try {
-			// Find the message to continue
-			const messageToContinue = activeMessages.find(
-				(msg) => msg.id === messageId,
-			);
-			if (!messageToContinue || messageToContinue.sender !== "character") {
-				return;
-			}
-
-			// Create a copy of the current messages
-			const updatedMessages = activeMessages.map((msg) => {
-				if (msg.id === messageId) {
-					return {
-						...msg,
-						isGenerating: true, // Show loading state
-						text: msg.text + "...", // Add ellipsis to show it's continuing
-					};
-				}
-				return msg;
-			});
-
-			// Update UI to show generating state
-			setActiveMessages(updatedMessages);
-			await updateChatMessagesAsync(updatedMessages, false);
-
-			// Find the active chat after it's been updated
+			// Find the active chat
 			const activeChat = selectedCharacter.chats.find(
 				(chat) => chat.id === activeChatId,
 			);
 			if (!activeChat) throw new Error("Chat not found");
 
-			// Create a custom prompt for continuation that doesn't add duplicate tags
-			const messagesForPrompt = activeChat.messages.filter(
-				(msg) =>
-					msg.timestamp <= messageToContinue.timestamp &&
-					msg.id !== messageId &&
-					!msg.isError,
+			// Find the message to continue
+			const messageToContinue = activeChat.messages.find(
+				(msg) => msg.id === messageId,
 			);
+			if (!messageToContinue) throw new Error("Message not found");
+
+			// Show loading state
+			const updatedMessages = activeMessages.map((msg) => {
+				if (msg.id === messageId) {
+					return {
+						...msg,
+						isGenerating: true,
+					};
+				}
+				return msg;
+			});
+
+			setActiveMessages(updatedMessages);
+
+			// Create a copy of messages up to and including the message we're continuing
+			const messageIndex = activeChat.messages.findIndex(
+				(msg) => msg.id === messageId,
+			);
+			const messagesForPrompt = activeChat.messages.slice(0, messageIndex + 1);
 
 			// Create a temporary chat object for prompt building
 			const tempChat = {
@@ -679,16 +701,13 @@ const AppContent: React.FC = () => {
 				messages: messagesForPrompt,
 			};
 
-			// Build the base prompt
-			const { prompt: basePrompt, settings } = buildPrompt(
+			// Build the prompt with a special continuation indicator
+			const { prompt, settings } = buildPrompt(
 				selectedCharacter,
 				tempChat,
 				"User",
+				true, // isContinuation flag
 			);
-
-			// Instead of adding the message to the chat history, append it directly to the prompt
-			// This prevents the duplicate <|im_start|>assistant tags
-			const prompt = basePrompt + messageToContinue.text;
 
 			// Call the API
 			let response = await callGeminiAPI(prompt, settings);
@@ -701,35 +720,57 @@ const AppContent: React.FC = () => {
 			// Process the response
 			const sanitizedResponse = sanitizeResponse(response.text);
 
-			// 1. Classify emotion for the combined continued message (if HF API key is available)
+			// Only classify emotion if in Visual Novel mode
 			const combinedText = messageToContinue.text + " " + sanitizedResponse;
-			const { huggingFaceApiKey } =
-				((globalThis as Record<string, unknown>).__gengoTavernUserSettings as {
-					huggingFaceApiKey?: string;
-				}) || {};
-			const detectedEmotion = huggingFaceApiKey
-				? await emotionClassifier.classify(combinedText, huggingFaceApiKey)
-				: null;
-			console.log(
-				`Continued character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
-			);
+			const detectedEmotion =
+				visualNovelMode && huggingFaceApiKey
+					? await emotionClassifier.classify(combinedText, huggingFaceApiKey)
+					: null;
 
-			// Create the continued message by appending the new text with emotion classification
-			const continuedMessages = activeMessages.map((msg) => {
+			if (visualNovelMode) {
+				console.log(
+					`Continued character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
+				);
+			} else {
+				console.log(
+					"Emotion classification skipped (not in Visual Novel mode)",
+				);
+			}
+
+			// First, immediately update with the continued message without emotion
+			const initialContinuedMessages = activeMessages.map((msg) => {
 				if (msg.id === messageId) {
 					return {
 						...msg,
 						text: combinedText,
 						isGenerating: false,
-						emotion: detectedEmotion || undefined, // 2. Store detected emotion or undefined if model not ready
 					};
 				}
 				return msg;
 			});
 
-			// Update the UI and save
-			setActiveMessages(continuedMessages);
-			await updateChatMessagesAsync(continuedMessages, false);
+			// Update the UI immediately
+			setActiveMessages(initialContinuedMessages);
+			await updateChatMessagesAsync(initialContinuedMessages, false);
+
+			// Then update with emotion once classification is complete
+			if (detectedEmotion) {
+				const continuedMessagesWithEmotion = initialContinuedMessages.map(
+					(msg) => {
+						if (msg.id === messageId) {
+							return {
+								...msg,
+								emotion: detectedEmotion,
+							};
+						}
+						return msg;
+					},
+				);
+
+				// Update the UI with emotion data
+				setActiveMessages(continuedMessagesWithEmotion);
+				await updateChatMessagesAsync(continuedMessagesWithEmotion, false);
+			}
 		} catch (err) {
 			console.error("Message continuation error:", err);
 
@@ -1020,12 +1061,7 @@ const AppContent: React.FC = () => {
 			)}
 
 			{/* Left Panel */}
-			<SidePanel
-				side="left"
-				isCollapsed={isLeftCollapsed}
-				setIsCollapsed={setIsLeftCollapsed}
-				isMobile={isMobile}
-			>
+			<SidePanel side="left" isMobile={isMobile}>
 				<div className="character-actions">
 					<button
 						type="button"
@@ -1036,10 +1072,10 @@ const AppContent: React.FC = () => {
 					</button>
 				</div>
 				<CharacterGrid
-					onNewCharacter={createNewCharacter}
-					onSelectCharacter={(character) => selectCharacter(character.id)}
 					characters={characters}
-					selectedCharacterId={selectedCharacter?.id}
+					selectedCharacter={selectedCharacter}
+					onSelectCharacter={handleSelectChat}
+					onDeleteCharacter={handleDeleteChat}
 				/>
 				<StorageIndicator />
 			</SidePanel>
@@ -1082,11 +1118,10 @@ const AppContent: React.FC = () => {
 				) : (
 					<ChatMessages
 						messages={activeMessages}
-						characterImage={selectedCharacter?.image || undefined}
-						characterName={selectedCharacter?.name}
+						character={selectedCharacter}
 						background={backgroundUrl || undefined}
 						onRegenerateMessage={handleRegenerateMessage}
-						onContinueMessage={handleContinueMessage} // Add the new handler here
+						onContinueMessage={handleContinueMessage}
 						onDeleteErrorMessage={handleDeleteErrorMessage}
 						onEditMessage={handleEditMessage}
 						onDeleteMessage={handleDeleteMessage}
@@ -1100,12 +1135,7 @@ const AppContent: React.FC = () => {
 			</main>
 
 			{/* Right Panel */}
-			<SidePanel
-				side="right"
-				isCollapsed={isRightCollapsed}
-				setIsCollapsed={setIsRightCollapsed}
-				isMobile={isMobile}
-			>
+			<SidePanel side="right" isMobile={isMobile}>
 				{selectedCharacter ? (
 					<CharacterForm
 						character={selectedCharacter}

@@ -47,6 +47,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 		setSelectedModel,
 		temperature,
 		setTemperature,
+		visualNovelMode,
+		setVisualNovelMode,
 	} = useUserSettings();
 
 	const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -63,12 +65,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 
 	return (
 		<div className="chat-header">
-			<h2>
-				{selectedCharacter ? selectedCharacter.name : "Select a character"}
-			</h2>
-
 			<div className="chat-header-actions">
 				<button
+					type="button"
 					className="header-action-button persona-button"
 					onClick={() => setShowPersonaModal(true)}
 					title="User Persona Settings"
@@ -76,6 +75,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					🎭
 				</button>
 				<button
+					type="button"
 					className="header-action-button api-button"
 					onClick={() => setShowApiKeyModal(true)}
 					title="API Settings"
@@ -83,6 +83,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					🔑
 				</button>
 				<button
+					type="button"
 					className="header-action-button writing-tips-button"
 					onClick={handleWritingTipsClick}
 					title="Writing Tips"
@@ -90,6 +91,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					✍️
 				</button>
 				<button
+					type="button"
 					className="header-action-button help-button"
 					onClick={handleHelpClick}
 					title="Help"

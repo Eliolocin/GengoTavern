@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { FC } from "react";
-import type { Character, DialoguePair } from "../../types/interfaces";
+import type { FC, ChangeEvent } from "react";
+import type { Character, DialoguePair, Sprite } from "../../types/interfaces";
 import placeholderImg from "../../assets/placeholder.jpg";
 import { useCharacters } from "../../contexts/CharacterContext";
 import ImageCropper from "../shared/ImageCropper";
@@ -11,10 +11,14 @@ import { compressImage, getDataUrlSizeInKB } from "../../utils/imageUtils";
 import { savePngAsBrowserDownload } from "../../utils/pngMetadata";
 import BackgroundManagerModal from "../shared/BackgroundManagerModal";
 import { storageManager } from "../../utils/storageManager";
+import { SUPPORTED_EMOTIONS } from "../../utils/emotionClassifier";
 
 interface CharacterFormProps {
 	character: Character;
-	onUpdateCharacter: (field: string, value: string | DialoguePair[]) => void;
+	onUpdateCharacter: (
+		field: string,
+		value: string | DialoguePair[] | Sprite[],
+	) => void;
 	onDeleteCharacter?: (id: number) => void;
 }
 
@@ -56,10 +60,25 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		string | null
 	>(null);
 
+	// Sprite management states
+	const [sprites, setSprites] = useState<Sprite[]>(character.sprites || []);
+	const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+	const [isCropperForSprite, setIsCropperForSprite] = useState(false);
+	const [spriteUrls, setSpriteUrls] = useState<Record<string, string>>({});
+	const [isLoadingSprite, setIsLoadingSprite] = useState(false);
+	const [spriteErrorMessage, setSpriteErrorMessage] = useState<string | null>(
+		null,
+	);
+
 	// Update dialogues state when character prop changes
 	useEffect(() => {
 		setDialogues(character.sampleDialogues || [{ user: "", character: "" }]);
 	}, [character.sampleDialogues]);
+
+	// Update sprites state when character prop changes
+	useEffect(() => {
+		setSprites(character.sprites || []);
+	}, [character.sprites]);
 
 	// Effect to load the background preview URL
 	useEffect(() => {
@@ -94,6 +113,47 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		};
 	}, [character.defaultBackground, backgroundPreviewUrl]);
 
+	// Load sprite images when component mounts or sprites change
+	useEffect(() => {
+		const loadSpriteImages = async () => {
+			try {
+				// First, scan the filesystem for sprites and update the character's sprites array
+				const updatedSprites =
+					await storageManager.scanAndUpdateCharacterSprites(character);
+
+				// If we found sprites in the filesystem, update our local state
+				if (updatedSprites.length > 0) {
+					setSprites(updatedSprites);
+				}
+
+				// Now load the sprite URLs for display
+				const urls: Record<string, string> = {};
+
+				// Load each sprite
+				for (const sprite of updatedSprites) {
+					try {
+						const url = await storageManager.loadSpriteAsUrl(
+							character.id,
+							sprite.filename,
+						);
+						urls[sprite.emotion] = url;
+					} catch (error) {
+						console.error(
+							`Failed to load sprite for ${sprite.emotion}:`,
+							error,
+						);
+					}
+				}
+
+				setSpriteUrls(urls);
+			} catch (error) {
+				console.error("Error loading sprites:", error);
+			}
+		};
+
+		loadSpriteImages();
+	}, [character]);
+
 	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -104,6 +164,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
 			// Create a temporary URL for the cropper
 			const tempImageUrl = URL.createObjectURL(file);
 			setCropImage(tempImageUrl);
+			setIsCropperForSprite(false);
 		} catch (error) {
 			console.error("Error handling image upload:", error);
 			alert("Error uploading image: " + error);
@@ -111,7 +172,37 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		}
 	};
 
+	const handleSpriteUpload = (
+		e: ChangeEvent<HTMLInputElement>,
+		emotion: string,
+	) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setSelectedEmotion(emotion);
+		setIsLoadingSprite(true);
+
+		try {
+			// Create a temporary URL for the cropper
+			const tempImageUrl = URL.createObjectURL(file);
+			setCropImage(tempImageUrl);
+			setIsCropperForSprite(true);
+		} catch (error) {
+			console.error(`Error handling sprite upload: ${error}`);
+			setSpriteErrorMessage("Error uploading sprite image");
+			setIsLoadingSprite(false);
+		}
+	};
+
 	const handleCroppedImage = async (croppedImageUrl: string) => {
+		if (isCropperForSprite) {
+			await handleCroppedSprite(croppedImageUrl);
+		} else {
+			await handleCroppedAvatar(croppedImageUrl);
+		}
+	};
+
+	const handleCroppedAvatar = async (croppedImageUrl: string) => {
 		try {
 			// Compress the cropped image
 			const originalSizeKB = getDataUrlSizeInKB(croppedImageUrl);
@@ -147,9 +238,88 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		setIsUploading(false);
 	};
 
+	const handleCroppedSprite = async (croppedImage: string) => {
+		if (!selectedEmotion) return;
+
+		setIsLoadingSprite(true);
+
+		try {
+			// Use a consistent filename based on emotion type
+			const filename = `${selectedEmotion}.png`;
+
+			// Save the sprite image
+			await storageManager.saveSprite(character.id, filename, croppedImage);
+
+			// Update sprites array
+			const updatedSprites = sprites.filter(
+				(s) => s.emotion !== selectedEmotion,
+			);
+			updatedSprites.push({
+				emotion: selectedEmotion,
+				filename: filename,
+			});
+
+			setSprites(updatedSprites);
+			onUpdateCharacter("sprites", updatedSprites);
+
+			// Update sprite URLs for preview
+			setSpriteUrls((prev) => ({
+				...prev,
+				[selectedEmotion]: croppedImage,
+			}));
+
+			setSpriteErrorMessage(null);
+		} catch (error) {
+			console.error("Failed to save sprite:", error);
+			setSpriteErrorMessage("Failed to save sprite image");
+		} finally {
+			setIsLoadingSprite(false);
+			setSelectedEmotion(null);
+			setCropImage(null);
+			setIsCropperForSprite(false);
+		}
+	};
+
+	const handleDeleteSprite = async (emotion: string) => {
+		setIsLoadingSprite(true);
+
+		try {
+			// Find the sprite to delete
+			const spriteToDelete = sprites.find((s) => s.emotion === emotion);
+			if (!spriteToDelete) return;
+
+			// Delete the sprite file
+			await storageManager.deleteSprite(character.id, spriteToDelete.filename);
+
+			// Update sprites array
+			const updatedSprites = sprites.filter((s) => s.emotion !== emotion);
+			setSprites(updatedSprites);
+			onUpdateCharacter("sprites", updatedSprites);
+
+			// Update sprite URLs
+			setSpriteUrls((prev) => {
+				const updated = { ...prev };
+				delete updated[emotion];
+				return updated;
+			});
+
+			setSpriteErrorMessage(null);
+		} catch (error) {
+			console.error("Failed to delete sprite:", error);
+			setSpriteErrorMessage("Failed to delete sprite image");
+		} finally {
+			setIsLoadingSprite(false);
+		}
+	};
+
 	const handleCancelCrop = () => {
 		setCropImage(null);
 		setIsUploading(false);
+		if (isCropperForSprite) {
+			setIsLoadingSprite(false);
+			setSelectedEmotion(null);
+			setIsCropperForSprite(false);
+		}
 	};
 
 	const handleSelectBackground = (filename: string) => {
@@ -304,20 +474,36 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		setEditField({ ...editField, isOpen: false });
 	};
 
+	// Handle sprite item keyboard navigation
+	const handleSpriteKeyDown = (
+		e: React.KeyboardEvent<HTMLDivElement>,
+		emotion: string,
+		hasSprite: boolean,
+	) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			if (!hasSprite && !isLoadingSprite) {
+				document.getElementById(`sprite-upload-${emotion}`)?.click();
+			}
+		}
+	};
+
 	return (
 		<div className="character-customization">
 			{isBgManagerOpen && (
 				<BackgroundManagerModal
 					onClose={() => setIsBgManagerOpen(false)}
 					onSelect={handleSelectBackground}
+					selectedBackground={character.defaultBackground}
 				/>
 			)}
 
 			{cropImage && (
 				<ImageCropper
 					src={cropImage}
-					onImageCropped={handleCroppedImage}
+					onCrop={handleCroppedImage}
 					onCancel={handleCancelCrop}
+					aspectRatio={isCropperForSprite ? 2 / 3 : undefined} // Use 2:3 aspect ratio for sprites
 				/>
 			)}
 
@@ -580,6 +766,111 @@ const CharacterForm: FC<CharacterFormProps> = ({
 						</div>
 					</div>
 				</label>
+			</div>
+
+			{/* Sprite Management Section */}
+			<div className="form-group sprite-management-section">
+				<h4 id="character-sprites-label">Character Sprites:</h4>
+				{spriteErrorMessage && (
+					<div className="error-message">{spriteErrorMessage}</div>
+				)}
+				<p className="sprites-description">
+					Upload sprites for each emotion to enable Visual Novel mode. Click on
+					any empty slot to add a sprite.
+				</p>
+
+				<div className="sprites-grid" aria-labelledby="character-sprites-label">
+					{SUPPORTED_EMOTIONS.map((emotion) => {
+						const hasSprite = spriteUrls[emotion] !== undefined;
+						return (
+							<div
+								key={emotion}
+								className="sprite-item"
+								onClick={() => {
+									if (!hasSprite && !isLoadingSprite) {
+										document
+											.getElementById(`sprite-upload-${emotion}`)
+											?.click();
+									}
+								}}
+								onKeyDown={(e) => handleSpriteKeyDown(e, emotion, hasSprite)}
+								tabIndex={0}
+								role="button"
+								aria-label={`${hasSprite ? "Edit" : "Add"} ${emotion} sprite`}
+							>
+								<div className="sprite-thumbnail">
+									{hasSprite ? (
+										<>
+											<img
+												src={spriteUrls[emotion]}
+												alt={`${emotion} sprite`}
+												className="sprite-thumbnail-image"
+											/>
+											<div className="sprite-actions-overlay">
+												<button
+													type="button"
+													className="sprite-action-button replace-button"
+													onClick={(e) => {
+														e.stopPropagation();
+														document
+															.getElementById(`sprite-upload-${emotion}`)
+															?.click();
+													}}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															document
+																.getElementById(`sprite-upload-${emotion}`)
+																?.click();
+														}
+													}}
+													disabled={isLoadingSprite}
+													aria-label={`Replace ${emotion} sprite`}
+												>
+													↺
+												</button>
+												<button
+													type="button"
+													className="sprite-action-button delete-button"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleDeleteSprite(emotion);
+													}}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															handleDeleteSprite(emotion);
+														}
+													}}
+													disabled={isLoadingSprite}
+													aria-label={`Delete ${emotion} sprite`}
+												>
+													✕
+												</button>
+											</div>
+										</>
+									) : (
+										<div className="sprite-placeholder">
+											<span>+</span>
+										</div>
+									)}
+								</div>
+								<div className="sprite-label">
+									{emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+								</div>
+								<input
+									type="file"
+									id={`sprite-upload-${emotion}`}
+									accept="image/*"
+									style={{ display: "none" }}
+									onChange={(e) => handleSpriteUpload(e, emotion)}
+									disabled={isLoadingSprite}
+									aria-label={`Upload ${emotion} sprite`}
+								/>
+							</div>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);

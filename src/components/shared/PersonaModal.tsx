@@ -141,7 +141,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
 	};
 
 	return (
-		<div className="modal-backdrop" onClick={onClose}>
+		<div className="modal-backdrop">
 			<div
 				className="modal-content persona-modal"
 				onClick={(e) => e.stopPropagation()}

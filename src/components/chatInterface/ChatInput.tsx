@@ -1,60 +1,79 @@
-import type React from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
+import type { FC, KeyboardEvent } from "react";
+import { useUserSettings } from "../../contexts/UserSettingsContext";
 
 interface ChatInputProps {
-  onSendMessage: (text: string) => void;
+	onSendMessage: (message: string) => void;
+	isProcessing: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
-  const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+const ChatInput: FC<ChatInputProps> = ({ onSendMessage, isProcessing }) => {
+	const [message, setMessage] = useState("");
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const { visualNovelMode, setVisualNovelMode } = useUserSettings();
 
-  // Auto-resize the textarea as content changes
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [message]);
+	// Auto-resize the textarea as content grows
+	useEffect(() => {
+		if (textareaRef.current) {
+			textareaRef.current.style.height = "auto";
+			textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+		}
+	}, [message]);
 
-  const handleSend = () => {
-    if (message.trim()) {
-      onSendMessage(message);
-      setMessage('');
-      
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-    }
-  };
+	const handleSendMessage = () => {
+		if (message.trim() && !isProcessing) {
+			onSendMessage(message);
+			setMessage("");
+		}
+	};
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (e.shiftKey) {
-        // Let the newline be added naturally
-        return;
-      } else {
-        // Submit the message without adding a newline
-        e.preventDefault();
-        handleSend();
-      }
-    }
-  };
+	const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			handleSendMessage();
+		}
+	};
 
-  return (
-    <div className="chat-input">
-      <textarea
-        ref={textareaRef}
-        placeholder="Type your message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleKeyDown}
-        rows={1}
-      />
-      <button type="button" onClick={handleSend}>Send</button>
-    </div>
-  );
+	const toggleVisualNovelMode = () => {
+		setVisualNovelMode(!visualNovelMode);
+	};
+
+	return (
+		<div className="chat-input-container">
+			<div className="vn-mode-toggle-container">
+				<button
+					type="button"
+					className={`vn-mode-toggle-button ${visualNovelMode ? "active" : ""}`}
+					onClick={toggleVisualNovelMode}
+					title={
+						visualNovelMode
+							? "Switch to Chat Mode"
+							: "Switch to Visual Novel Mode"
+					}
+				>
+					{visualNovelMode ? "Chat Mode" : "Visual Novel Mode"}
+				</button>
+			</div>
+			<div className="chat-input">
+				<textarea
+					ref={textareaRef}
+					value={message}
+					onChange={(e) => setMessage(e.target.value)}
+					onKeyDown={handleKeyDown}
+					placeholder="Type your message..."
+					disabled={isProcessing}
+					rows={1}
+				/>
+				<button
+					type="button"
+					onClick={handleSendMessage}
+					disabled={!message.trim() || isProcessing}
+				>
+					Send
+				</button>
+			</div>
+		</div>
+	);
 };
 
 export default ChatInput;

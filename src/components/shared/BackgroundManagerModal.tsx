@@ -101,13 +101,7 @@ const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 	};
 
 	return (
-		<div
-			className="modal-backdrop"
-			onClick={onClose}
-			onKeyDown={(e) => e.key === "Escape" && onClose()}
-			role="dialog"
-			aria-modal="true"
-		>
+		<div className="modal-backdrop">
 			<div
 				className="modal-content background-manager-modal"
 				onClick={(e) => e.stopPropagation()}

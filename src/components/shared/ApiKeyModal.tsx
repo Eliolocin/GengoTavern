@@ -144,11 +144,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 	};
 
 	return (
-		<div className="modal-backdrop" onClick={onClose} onKeyDown={handleKeyDown}>
-			<div
-				className="modal-content api-key-modal"
-				onClick={(e) => e.stopPropagation()}
-			>
+		<div className="modal-backdrop" onKeyDown={handleKeyDown}>
+			<div className="modal-content api-key-modal">
 				<div className="modal-header">
 					<h3>API Settings</h3>
 					<button type="button" className="close-button" onClick={onClose}>
