@@ -1,17 +1,28 @@
 /**
- * Supported emotions for sprite classification
- * Maps to the 6 emotions supported by the bhadresh-savani/distilbert-base-uncased-emotion model
+ * Supported sentiment levels for sprite classification
+ * Maps to the 5 sentiment levels supported by the tabularisai/multilingual-sentiment-analysis model
  */
 export const SUPPORTED_EMOTIONS = [
-	"sadness",
-	"joy",
-	"love",
-	"anger",
-	"fear",
-	"surprise",
+	"very_negative",
+	"negative",
+	"neutral",
+	"positive",
+	"very_positive",
 ] as const;
 
 export type SupportedEmotion = (typeof SUPPORTED_EMOTIONS)[number];
+
+/**
+ * Maps the model's LABEL outputs to our supported emotions
+ * tabularisai/multilingual-sentiment-analysis returns LABEL_0 to LABEL_4
+ */
+const LABEL_TO_EMOTION_MAP: Record<string, SupportedEmotion> = {
+	"LABEL_0": "very_negative",
+	"LABEL_1": "negative",
+	"LABEL_2": "neutral",
+	"LABEL_3": "positive",
+	"LABEL_4": "very_positive",
+};
 
 /**
  * Hugging Face API response type for text classification
@@ -23,12 +34,12 @@ interface HuggingFaceClassificationResult {
 
 /**
  * Singleton class for emotion classification using Hugging Face Inference API
- * Uses the bhadresh-savani/distilbert-base-uncased-emotion model via API calls
+ * Uses the tabularisai/multilingual-sentiment-analysis model via API calls
  */
 class EmotionClassifier {
 	private static instance: EmotionClassifier;
 	private readonly apiUrl =
-		"https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion";
+		"https://api-inference.huggingface.co/models/tabularisai/multilingual-sentiment-analysis";
 
 	private constructor() {}
 
@@ -68,7 +79,7 @@ class EmotionClassifier {
 
 		try {
 			console.log(
-				"🔍 Starting emotion classification for text:",
+				"🔍 Starting sentiment analysis for text:",
 				`${text.substring(0, 100)}...`,
 			);
 			console.log("🔑 Using API key:", `${apiKey.substring(0, 8)}...`);
@@ -166,31 +177,30 @@ class EmotionClassifier {
 
 			console.log("🏆 Top result:", topResult);
 
-			const detectedEmotion = topResult.label?.toLowerCase();
+			const detectedLabel = topResult.label;
 
-			// 7. Validate that the detected emotion is supported
-			if (
-				detectedEmotion &&
-				SUPPORTED_EMOTIONS.includes(detectedEmotion as SupportedEmotion)
-			) {
+			// 7. Map the label to our supported emotions
+			const mappedEmotion = LABEL_TO_EMOTION_MAP[detectedLabel];
+
+			if (mappedEmotion) {
 				console.log(
-					`✅ Detected emotion: ${detectedEmotion} (confidence: ${topResult.score.toFixed(3)})`,
+					`✅ Detected sentiment: ${mappedEmotion} (label: ${detectedLabel}, confidence: ${topResult.score.toFixed(3)})`,
 				);
-				return detectedEmotion as SupportedEmotion;
+				return mappedEmotion;
 			}
 
-			// 8. Log warning if emotion is not in our supported list
-			console.warn(`❌ Unsupported emotion detected: ${detectedEmotion}`);
-			console.warn("Supported emotions:", SUPPORTED_EMOTIONS);
+			// 8. Log warning if label is not in our mapping
+			console.warn(`❌ Unsupported label detected: ${detectedLabel}`);
+			console.warn("Supported labels:", Object.keys(LABEL_TO_EMOTION_MAP));
 			console.warn("Full results:", results);
 			return null;
 		} catch (error) {
 			// 9. Handle network and other errors
-			console.error("❌ Error during emotion classification:", error);
+			console.error("❌ Error during sentiment analysis:", error);
 			if (error instanceof TypeError && error.message.includes("fetch")) {
-				console.error("Network error during emotion classification:", error);
+				console.error("Network error during sentiment analysis:", error);
 			} else {
-				console.error("Unexpected error during emotion classification:", error);
+				console.error("Unexpected error during sentiment analysis:", error);
 			}
 			return null;
 		}
@@ -208,7 +218,7 @@ class EmotionClassifier {
 
 		try {
 			// Use a simple test text to verify the API key
-			const result = await this.classify("I am happy", apiKey);
+			const result = await this.classify("This is a test message", apiKey);
 			return result !== null;
 		} catch {
 			return false;

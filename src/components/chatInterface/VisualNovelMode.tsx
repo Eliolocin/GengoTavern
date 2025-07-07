@@ -99,18 +99,18 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 					}
 				}
 
-				// If no emotion-specific sprite found, try to find a joy sprite as default
-				const joySprite = sprites.find((s) => s.emotion === "joy");
-				if (joySprite) {
+				// If no emotion-specific sprite found, try to find a positive sprite as default
+				const positiveSprite = sprites.find((s) => s.emotion === "positive");
+				if (positiveSprite) {
 					const url = await storageManager.loadSpriteAsUrl(
 						character.id,
-						joySprite.filename,
+						positiveSprite.filename,
 					);
 					setSpriteUrl(url);
 					return;
 				}
 
-				// If no joy sprite, try to find any sprite
+				// If no positive sprite, try to find any sprite
 				if (sprites.length > 0) {
 					const url = await storageManager.loadSpriteAsUrl(
 						character.id,
