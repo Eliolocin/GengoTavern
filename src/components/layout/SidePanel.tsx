@@ -1,46 +1,84 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from "react";
+import type { FC } from "react";
+import { useApp } from "../../contexts/AppContext";
 
 interface SidePanelProps {
-  side: 'left' | 'right';
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
-  children: React.ReactNode;
-  isMobile: boolean;
+	side: "left" | "right";
+	children: React.ReactNode;
+	isMobile: boolean;
 }
 
-const SidePanel: React.FC<SidePanelProps> = ({
-  side,
-  isCollapsed,
-  setIsCollapsed,
-  children,
-  isMobile
-}) => {
-  // Reset panel state when switching between mobile and desktop modes
-  useEffect(() => {
-    if (isMobile) {
-      // Ensure panels are collapsed in mobile mode
-      setIsCollapsed(true);
-    } else {
-      // Expand panels in desktop mode
-      setIsCollapsed(false);
-    }
-  }, [isMobile, setIsCollapsed]);
+const SidePanel: FC<SidePanelProps> = ({ side, children, isMobile }) => {
+	const {
+		leftPanelExpanded,
+		rightPanelExpanded,
+		setLeftPanelExpanded,
+		setRightPanelExpanded,
+	} = useApp();
 
-  // Apply mobile-specific class when in mobile mode
-  const mobileClass = isMobile ? 'mobile' : '';
+	// Use local state to track panel state, initialized from context
+	const [isLocalExpanded, setIsLocalExpanded] = useState(
+		side === "left" ? leftPanelExpanded : rightPanelExpanded,
+	);
 
-  return (
-    <div className={`side-panel ${side}-panel ${isCollapsed ? 'collapsed' : 'expanded'} ${mobileClass}`}>
-      <button
-        type="button"
-        className={`collapse-button vertical ${side}`}
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {(side === 'left') !== isCollapsed ? "<" : ">"}
-      </button>
-      {!isCollapsed && <div className="pane-content">{children}</div>}
-    </div>
-  );
+	// Update local state when context state changes
+	useEffect(() => {
+		setIsLocalExpanded(
+			side === "left" ? leftPanelExpanded : rightPanelExpanded,
+		);
+	}, [side, leftPanelExpanded, rightPanelExpanded]);
+
+	// Reset panel state when switching between mobile and desktop modes
+	useEffect(() => {
+		if (isMobile) {
+			// Ensure panels are collapsed in mobile mode
+			setIsLocalExpanded(false);
+			if (side === "left") {
+				setLeftPanelExpanded(false);
+			} else {
+				setRightPanelExpanded(false);
+			}
+		} else {
+			// Expand panels in desktop mode
+			setIsLocalExpanded(true);
+			if (side === "left") {
+				setLeftPanelExpanded(true);
+			} else {
+				setRightPanelExpanded(true);
+			}
+		}
+	}, [isMobile, side, setLeftPanelExpanded, setRightPanelExpanded]);
+
+	// Apply mobile-specific class when in mobile mode
+	const mobileClass = isMobile ? "mobile" : "";
+
+	// Toggle panel state and update both local state and context
+	const togglePanel = () => {
+		const newState = !isLocalExpanded;
+		setIsLocalExpanded(newState);
+
+		// Also update the context state
+		if (side === "left") {
+			setLeftPanelExpanded(newState);
+		} else {
+			setRightPanelExpanded(newState);
+		}
+	};
+
+	return (
+		<div
+			className={`side-panel ${side}-panel ${isLocalExpanded ? "expanded" : "collapsed"} ${mobileClass}`}
+		>
+			<button
+				type="button"
+				className={`collapse-button vertical ${side}`}
+				onClick={togglePanel}
+			>
+				{(side === "left") !== isLocalExpanded ? ">" : "<"}
+			</button>
+			{isLocalExpanded && <div className="pane-content">{children}</div>}
+		</div>
+	);
 };
 
 export default SidePanel;

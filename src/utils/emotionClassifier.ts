@@ -67,43 +67,95 @@ class EmotionClassifier {
 		}
 
 		try {
+			console.log(
+				"🔍 Starting emotion classification for text:",
+				`${text.substring(0, 100)}...`,
+			);
+			console.log("🔑 Using API key:", `${apiKey.substring(0, 8)}...`);
+
 			// 2. Prepare the API request
+			const requestBody = {
+				inputs: text.trim(),
+				options: {
+					wait_for_model: true, // Wait if model is loading
+				},
+			};
+
+			console.log("📤 Sending request to HuggingFace API:", {
+				url: this.apiUrl,
+				body: requestBody,
+			});
+
 			const response = await fetch(this.apiUrl, {
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${apiKey.trim()}`,
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({
-					inputs: text.trim(),
-					options: {
-						wait_for_model: true, // Wait if model is loading
-					},
-				}),
+				body: JSON.stringify(requestBody),
+			});
+
+			console.log("📥 Received response:", {
+				status: response.status,
+				statusText: response.statusText,
+				ok: response.ok,
 			});
 
 			// 3. Check if the request was successful
 			if (!response.ok) {
 				if (response.status === 401) {
-					console.error("Invalid Hugging Face API key");
+					console.error("❌ Invalid Hugging Face API key");
 					return null;
 				}
 				if (response.status === 429) {
-					console.error("Hugging Face API rate limit exceeded");
+					console.error("❌ Hugging Face API rate limit exceeded");
 					return null;
 				}
 				console.error(
-					`Hugging Face API error: ${response.status} ${response.statusText}`,
+					`❌ Hugging Face API error: ${response.status} ${response.statusText}`,
 				);
 				return null;
 			}
 
 			// 4. Parse the response
-			const results: HuggingFaceClassificationResult[] = await response.json();
+			const responseText = await response.text();
+			console.log("📄 Raw response text:", responseText);
+
+			let parsedResponse: unknown;
+			try {
+				parsedResponse = JSON.parse(responseText);
+			} catch (parseError) {
+				console.error("❌ Failed to parse JSON response:", parseError);
+				console.error("Raw response was:", responseText);
+				return null;
+			}
+
+			// Handle nested array structure - the API sometimes returns [[{...}]] instead of [{...}]
+			let results: HuggingFaceClassificationResult[];
+
+			if (Array.isArray(parsedResponse)) {
+				// Check if it's a nested array structure [[{...}]]
+				if (Array.isArray(parsedResponse[0])) {
+					results = parsedResponse[0];
+				} else {
+					// Standard format [{...}]
+					results = parsedResponse;
+				}
+			} else {
+				console.warn("❌ Invalid response format - not an array");
+				console.warn("Response:", parsedResponse);
+				return null;
+			}
+
+			console.log("🔍 Parsed results:", results);
 
 			// 5. Handle API response errors
 			if (!Array.isArray(results) || results.length === 0) {
-				console.warn("Invalid response from Hugging Face API");
+				console.warn(
+					"❌ Invalid response from Hugging Face API - not an array or empty",
+				);
+				console.warn("Response type:", typeof results);
+				console.warn("Response:", results);
 				return null;
 			}
 
@@ -111,6 +163,8 @@ class EmotionClassifier {
 			const topResult = results.reduce((prev, current) =>
 				prev.score > current.score ? prev : current,
 			);
+
+			console.log("🏆 Top result:", topResult);
 
 			const detectedEmotion = topResult.label?.toLowerCase();
 
@@ -120,20 +174,23 @@ class EmotionClassifier {
 				SUPPORTED_EMOTIONS.includes(detectedEmotion as SupportedEmotion)
 			) {
 				console.log(
-					`Detected emotion: ${detectedEmotion} (confidence: ${topResult.score.toFixed(3)})`,
+					`✅ Detected emotion: ${detectedEmotion} (confidence: ${topResult.score.toFixed(3)})`,
 				);
 				return detectedEmotion as SupportedEmotion;
 			}
 
 			// 8. Log warning if emotion is not in our supported list
-			console.warn(`Unsupported emotion detected: ${detectedEmotion}`);
+			console.warn(`❌ Unsupported emotion detected: ${detectedEmotion}`);
+			console.warn("Supported emotions:", SUPPORTED_EMOTIONS);
+			console.warn("Full results:", results);
 			return null;
 		} catch (error) {
 			// 9. Handle network and other errors
+			console.error("❌ Error during emotion classification:", error);
 			if (error instanceof TypeError && error.message.includes("fetch")) {
 				console.error("Network error during emotion classification:", error);
 			} else {
-				console.error("Error during emotion classification:", error);
+				console.error("Unexpected error during emotion classification:", error);
 			}
 			return null;
 		}

@@ -15,9 +15,21 @@ interface AppContextType {
 	closeSetupModal: () => void;
 	storageStrategy: StorageStrategy;
 	setStorageStrategy: (strategy: StorageStrategy) => void;
+	leftPanelExpanded: boolean;
+	rightPanelExpanded: boolean;
+	setLeftPanelExpanded: (expanded: boolean) => void;
+	setRightPanelExpanded: (expanded: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
+
+export const useApp = () => {
+	const context = useContext(AppContext);
+	if (!context) {
+		throw new Error("useApp must be used within an AppProvider");
+	}
+	return context;
+};
 
 export const useAppContext = () => {
 	const context = useContext(AppContext);
@@ -35,6 +47,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 	const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
 	const [storageStrategy, setStorageStrategy] =
 		useState<StorageStrategy>("localstorage");
+	const [leftPanelExpanded, setLeftPanelExpanded] = useState(true);
+	const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
 
 	const openSetupModal = useCallback(() => setIsSetupModalOpen(true), []);
 	const closeSetupModal = useCallback(() => setIsSetupModalOpen(false), []);
@@ -46,8 +60,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 			closeSetupModal,
 			storageStrategy,
 			setStorageStrategy,
+			leftPanelExpanded,
+			rightPanelExpanded,
+			setLeftPanelExpanded,
+			setRightPanelExpanded,
 		}),
-		[isSetupModalOpen, openSetupModal, closeSetupModal, storageStrategy],
+		[
+			isSetupModalOpen,
+			openSetupModal,
+			closeSetupModal,
+			storageStrategy,
+			leftPanelExpanded,
+			rightPanelExpanded,
+		],
 	);
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -39,7 +39,7 @@ const FileSystemSetupModal: React.FC<FileSystemSetupModalProps> = ({
 	};
 
 	return (
-		<div className="modal-backdrop" onClick={onClose}>
+		<div className="modal-backdrop">
 			<div
 				className="modal-content setup-modal"
 				onClick={(e) => e.stopPropagation()}

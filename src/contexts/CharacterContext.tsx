@@ -69,11 +69,14 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 				// 2. Handle migration from old localStorage format
 				await storageManager.migrateFromOldLocalStorage();
 
-				// 3. Load characters from storage
+				// 3. Migrate sprites from ID-based to name-based directories
+				await storageManager.migrateAllSprites();
+
+				// 4. Load characters from storage
 				let loadedCharacters: Character[] = [];
 				loadedCharacters = await storageManager.loadAllCharacters();
 
-				// 4. If no characters were loaded, create a default character
+				// 5. If no characters were loaded, create a default character
 				if (loadedCharacters.length === 0) {
 					const defaultCharacter: Character = {
 						id: Date.now(),

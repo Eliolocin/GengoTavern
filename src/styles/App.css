@@ -45,8 +45,7 @@ html {
 	flex-direction: column;
 	padding: 20px;
 	box-sizing: border-box;
-	background-color: rgba(18, 18, 18, 0.6); /* Semi-transparent background */
-	backdrop-filter: blur(5px); /* Apply blur effect */
+	/*backdrop-filter: blur(5px);  Apply blur effect */
 }
 
 /* Responsive Layout - Switch to Full Width at 768px */
@@ -242,10 +241,14 @@ html {
 /* Chat Components */
 .chat-header {
 	display: flex;
-	align-items: center;
 	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 10px;
+	align-items: center;
+	padding: 15px;
+	border-radius: 6px;
+	margin-bottom: 15px;
+	background-color: rgba(18, 18, 18, 0.6); /* Added background color */
+	z-index: 3; /* Higher than visual novel elements */
+	position: relative;
 }
 
 .chat-header h2 {
@@ -291,7 +294,7 @@ html {
 	flex: 1;
 	overflow-y: auto;
 	padding: 15px;
-	background-color: rgba(0, 0, 0, 0.4); /* More transparent */
+	background-color: rgba(18, 18, 18, 0.6); /* Changed from rgba(0, 0, 0, 0.4) to match chat-pane */
 	border-radius: 6px;
 	margin: 15px 0;
 	display: flex;
@@ -482,17 +485,53 @@ html {
 
 .chat-input {
 	display: flex;
-	padding: 10px 0;
-	gap: 10px;
+	padding: 10px;
+	background-color: rgba(18, 18, 18, 0.6); /* Changed from rgba(42, 42, 42, 0.8) to match chat-pane */
+	border-radius: 8px;
+	z-index: 3; /* Higher than visual novel elements */
+	position: relative;
 }
 
-.chat-input input {
-	flex: 1;
-	padding: 12px;
+.chat-input-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.vn-mode-toggle-container {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+}
+
+.vn-mode-toggle-button {
+	background-color: #2c3e50;
+	color: white;
 	border: none;
-	border-radius: 6px;
-	background-color: #2a2a2a;
-	color: #fff;
+	border-radius: 20px;
+	padding: 8px 16px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background-color 0.3s ease, transform 0.2s ease;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.vn-mode-toggle-button:hover {
+	background-color: #34495e;
+	transform: translateY(-2px);
+}
+
+.vn-mode-toggle-button.active {
+	background-color: #e74c3c;
+}
+
+.vn-mode-toggle-button.active:hover {
+	background-color: #c0392b;
 }
 
 .chat-input textarea {
@@ -607,6 +646,22 @@ html {
 	background-color: #66bb6a;
 }
 
+.manage-sprites-button {
+	background-color: #2196f3;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	padding: 8px 16px;
+	cursor: pointer;
+	font-size: 14px;
+	margin-left: 10px;
+	transition: background-color 0.3s ease;
+}
+
+.manage-sprites-button:hover {
+	background-color: #0d8bf2;
+}
+
 .save-json-button {
 	padding: 8px 16px;
 	background-color: #2196f3; /* Blue color for JSON button */
@@ -641,7 +696,6 @@ html {
 .character-avatar-wrapper {
 	position: relative;
 	overflow: hidden;
-	margin-bottom: 25px;
 	/* Fixed dimensions for better control */
 	width: 140px;
 	height: 210px; /* 2:3 ratio */
@@ -1963,9 +2017,8 @@ html {
 	color: #dc3545;
 	font-size: 0.9rem;
 	display: flex;
-	align-items: center;
+	flex-direction: column;
 	gap: 10px;
-	flex-wrap: wrap;
 }
 
 .retry-button {
@@ -2680,7 +2733,7 @@ html {
 }
 
 .retry-button {
-	background: #dc3545;
+	background-color: #dc3545;
 	color: white;
 	border: none;
 	padding: 0.25rem 0.5rem;
@@ -2691,7 +2744,7 @@ html {
 }
 
 .retry-button:hover {
-	background: #c82333;
+	background-color: #c82333;
 }
 
 /* File Instructions Styling */
@@ -2826,4 +2879,427 @@ html {
 	margin: 0.5rem 0;
 	font-style: italic;
 	color: #ccc;
+}
+
+/* Visual Novel Mode Toggle Button */
+.vn-mode-button {
+	background-color: #2c3e50;
+	color: white;
+}
+
+.vn-mode-button.active {
+	background-color: #e74c3c;
+	color: white;
+}
+
+/* Visual Novel Mode Container */
+.visual-novel-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	position: relative;
+	background-color: transparent;
+}
+
+/* Transparent chat messages in VN mode */
+.chat-messages-transparent {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	opacity: 0;
+	pointer-events: none;
+	z-index: -1;
+	background-color: transparent; /* Ensure transparency */
+}
+
+/* Visual Novel Mode */
+.visual-novel-mode {
+	position: fixed; /* Changed from absolute to fixed */
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	z-index: 0; /* Lower z-index so it's behind chat-input and chat-header */
+	background-color: transparent;
+	padding-bottom: 100px; /* Increased space for chat input */
+	pointer-events: none; /* Allow clicks to pass through the container */
+}
+
+/* Visual Novel Character Container */
+.visual-novel-character-container {
+	position: fixed; /* Changed from absolute to fixed */
+	top: 130px; /* Start below the header instead of at the top */
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	justify-content: center;
+	align-items: flex-end; /* Align to bottom */
+	z-index: 0; /* Lower z-index so it's behind chat-input and chat-header */
+	background-color: transparent;
+	pointer-events: none; /* Allow clicks to pass through */
+}
+
+/* Visual Novel Character Sprite */
+.visual-novel-character-sprite {
+	width: 100%;
+	height: calc(100vh - 130px); /* Adjusted height to account for header */
+	object-fit: contain;
+	object-position: bottom center; /* Position at bottom center */
+	filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+	max-height: calc(100vh - 130px); /* Adjusted max-height to account for header */
+	/* Remove margin-top as we're already positioning the container below header */
+	transition: opacity 0.3s ease-in-out; /* Add transition for fade effect */
+}
+
+/* Sprite fade states */
+.sprite-fade-in {
+	opacity: 0;
+	animation: fadeIn 0.3s forwards;
+}
+
+.sprite-fade-out {
+	opacity: 1;
+	animation: fadeOut 0.3s forwards;
+}
+
+.sprite-visible {
+	opacity: 1;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes fadeOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+/* Visual Novel Dialogue Box - Positioned at bottom */
+.visual-novel-dialogue-box {
+	width: 90%;
+	max-width: 1200px;
+	background-color: rgba(0, 0, 0, 0.7);
+	border-radius: 10px;
+	padding: 20px;
+	margin-bottom: 110px; /* Increased to position above chat input */
+	color: white;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+	border: 2px solid #3a506b;
+	z-index: 2; /* Higher z-index than the sprite but lower than chat-input */
+	position: relative;
+	pointer-events: auto; /* Enable interactions with the dialogue box */
+}
+
+/* Visual Novel Speaker Name */
+.visual-novel-speaker {
+	font-weight: bold;
+	font-size: 1.2rem;
+	margin-bottom: 10px;
+	color: #e74c3c;
+}
+
+/* Visual Novel Text */
+.visual-novel-text {
+	font-size: 1.1rem;
+	line-height: 1.5;
+}
+
+/* Visual Novel Message Actions - Now positioned in dialogue box */
+.vn-message-actions {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	display: flex;
+	gap: 10px;
+	z-index: 20;
+	pointer-events: auto; /* Ensure buttons are clickable */
+}
+
+/* Sprite Loading Placeholder */
+.sprite-loading-placeholder {
+	color: white;
+	font-size: 1.2rem;
+	text-align: center;
+	background-color: rgba(0, 0, 0, 0.5);
+	padding: 20px;
+	border-radius: 10px;
+}
+
+/* Sprite Manager Modal */
+.sprite-manager-modal {
+	width: 90%;
+	max-width: 800px;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+/* Sprite Selection Grid */
+.sprites-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	gap: 15px;
+	margin-top: 20px;
+}
+
+/* Sprite Item */
+.sprite-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	cursor: pointer;
+	padding: 10px;
+	border-radius: 5px;
+	background-color: #2c3e50;
+	transition: all 0.2s ease;
+}
+
+.sprite-item:hover {
+	background-color: #34495e;
+}
+
+.sprite-item.selected {
+	background-color: #3498db;
+}
+
+/* Sprite Thumbnail */
+.sprite-thumbnail {
+	width: 100px;
+	height: 150px;
+	background-color: #1a1a2e;
+	border-radius: 5px;
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.sprite-thumbnail-image {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+.sprite-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 2rem;
+	color: #95a5a6;
+}
+
+/* Sprite Label */
+.sprite-label {
+	font-size: 0.9rem;
+	text-align: center;
+	color: white;
+}
+
+/* Sprite Upload Section */
+.sprite-upload-section {
+	margin-top: 20px;
+	padding: 20px;
+	background-color: #2c3e50;
+	border-radius: 5px;
+}
+
+/* Sprite Preview */
+.sprite-preview {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.sprite-image {
+	max-width: 200px;
+	max-height: 300px;
+	object-fit: contain;
+	margin-bottom: 15px;
+}
+
+.sprite-actions {
+	display: flex;
+	gap: 10px;
+}
+
+/* Sprite Upload Placeholder */
+.sprite-upload {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 20px;
+	background-color: #34495e;
+	border-radius: 5px;
+}
+
+.upload-placeholder {
+	text-align: center;
+}
+
+/* Emotion Selection */
+.emotion-selection {
+	margin-bottom: 20px;
+}
+
+.emotion-selection select {
+	width: 100%;
+	padding: 10px;
+	border-radius: 5px;
+	background-color: #34495e;
+	color: white;
+	border: none;
+}
+
+/* Sprites Overview */
+.sprites-overview {
+	margin-top: 30px;
+}
+
+/* Sprites Summary in Character Form */
+.sprites-summary {
+	margin-bottom: 10px;
+}
+
+.sprites-description {
+	font-size: 0.9rem;
+	color: #95a5a6;
+	margin-top: 5px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+	.visual-novel-dialogue-box {
+		width: 95%;
+		padding: 15px;
+	}
+
+	.sprites-grid {
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	}
+
+	.sprite-thumbnail {
+		width: 80px;
+		height: 120px;
+	}
+}
+
+/* VN Mode Toggle Button - Ensure it's always visible */
+.vn-mode-toggle-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(42, 42, 42, 0.7);
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 5px 10px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+	font-size: 0.9rem;
+	opacity: 0.9; /* Always visible */
+}
+
+.vn-mode-toggle-button:hover {
+	background-color: rgba(60, 60, 60, 0.8);
+	opacity: 1;
+}
+
+.vn-mode-toggle-button.active {
+	background-color: rgba(100, 108, 255, 0.7);
+	opacity: 0.9; /* Always visible */
+}
+
+.vn-mode-toggle-button.active:hover {
+	background-color: rgba(100, 108, 255, 0.9);
+	opacity: 1;
+}
+
+/* Sprite Management in Character Form */
+.sprite-management-section {
+	margin-top: 30px;
+	border-top: 1px solid #34495e;
+	padding-top: 20px;
+}
+
+.sprite-actions-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(0, 0, 0, 0.6);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 10px;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	border-radius: 5px;
+}
+
+.sprite-thumbnail:hover .sprite-actions-overlay {
+	opacity: 1;
+}
+
+.sprite-action-button {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	font-size: 16px;
+	color: white;
+}
+
+.sprite-action-button.replace-button {
+	background-color: #3498db;
+}
+
+.sprite-action-button.delete-button {
+	background-color: #e74c3c;
+}
+
+.sprite-action-button:hover {
+	transform: scale(1.1);
+}
+
+.sprite-item {
+	position: relative;
+	cursor: pointer;
+	transition: transform 0.2s ease;
+}
+
+.sprite-item:hover {
+	transform: translateY(-5px);
+}
+
+/* Make the sprite thumbnails in character form slightly smaller */
+.sprite-management-section .sprite-thumbnail {
+	position: relative;
+	width: 80px;
+	height: 120px;
 }

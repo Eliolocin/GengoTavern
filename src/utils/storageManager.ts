@@ -1,5 +1,6 @@
 import { extractCharacterFromPng, embedCharacterIntoPng } from "./pngMetadata";
-import type { Character } from "../types/interfaces";
+import type { Character, Sprite } from "../types/interfaces";
+import { SUPPORTED_EMOTIONS, type SupportedEmotion } from "./emotionClassifier";
 
 // Define UserPersona interface locally
 interface UserPersona {
@@ -94,6 +95,20 @@ class HandleStorage {
 			request.onsuccess = () => resolve();
 		});
 	}
+}
+
+/**
+ * Reads a file as a data URL
+ * @param file - The file to read
+ * @returns Promise<string> - The file contents as a data URL
+ */
+async function readFileAsDataURL(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = () => reject(reader.error);
+		reader.readAsDataURL(file);
+	});
 }
 
 /**
@@ -297,6 +312,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode?: boolean;
 	}): Promise<void> {
 		if (this.strategy === "filesystem") {
 			await this.saveSettingsToFileSystem(settings);
@@ -312,6 +328,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode: boolean;
 	}> {
 		if (this.strategy === "filesystem") {
 			return await this.loadSettingsFromFileSystem();
@@ -420,6 +437,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode?: boolean;
 	}): Promise<void> {
 		if (!this.rootHandle) throw new Error("No root directory handle");
 
@@ -442,6 +460,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode: boolean;
 	}> {
 		if (!this.rootHandle) return this.getDefaultSettings();
 
@@ -535,6 +554,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode?: boolean;
 	}): Promise<void> {
 		localStorage.setItem(
 			"gengoTavern_file_settings_settings_json",
@@ -549,6 +569,7 @@ export class StorageManager {
 		userPersona: UserPersona;
 		selectedModel: string;
 		temperature: number;
+		visualNovelMode: boolean;
 	}> {
 		try {
 			const data = localStorage.getItem(
@@ -588,6 +609,7 @@ export class StorageManager {
 			},
 			selectedModel: "gemini-2.5-flash",
 			temperature: 1.5,
+			visualNovelMode: false,
 		};
 	}
 
@@ -837,6 +859,486 @@ export class StorageManager {
 		} catch (error) {
 			console.error(`Error deleting background ${filename}:`, error);
 			throw new Error(`Could not delete background: ${filename}`);
+		}
+	}
+
+	/**
+	 * Gets the character directory handle
+	 * @param characterId - The ID of the character
+	 * @returns Promise<FileSystemDirectoryHandle> - The directory handle for the character
+	 */
+	async getCharacterDirHandle(
+		characterId: number,
+	): Promise<FileSystemDirectoryHandle> {
+		if (!this.rootHandle) {
+			throw new Error("No root directory handle available");
+		}
+
+		const charactersDirHandle = await this.rootHandle.getDirectoryHandle(
+			DIRECTORIES.characters,
+			{ create: true },
+		);
+
+		// Create or get the directory for this character
+		return charactersDirHandle.getDirectoryHandle(`character_${characterId}`, {
+			create: true,
+		});
+	}
+
+	/**
+	 * Gets the sprites directory handle for a character
+	 * @param characterId - The ID of the character
+	 * @returns Promise<FileSystemDirectoryHandle> - The directory handle for the character's sprites
+	 */
+	async getCharacterSpritesDirHandle(
+		characterId: number,
+	): Promise<FileSystemDirectoryHandle> {
+		// Get the character directory
+		const characterDirHandle = await this.getCharacterDirHandle(characterId);
+
+		// Try to get the sprites directory, create if it doesn't exist
+		let spritesDirHandle: FileSystemDirectoryHandle;
+		try {
+			spritesDirHandle = await characterDirHandle.getDirectoryHandle(
+				"sprites",
+				{
+					create: true,
+				},
+			);
+		} catch (error: unknown) {
+			console.error("Failed to get sprites directory:", error);
+			throw new Error("Failed to access sprites directory");
+		}
+
+		return spritesDirHandle;
+	}
+
+	/**
+	 * Gets the character name-based sprites directory handle
+	 * @param characterName - The name of the character
+	 * @returns Promise<FileSystemDirectoryHandle> - The directory handle for the character's sprites
+	 */
+	async getCharacterNamedSpritesDirHandle(
+		characterName: string,
+	): Promise<FileSystemDirectoryHandle> {
+		if (!this.rootHandle) {
+			throw new Error("No root directory handle available");
+		}
+
+		// Sanitize character name for safe directory naming
+		const sanitizedName = this.sanitizeFilename(characterName);
+
+		// Get or create the characters directory
+		const charactersDirHandle = await this.rootHandle.getDirectoryHandle(
+			DIRECTORIES.characters,
+			{ create: true },
+		);
+
+		// Create or get the directory for this character by name
+		let characterDirHandle: FileSystemDirectoryHandle;
+		try {
+			characterDirHandle = await charactersDirHandle.getDirectoryHandle(
+				sanitizedName,
+				{
+					create: true,
+				},
+			);
+		} catch (error: unknown) {
+			console.error(
+				`Failed to get character directory for ${characterName}:`,
+				error,
+			);
+			throw new Error(
+				`Failed to access character directory for ${characterName}`,
+			);
+		}
+
+		// Create or get the sprites directory
+		let spritesDirHandle: FileSystemDirectoryHandle;
+		try {
+			spritesDirHandle = await characterDirHandle.getDirectoryHandle(
+				"sprites",
+				{
+					create: true,
+				},
+			);
+		} catch (error: unknown) {
+			console.error(
+				`Failed to get sprites directory for ${characterName}:`,
+				error,
+			);
+			throw new Error(
+				`Failed to access sprites directory for ${characterName}`,
+			);
+		}
+
+		return spritesDirHandle;
+	}
+
+	/**
+	 * Saves a sprite image for a character
+	 * @param characterId - The ID of the character
+	 * @param filename - The filename to save the sprite as
+	 * @param imageData - The image data as a base64 string
+	 * @returns Promise<void>
+	 */
+	async saveSprite(
+		characterId: number,
+		filename: string,
+		imageData: string,
+	): Promise<void> {
+		if (this.strategy === "filesystem") {
+			try {
+				// Find character name from ID
+				const characters = await this.loadAllCharacters();
+				const character = characters.find((c) => c.id === characterId);
+
+				if (!character) {
+					throw new Error(`Character with ID ${characterId} not found`);
+				}
+
+				// Get the sprites directory using character name
+				const spritesDirHandle = await this.getCharacterNamedSpritesDirHandle(
+					character.name,
+				);
+
+				// Convert base64 to blob
+				const base64Data = imageData.split(",")[1];
+				const blob = await (
+					await fetch(`data:image/png;base64,${base64Data}`)
+				).blob();
+
+				// Save the file
+				const fileHandle = await spritesDirHandle.getFileHandle(filename, {
+					create: true,
+				});
+				const writable = await fileHandle.createWritable();
+				await writable.write(blob);
+				await writable.close();
+
+				console.log(`✅ Sprite saved: ${character.name}/sprites/${filename}`);
+			} catch (error: unknown) {
+				console.error("Failed to save sprite:", error);
+				throw new Error("Failed to save sprite");
+			}
+		} else {
+			// LocalStorage fallback
+			try {
+				// Create a key for the sprite
+				const key = `character_${characterId}_sprite_${filename}`;
+				localStorage.setItem(key, imageData);
+			} catch (error: unknown) {
+				console.error("Failed to save sprite to localStorage:", error);
+				throw new Error("Failed to save sprite to localStorage");
+			}
+		}
+	}
+
+	/**
+	 * Loads a sprite image as a URL
+	 * @param characterId - The ID of the character
+	 * @param filename - The filename of the sprite
+	 * @returns Promise<string> - The sprite image as a data URL
+	 */
+	async loadSpriteAsUrl(
+		characterId: number,
+		filename: string,
+	): Promise<string> {
+		if (this.strategy === "filesystem") {
+			try {
+				// Find character name from ID
+				const characters = await this.loadAllCharacters();
+				const character = characters.find((c) => c.id === characterId);
+
+				if (!character) {
+					throw new Error(`Character with ID ${characterId} not found`);
+				}
+
+				// Try to get the sprites directory using character name
+				const spritesDirHandle = await this.getCharacterNamedSpritesDirHandle(
+					character.name,
+				);
+
+				// Get the file
+				const fileHandle = await spritesDirHandle.getFileHandle(filename);
+				const file = await fileHandle.getFile();
+
+				// Read the file as data URL
+				return await readFileAsDataURL(file);
+			} catch (error: unknown) {
+				console.error("Failed to load sprite:", error);
+
+				// Fallback to the old ID-based path if name-based fails
+				try {
+					const spritesDirHandle =
+						await this.getCharacterSpritesDirHandle(characterId);
+					const fileHandle = await spritesDirHandle.getFileHandle(filename);
+					const file = await fileHandle.getFile();
+					return await readFileAsDataURL(file);
+				} catch (fallbackError) {
+					console.error("Fallback sprite loading also failed:", fallbackError);
+					throw new Error("Failed to load sprite");
+				}
+			}
+		} else {
+			// LocalStorage fallback
+			const key = `character_${characterId}_sprite_${filename}`;
+			const imageData = localStorage.getItem(key);
+			if (!imageData) {
+				throw new Error("Sprite not found in localStorage");
+			}
+			return imageData;
+		}
+	}
+
+	/**
+	 * Deletes a sprite image
+	 * @param characterId - The ID of the character
+	 * @param filename - The filename of the sprite to delete
+	 * @returns Promise<void>
+	 */
+	async deleteSprite(characterId: number, filename: string): Promise<void> {
+		if (this.strategy === "filesystem") {
+			try {
+				// Find character name from ID
+				const characters = await this.loadAllCharacters();
+				const character = characters.find((c) => c.id === characterId);
+
+				if (!character) {
+					throw new Error(`Character with ID ${characterId} not found`);
+				}
+
+				// Get the sprites directory using character name
+				const spritesDirHandle = await this.getCharacterNamedSpritesDirHandle(
+					character.name,
+				);
+
+				// Delete the file
+				await spritesDirHandle.removeEntry(filename);
+				console.log(`✅ Sprite deleted: ${character.name}/sprites/${filename}`);
+			} catch (error: unknown) {
+				console.error("Failed to delete sprite:", error);
+
+				// Fallback to the old ID-based path if name-based fails
+				try {
+					const spritesDirHandle =
+						await this.getCharacterSpritesDirHandle(characterId);
+					await spritesDirHandle.removeEntry(filename);
+				} catch (fallbackError) {
+					console.error("Fallback sprite deletion also failed:", fallbackError);
+					throw new Error("Failed to delete sprite");
+				}
+			}
+		} else {
+			// LocalStorage fallback
+			const key = `character_${characterId}_sprite_${filename}`;
+			localStorage.removeItem(key);
+		}
+	}
+
+	/**
+	 * Migrates sprites from the old ID-based directory structure to the new name-based structure
+	 * @param character - The character whose sprites need to be migrated
+	 * @returns Promise<void>
+	 */
+	async migrateSpriteDirectories(character: Character): Promise<void> {
+		if (
+			this.strategy !== "filesystem" ||
+			!character.sprites ||
+			character.sprites.length === 0
+		) {
+			return;
+		}
+
+		try {
+			console.log(`🔄 Migrating sprites for character: ${character.name}`);
+
+			// Get the old sprites directory (ID-based)
+			let oldSpritesDirHandle: FileSystemDirectoryHandle;
+			try {
+				oldSpritesDirHandle = await this.getCharacterSpritesDirHandle(
+					character.id,
+				);
+			} catch (error) {
+				console.log(
+					`No old sprites directory found for ${character.name}, skipping migration`,
+				);
+				return;
+			}
+
+			// Get the new sprites directory (name-based)
+			const newSpritesDirHandle = await this.getCharacterNamedSpritesDirHandle(
+				character.name,
+			);
+
+			// Migrate each sprite
+			for (const sprite of character.sprites) {
+				try {
+					// Get the file from old location
+					const oldFileHandle = await oldSpritesDirHandle.getFileHandle(
+						sprite.filename,
+					);
+					const file = await oldFileHandle.getFile();
+
+					// Read the file content
+					const fileContent = await file.arrayBuffer();
+
+					// Create the new filename (emotion.png)
+					const newFilename = `${sprite.emotion}.png`;
+
+					// Save to new location
+					const newFileHandle = await newSpritesDirHandle.getFileHandle(
+						newFilename,
+						{ create: true },
+					);
+					const writable = await newFileHandle.createWritable();
+					await writable.write(fileContent);
+					await writable.close();
+
+					// Update the sprite filename in the character object
+					sprite.filename = newFilename;
+
+					console.log(
+						`✅ Migrated sprite: ${sprite.emotion} for ${character.name}`,
+					);
+				} catch (error) {
+					console.error(`Failed to migrate sprite ${sprite.filename}:`, error);
+				}
+			}
+
+			// Save the character with updated sprite filenames
+			await this.saveCharacter(character);
+
+			console.log(`✅ Sprite migration completed for ${character.name}`);
+		} catch (error) {
+			console.error(`Error migrating sprites for ${character.name}:`, error);
+		}
+	}
+
+	/**
+	 * Migrates all characters' sprites from ID-based to name-based directories
+	 * @returns Promise<void>
+	 */
+	async migrateAllSprites(): Promise<void> {
+		if (this.strategy !== "filesystem") {
+			return;
+		}
+
+		try {
+			console.log("🔄 Starting sprite migration for all characters");
+			const characters = await this.loadAllCharacters();
+
+			for (const character of characters) {
+				await this.migrateSpriteDirectories(character);
+			}
+
+			console.log("✅ Sprite migration completed for all characters");
+		} catch (error) {
+			console.error("Error during sprite migration:", error);
+		}
+	}
+
+	/**
+	 * Scans a character's sprites directory and updates the character's sprites array
+	 * @param character - The character to scan sprites for
+	 * @returns Promise<Sprite[]> - The updated sprites array
+	 */
+	async scanAndUpdateCharacterSprites(character: Character): Promise<Sprite[]> {
+		if (this.strategy !== "filesystem" || !this.rootHandle) {
+			// For localStorage, we just return the existing sprites
+			return character.sprites || [];
+		}
+
+		try {
+			// Get the character directory by name
+			const sanitizedName = this.sanitizeFilename(character.name);
+			const charactersDirHandle = await this.rootHandle.getDirectoryHandle(
+				DIRECTORIES.characters,
+				{ create: false },
+			);
+
+			// Try to get the character directory
+			let characterDirHandle: FileSystemDirectoryHandle;
+			try {
+				characterDirHandle = await charactersDirHandle.getDirectoryHandle(
+					sanitizedName,
+					{ create: false },
+				);
+			} catch (error) {
+				console.log(
+					`No directory found for character ${character.name}, using existing sprites`,
+				);
+				return character.sprites || [];
+			}
+
+			// Try to get the sprites directory
+			let spritesDirHandle: FileSystemDirectoryHandle;
+			try {
+				spritesDirHandle = await characterDirHandle.getDirectoryHandle(
+					"sprites",
+					{ create: false },
+				);
+			} catch (error) {
+				console.log(
+					`No sprites directory found for character ${character.name}`,
+				);
+				return character.sprites || [];
+			}
+
+			// Scan for sprite files
+			const sprites: Sprite[] = [];
+			const emotionMap = new Map<string, boolean>();
+
+			// First, build a map of supported emotions for quick lookup
+			SUPPORTED_EMOTIONS.forEach((emotion) => {
+				emotionMap.set(emotion, true);
+			});
+
+			// Scan the directory for sprite files
+			try {
+				// @ts-ignore - entries() is not yet in TypeScript types
+				for await (const [filename, fileHandle] of spritesDirHandle.entries()) {
+					if (
+						fileHandle.kind === "file" &&
+						filename.toLowerCase().endsWith(".png")
+					) {
+						// Extract emotion from filename (remove .png extension)
+						const emotion = filename.toLowerCase().replace(/\.png$/i, "");
+
+						// Check if this is a supported emotion
+						if (emotionMap.has(emotion)) {
+							sprites.push({
+								emotion: emotion as SupportedEmotion,
+								filename: filename,
+							});
+							console.log(`Found sprite for emotion ${emotion}: ${filename}`);
+						}
+					}
+				}
+
+				// Update the character's sprites array if we found any
+				if (sprites.length > 0) {
+					console.log(
+						`Found ${sprites.length} sprites for character ${character.name}`,
+					);
+
+					// Save the updated character
+					const updatedCharacter = { ...character, sprites };
+					await this.saveCharacter(updatedCharacter);
+
+					return sprites;
+				}
+			} catch (error) {
+				console.error(
+					`Error scanning sprites directory for ${character.name}:`,
+					error,
+				);
+			}
+
+			return character.sprites || [];
+		} catch (error) {
+			console.error(`Error scanning sprites for ${character.name}:`, error);
+			return character.sprites || [];
 		}
 	}
 }
