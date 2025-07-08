@@ -138,10 +138,11 @@ const CharacterForm: FC<CharacterFormProps> = ({
 						);
 						urls[sprite.emotion] = url;
 					} catch (error) {
-						console.error(
+						console.warn(
 							`Failed to load sprite for ${sprite.emotion}:`,
-							error,
+							error.message || error,
 						);
+						// Continue loading other sprites even if one fails
 					}
 				}
 

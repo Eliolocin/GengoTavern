@@ -14,14 +14,13 @@ export type SupportedEmotion = (typeof SUPPORTED_EMOTIONS)[number];
 
 /**
  * Maps the model's LABEL outputs to our supported emotions
- * tabularisai/multilingual-sentiment-analysis returns LABEL_0 to LABEL_4
  */
 const LABEL_TO_EMOTION_MAP: Record<string, SupportedEmotion> = {
-	"LABEL_0": "very_negative",
-	"LABEL_1": "negative",
-	"LABEL_2": "neutral",
-	"LABEL_3": "positive",
-	"LABEL_4": "very_positive",
+	"Very Negative": "very_negative",
+	"Negative": "negative",
+	"Neutral": "neutral",
+	"Positive": "positive",
+	"Very Positive": "very_positive",
 };
 
 /**
@@ -180,7 +179,20 @@ class EmotionClassifier {
 			const detectedLabel = topResult.label;
 
 			// 7. Map the label to our supported emotions
-			const mappedEmotion = LABEL_TO_EMOTION_MAP[detectedLabel];
+			let mappedEmotion = LABEL_TO_EMOTION_MAP[detectedLabel];
+			
+			// Handle different label formats that might be returned by the model
+			if (!mappedEmotion) {
+				// Try with "LABEL_" prefix if it's just a number
+				if (/^\d+$/.test(detectedLabel)) {
+					mappedEmotion = LABEL_TO_EMOTION_MAP[`LABEL_${detectedLabel}`];
+				}
+				// Try without "LABEL_" prefix if it has one
+				else if (detectedLabel.startsWith("LABEL_")) {
+					const numberOnly = detectedLabel.replace("LABEL_", "");
+					mappedEmotion = LABEL_TO_EMOTION_MAP[`LABEL_${numberOnly}`];
+				}
+			}
 
 			if (mappedEmotion) {
 				console.log(
@@ -213,14 +225,22 @@ class EmotionClassifier {
 	 */
 	public async testApiKey(apiKey: string): Promise<boolean> {
 		if (!apiKey || typeof apiKey !== "string" || apiKey.trim().length === 0) {
+			console.log("🔍 API Key test: Empty or invalid key provided");
 			return false;
 		}
 
 		try {
+			console.log("🔍 Testing API key with sentiment analysis...");
 			// Use a simple test text to verify the API key
 			const result = await this.classify("This is a test message", apiKey);
-			return result !== null;
-		} catch {
+			const isValid = result !== null;
+			console.log(`🔍 API Key test result: ${isValid ? "✅ Valid" : "❌ Invalid"}`);
+			if (result) {
+				console.log(`🔍 Test returned sentiment: ${result}`);
+			}
+			return isValid;
+		} catch (error) {
+			console.error("🔍 API Key test failed with error:", error);
 			return false;
 		}
 	}

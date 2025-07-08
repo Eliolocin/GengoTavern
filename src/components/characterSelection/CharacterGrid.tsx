@@ -4,7 +4,7 @@ import type { Character } from '../../types/interfaces';
 
 interface CharacterGridProps {
   onNewCharacter: () => void;
-  onSelectCharacter: (character: Character) => void;
+  onSelectCharacter: (id: number) => void;
   characters: Character[];
   selectedCharacterId?: number;
 }
@@ -22,7 +22,7 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
         <CharacterTile
           key={character.id}
           character={character}
-          onClick={() => onSelectCharacter(character)}
+          onClick={() => onSelectCharacter(character.id)}
           isSelected={character.id === selectedCharacterId}
         />
       ))}

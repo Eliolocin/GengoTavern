@@ -28,6 +28,7 @@ interface CharacterContextType {
 	) => Promise<void>;
 	deleteCharacter: (id: number) => Promise<boolean>;
 	saveCharacter: (character: Character) => Promise<void>;
+	addGeneratedCharacter: (character: Character) => Promise<void>;
 	importCharacter: () => Promise<Character | null>;
 	exportCharacterAsPng: (character: Character) => Promise<void>;
 	exportCharacterAsJson: (character: Character) => Promise<void>;
@@ -382,6 +383,35 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 		}
 	}, [characters, saveCharacterInternal]);
 
+	// Add a generated character (follows importCharacter pattern but for generated characters)
+	const addGeneratedCharacter = useCallback(async (character: Character) => {
+		try {
+			// Add to characters list (same as importCharacter)
+			const exists = characters.some((c) => c.id === character.id);
+
+			if (exists) {
+				// Update existing character
+				const newCharacters = characters.map((c) =>
+					c.id === character.id ? character : c,
+				);
+				setCharacters(newCharacters);
+			} else {
+				// Add new character
+				setCharacters([...characters, character]);
+			}
+
+			// Select the character
+			setSelectedCharacter(character);
+
+			// Save the generated character to storage
+			await saveCharacterInternal(character);
+
+		} catch (err) {
+			console.error("Error adding generated character:", err);
+			setError(`Failed to add generated character: ${err}`);
+		}
+	}, [characters, saveCharacterInternal]);
+
 	const value = {
 		characters,
 		selectedCharacter,
@@ -392,6 +422,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 		updateCharacter,
 		deleteCharacter,
 		saveCharacter,
+		addGeneratedCharacter,
 		importCharacter,
 		exportCharacterAsPng,
 		exportCharacterAsJson,
