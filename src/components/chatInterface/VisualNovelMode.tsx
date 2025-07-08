@@ -99,8 +99,8 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 					}
 				}
 
-				// If no emotion-specific sprite found, try to find a positive sprite as default
-				const positiveSprite = sprites.find((s) => s.emotion === "positive");
+				// If no emotion-specific sprite found, try to find a neutral sprite as default
+				const positiveSprite = sprites.find((s) => s.emotion === "neutral");
 				if (positiveSprite) {
 					const url = await storageManager.loadSpriteAsUrl(
 						character.id,

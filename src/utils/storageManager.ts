@@ -392,9 +392,19 @@ export class StorageManager {
 						const file = await (handle as FileSystemFileHandle).getFile();
 						const character = await extractCharacterFromPng(file);
 						character.originalFilename = name;
-						characters.push(character);
+						
+						// Validate character data
+						if (!character.id || !character.name) {
+							console.warn(`Invalid character data in ${name} - missing required fields`);
+							continue;
+						}
+						
+						// Clean up any orphaned sprite references
+						const cleanedCharacter = this.cleanOrphanedSprites(character);
+						characters.push(cleanedCharacter);
 					} catch (error) {
-						console.warn(`Error loading character ${name}:`, error);
+						console.warn(`Error loading character ${name}:`, error.message || error);
+						// Continue with other characters
 					}
 				}
 			}
@@ -1051,6 +1061,7 @@ export class StorageManager {
 				const character = characters.find((c) => c.id === characterId);
 
 				if (!character) {
+					console.warn(`Character with ID ${characterId} not found - this sprite may be orphaned`);
 					throw new Error(`Character with ID ${characterId} not found`);
 				}
 
@@ -1236,6 +1247,21 @@ export class StorageManager {
 		} catch (error) {
 			console.error("Error during sprite migration:", error);
 		}
+	}
+
+	/**
+	 * Cleans up orphaned sprite references in a character
+	 * @param character - The character to clean up
+	 * @returns Character with cleaned sprite references
+	 */
+	cleanOrphanedSprites(character: Character): Character {
+		if (!character.sprites || character.sprites.length === 0) {
+			return character;
+		}
+
+		// For now, just return the character as-is
+		// In the future, we could add more sophisticated cleanup logic here
+		return character;
 	}
 
 	/**

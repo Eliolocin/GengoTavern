@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "../styles/App.css";
 
-import type { Message, Chat } from "../types/interfaces";
+import type { Message, Chat, Character } from "../types/interfaces";
 // Import our new utilities
 import { buildPrompt } from "../utils/promptBuilder";
 import { callGeminiAPI, sanitizeResponse } from "../utils/geminiAPI";
@@ -20,6 +20,9 @@ import {
 import { AppProvider, useAppContext } from "../contexts/AppContext";
 import HelpModal from "../components/shared/HelpModal";
 import FileSystemSetupModal from "../components/shared/FileSystemSetupModal";
+import NewCharacterModal from "../components/shared/NewCharacterModal";
+import ImageToTextModal from "../components/shared/ImageToTextModal";
+import type { GeneratedCharacterData } from "../components/shared/ImageToTextModal";
 import StorageIndicator from "../components/shared/StorageIndicator";
 import { storageManager } from "../utils/storageManager";
 
@@ -47,6 +50,8 @@ const AppContent: React.FC = () => {
 		selectCharacter,
 		updateCharacter,
 		deleteCharacter,
+		saveCharacter,
+		addGeneratedCharacter,
 		importCharacter,
 	} = useCharacters();
 	const {
@@ -71,6 +76,8 @@ const AppContent: React.FC = () => {
 	const [localError, setLocalError] = useState<string | null>(null);
 	const [activeChat, setActiveChat] = useState<Chat | null>(null);
 	const [showHelpModal, setShowHelpModal] = useState<boolean>(true); // Default to true to show at startup
+	const [showNewCharacterModal, setShowNewCharacterModal] = useState<boolean>(false);
+	const [showImageToTextModal, setShowImageToTextModal] = useState<boolean>(false);
 	const [isMobile, setIsMobile] = useState<boolean>(false);
 	const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
 
@@ -912,6 +919,82 @@ const AppContent: React.FC = () => {
 		updateCharacter(selectedCharacter.id, field, value, true);
 	};
 
+	/**
+	 * 1. Open the new character modal instead of directly creating a character
+	 */
+	const handleOpenNewCharacterModal = () => {
+		setShowNewCharacterModal(true);
+	};
+
+	/**
+	 * 2. Close the new character modal
+	 */
+	const handleCloseNewCharacterModal = () => {
+		setShowNewCharacterModal(false);
+	};
+
+	/**
+	 * 3. Handle creating an empty character (current behavior)
+	 */
+	const handleCreateEmptyCharacter = async () => {
+		setShowNewCharacterModal(false);
+		await createNewCharacter();
+	};
+
+	/**
+	 * 4. Handle creating character from image - open the ImageToTextModal
+	 */
+	const handleCreateFromImage = () => {
+		setShowNewCharacterModal(false);
+		setShowImageToTextModal(true);
+	};
+
+	/**
+	 * 5. Handle creating group chat (placeholder for now)
+	 */
+	const handleCreateGroupChat = () => {
+		setShowNewCharacterModal(false);
+		// TODO: Implement group chat creation
+		alert("Group Chat feature coming soon! This will allow you to create chats with multiple characters.");
+	};
+
+	/**
+	 * 6. Handle closing the ImageToTextModal
+	 */
+	const handleCloseImageToTextModal = () => {
+		setShowImageToTextModal(false);
+	};
+
+	/**
+	 * 7. Handle accepting the generated character from ImageToTextModal
+	 * @param characterData - The generated character data
+	 */
+	const handleAcceptGeneratedCharacter = async (characterData: GeneratedCharacterData) => {
+		try {
+			// 1. Create character object with all the generated data
+			const newCharacter: Character = {
+				id: Date.now(),
+				name: characterData.name, // Use the generated name immediately
+				image: characterData.image,
+				description: characterData.description,
+				defaultGreeting: characterData.defaultGreeting,
+				defaultScenario: characterData.defaultScenario,
+				sampleDialogues: characterData.sampleDialogues,
+				chats: [], // Start with no chats
+			};
+
+			// 2. Use the new addGeneratedCharacter function (follows importCharacter pattern)
+			// This will add to characters array, select it, and save to storage all at once
+			await addGeneratedCharacter(newCharacter);
+
+			console.log('✅ Generated character created successfully:', characterData.name);
+
+		} catch (error) {
+			console.error('Failed to create generated character:', error);
+			setLocalError(`Failed to create character: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
+	};
+
 	// Get the current background from the active chat
 	const currentBackgroundFilename =
 		activeChat?.background || selectedCharacter?.defaultBackground;
@@ -1073,9 +1156,9 @@ const AppContent: React.FC = () => {
 				</div>
 				<CharacterGrid
 					characters={characters}
-					selectedCharacter={selectedCharacter}
-					onSelectCharacter={handleSelectChat}
-					onDeleteCharacter={handleDeleteChat}
+					selectedCharacterId={selectedCharacter?.id}
+					onSelectCharacter={selectCharacter}
+					onNewCharacter={handleOpenNewCharacterModal}
 				/>
 				<StorageIndicator />
 			</SidePanel>
@@ -1171,6 +1254,22 @@ const AppContent: React.FC = () => {
 						sessionStorage.setItem("hasSkippedFSAccess", "true");
 						closeSetupModal();
 					}}
+				/>
+			)}
+			{showNewCharacterModal && (
+				<NewCharacterModal
+					isOpen={showNewCharacterModal}
+					onClose={handleCloseNewCharacterModal}
+					onCreateEmpty={handleCreateEmptyCharacter}
+					onCreateFromImage={handleCreateFromImage}
+					onCreateGroupChat={handleCreateGroupChat}
+				/>
+			)}
+			{showImageToTextModal && (
+				<ImageToTextModal
+					isOpen={showImageToTextModal}
+					onClose={handleCloseImageToTextModal}
+					onAccept={handleAcceptGeneratedCharacter}
 				/>
 			)}
 		</div>
