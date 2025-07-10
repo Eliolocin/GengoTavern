@@ -18,6 +18,7 @@ interface ChatMessagesProps {
 	onDeleteErrorMessage?: (messageId: number) => void;
 	onEditMessage?: (messageId: number, newText: string) => void;
 	onDeleteMessage?: (messageId: number) => void;
+	allCharacters?: Character[]; // Add this to look up individual character info
 }
 
 const ChatMessages: FC<ChatMessagesProps> = ({
@@ -30,6 +31,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 	onDeleteErrorMessage,
 	onEditMessage,
 	onDeleteMessage,
+	allCharacters = [],
 }) => {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const prevMessagesLengthRef = useRef<number>(0);
@@ -40,6 +42,25 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 
 	const characterImage = character?.image;
 	const characterName = character?.name || "Character";
+
+	// Helper function to get character info for group chat messages
+	const getCharacterInfo = (message: Message) => {
+		if (message.sender === 'character' && message.speakerId && allCharacters.length > 0) {
+			// This is a group chat message, find the specific character
+			const messageCharacter = allCharacters.find(char => char.id === message.speakerId);
+			if (messageCharacter) {
+				return {
+					name: messageCharacter.name,
+					image: messageCharacter.image
+				};
+			}
+		}
+		// Fall back to the main character (individual chat or group chat fallback)
+		return {
+			name: characterName,
+			image: characterImage
+		};
+	};
 
 	// Scroll to bottom helper function
 	const scrollToBottom = useCallback(() => {
@@ -163,6 +184,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 					onStartEditing={handleStartEditing}
 					onStartDeleting={handleStartDeleting}
 					lastCharacterMessageId={lastCharacterMessageId}
+					allCharacters={allCharacters}
 				/>
 
 				{/* Modals still need to be available in VN mode */}
@@ -257,23 +279,24 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 					}
 
 					// Regular user/character message rendering
+					const charInfo = getCharacterInfo(message);
 					return (
 						<div
 							key={message.id}
 							className={`message ${message.sender === "user" ? "user-message" : "character-message"}`}
 						>
-							{message.sender === "character" && characterImage && (
+							{message.sender === "character" && charInfo.image && (
 								<div className="character-avatar-container">
 									<img
-										src={characterImage}
-										alt="Character"
+										src={charInfo.image}
+										alt={charInfo.name}
 										className="message-avatar"
 									/>
 								</div>
 							)}
 							<div className="message-content">
 								<div className="message-sender">
-									{message.sender === "user" ? userPersona.name : characterName}
+									{message.sender === "user" ? userPersona.name : charInfo.name}
 								</div>
 								<div className="message-text">
 									{message.isGenerating ? (
@@ -282,10 +305,10 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 										<MarkdownRenderer
 											content={
 												// Replace any remaining placeholders in message text
-												characterName && userPersona
+												charInfo.name && userPersona
 													? replaceNamePlaceholders(
 															message.text,
-															characterName,
+															charInfo.name,
 															userPersona.name,
 														)
 													: message.text

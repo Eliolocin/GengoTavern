@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import "../styles/App.css";
 
-import type { Message, Chat, Character } from "../types/interfaces";
+import type { Message, Chat, Character, GroupMember, GroupGreeting } from "../types/interfaces";
 // Import our new utilities
 import { buildPrompt } from "../utils/promptBuilder";
 import { callGeminiAPI, sanitizeResponse } from "../utils/geminiAPI";
 import { emotionClassifier } from "../utils/emotionClassifier";
+import { createGroupChat, isGroupChat, calculateResponseQueue, getLastSpeaker } from "../utils/groupChatUtils";
+import { generateGroupChatImage, generateFallbackGroupImage } from "../utils/compositeImageGenerator";
 import SidePanel from "../components/layout/SidePanel";
 import CharacterGrid from "../components/characterSelection/CharacterGrid";
 import ChatHeader from "../components/chatInterface/ChatHeader";
 import ChatMessages from "../components/chatInterface/ChatMessages";
 import ChatInput from "../components/chatInterface/ChatInput";
 import CharacterForm from "../components/characterCustomization/CharacterForm";
+import GroupChatConfig from "../components/characterCustomization/GroupChatConfig";
 import { CharacterProvider, useCharacters } from "../contexts/CharacterContext";
 import {
 	UserSettingsProvider,
@@ -23,6 +26,7 @@ import FileSystemSetupModal from "../components/shared/FileSystemSetupModal";
 import NewCharacterModal from "../components/shared/NewCharacterModal";
 import ImageToTextModal from "../components/shared/ImageToTextModal";
 import type { GeneratedCharacterData } from "../components/shared/ImageToTextModal";
+import GroupChatCreationModal from "../components/shared/GroupChatCreationModal";
 import StorageIndicator from "../components/shared/StorageIndicator";
 import { storageManager } from "../utils/storageManager";
 
@@ -78,8 +82,18 @@ const AppContent: React.FC = () => {
 	const [showHelpModal, setShowHelpModal] = useState<boolean>(true); // Default to true to show at startup
 	const [showNewCharacterModal, setShowNewCharacterModal] = useState<boolean>(false);
 	const [showImageToTextModal, setShowImageToTextModal] = useState<boolean>(false);
+	const [showGroupChatCreationModal, setShowGroupChatCreationModal] = useState<boolean>(false);
 	const [isMobile, setIsMobile] = useState<boolean>(false);
 	const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+	
+	// Group chat response queue state
+	const [responseQueue, setResponseQueue] = useState<number[]>([]);
+	const [isProcessingQueue, setIsProcessingQueue] = useState<boolean>(false);
+	const [currentlyTypingCharacter, setCurrentlyTypingCharacter] = useState<number | null>(null);
+	const [shouldStopQueue, setShouldStopQueue] = useState<boolean>(false);
+	
+	// Use a ref to track stop state for immediate access in async operations
+	const stopQueueRef = useRef<boolean>(false);
 
 	// Use ref to track background URL for cleanup without triggering re-renders
 	const backgroundUrlRef = useRef<string | null>(null);
@@ -241,6 +255,90 @@ const AppContent: React.FC = () => {
 		}
 	};
 
+	const handleNewGroupChat = async (
+		chatName: string,
+		scenario: string,
+		greetings: GroupGreeting[],
+		background: string,
+	) => {
+		if (!selectedCharacter || !isGroupChat(selectedCharacter)) return;
+
+		try {
+			const newChatId = Date.now();
+			const messages: Message[] = [];
+
+			// Add system message with scenario if provided
+			if (scenario) {
+				messages.push({
+					id: Date.now(),
+					text: scenario,
+					sender: "system",
+					timestamp: Date.now(),
+				});
+			}
+
+			// Add greeting messages from each character in display order
+			let messageIdCounter = Date.now() + 1;
+			for (const greeting of greetings) {
+				// Find the character for this greeting
+				const character = characters.find(c => c.id === greeting.characterId);
+				if (!character) continue;
+
+				// Classify emotion for greeting if HF API key is available
+				const greetingEmotion = huggingFaceApiKey
+					? await emotionClassifier.classify(greeting.greeting, huggingFaceApiKey)
+					: null;
+
+				console.log(
+					`Group chat greeting emotion (${character.name}): ${greetingEmotion || "not classified (HF API key not set)"}`,
+				);
+
+				messages.push({
+					id: messageIdCounter++,
+					text: greeting.greeting,
+					sender: "character",
+					timestamp: Date.now() + messageIdCounter,
+					emotion: greetingEmotion || undefined,
+					speakerId: greeting.characterId,
+					speakerName: character.name,
+				});
+			}
+
+			// Mark all existing chats as not active
+			const updatedChats = selectedCharacter.chats.map((chat) => ({
+				...chat,
+				isActive: false,
+			}));
+
+			// Create new chat with isActive flag and group greetings
+			const newChat: Chat = {
+				id: newChatId,
+				name: chatName,
+				scenario: scenario,
+				background: background,
+				messages: messages,
+				lastActivity: Date.now(),
+				isActive: true, // Mark as active
+				groupGreetings: greetings, // Store the split greetings for future reference
+			};
+
+			const updatedCharacter = {
+				...selectedCharacter,
+				chats: [...updatedChats, newChat], // Add to existing chats
+			};
+
+			// Update character with new chats array
+			updateCharacter(selectedCharacter.id, "chats", updatedCharacter.chats);
+
+			// Make sure the new chat is active locally too
+			setActiveChatId(newChatId);
+			setActiveChat(newChat);
+			setActiveMessages(messages);
+		} catch (err) {
+			setLocalError(`Failed to create new group chat: ${err}`);
+		}
+	};
+
 	const handleEditChat = (
 		chatId: number,
 		chatName: string,
@@ -308,6 +406,26 @@ const AppContent: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Force a specific character to respond in a group chat
+	 */
+	const handleForceResponse = async (characterId: number) => {
+		if (!selectedCharacter || !isGroupChat(selectedCharacter) || activeChatId === null) return;
+		
+		// Don't allow force response if already processing
+		if (isProcessingQueue) return;
+		
+		// Find the character
+		const character = characters.find(c => c.id === characterId);
+		if (!character) return;
+		
+		// Create a simple queue with just this character
+		const forceQueue = [characterId];
+		
+		// Process the forced response
+		await processResponseQueue(forceQueue, "Force Response", activeMessages);
+	};
+
 	const handleDeleteChat = (chatId: number) => {
 		if (!selectedCharacter) return;
 
@@ -366,61 +484,137 @@ const AppContent: React.FC = () => {
 		}
 	};
 
-	const handleSendMessage = async (text: string) => {
-		if (!selectedCharacter || activeChatId === null) return;
+	/**
+	 * Process a queue of character responses for group chats
+	 * Each character responds sequentially with typing indicators
+	 */
+	const processResponseQueue = async (queue: number[], _userMessage: string, currentMessages?: Message[]) => {
+		if (!selectedCharacter || !isGroupChat(selectedCharacter) || activeChatId === null) return;
+		
+		console.log(`Starting processResponseQueue with queue: [${queue.join(', ')}]`);
+		console.log(`shouldStopQueue at start: ${shouldStopQueue}`);
+		console.log(`stopQueueRef.current at start: ${stopQueueRef.current}`);
+		
+		setIsProcessingQueue(true);
+		// Don't reset shouldStopQueue here - preserve user's stop request
+		
+		// Create a copy of the queue to avoid modifying the original
+		const processQueue = [...queue];
+		setResponseQueue(processQueue);
 
-		const newMessage: Message = {
-			id: Date.now(),
-			text,
-			sender: "user",
-			timestamp: Date.now(),
-		};
-
-		const updatedMessages = [...activeMessages, newMessage];
-
-		// First update local state
-		setActiveMessages(updatedMessages);
-
-		// Then update in character state but keep current active chat
-		// We need to wait for the chat messages to be updated properly
-		await updateChatMessagesAsync(updatedMessages, false);
-
-		// Add a loading/generating message
-		const generatingMsgId = Date.now() + 1;
-		const generatingMessage: Message = {
-			id: generatingMsgId,
-			text: "...",
-			sender: "character",
-			timestamp: Date.now() + 1,
-			isGenerating: true,
-		};
-
-		const messagesWithGenerating = [...updatedMessages, generatingMessage];
-		setActiveMessages(messagesWithGenerating);
+		// Keep track of the most current messages as we process the queue
+		let workingMessages = currentMessages || activeMessages;
 
 		try {
-			// Find the active chat AFTER it's been updated
-			const activeChat = selectedCharacter.chats.find(
-				(chat) => chat.id === activeChatId,
-			);
-			if (!activeChat) throw new Error("Chat not found");
+			for (let i = 0; i < processQueue.length; i++) {
+				// Check if user requested to stop the queue BEFORE starting next character
+				if (stopQueueRef.current) {
+					console.log(`Queue stopped by user at position ${i}/${processQueue.length} (ref check)`);
+					break;
+				}
 
-			// Double-check that the user's message is in the chat
-			if (!activeChat.messages.some((msg) => msg.id === newMessage.id)) {
-				console.warn("Ensuring user message is included in prompt");
-				// If not found in the chat, manually include it in our prompt building
-				activeChat.messages = [...activeChat.messages, newMessage];
+				const speakerId = processQueue[i];
+				const speakerCharacter = characters.find(c => c.id === speakerId);
+				if (!speakerCharacter) continue;
+
+				console.log(`Processing character ${speakerCharacter.name} (${speakerId}) - ${i + 1}/${processQueue.length}`);
+
+				// Set typing indicator
+				setCurrentlyTypingCharacter(speakerId);
+
+				// Generate response for this character with current message state
+				// Let this complete fully without interruption
+				const newMessage = await generateCharacterResponse(speakerId, speakerCharacter.name, _userMessage, workingMessages);
+				
+				// Check again after response generation in case user clicked stop during generation
+				if (stopQueueRef.current) {
+					console.log(`Queue stopped by user after ${speakerCharacter.name}'s response generation`);
+					// Still add the completed message to working messages
+					if (newMessage) {
+						workingMessages = [...workingMessages, newMessage];
+					}
+					break;
+				}
+				
+				// Update working messages to include the new response for the next character
+				if (newMessage) {
+					workingMessages = [...workingMessages, newMessage];
+					
+					// Check if this character's response triggers additional characters
+					// But only if queue hasn't been stopped
+					if (selectedCharacter && isGroupChat(selectedCharacter) && !stopQueueRef.current) {
+						console.log(`Checking if ${speakerCharacter.name}'s response triggers additional characters`);
+						console.log(`Message from ${speakerCharacter.name}: "${newMessage.text}"`);
+						console.log(`Last speaker ID being passed: ${newMessage.speakerId}`);
+						
+						const lastSpeaker = { speakerId: newMessage.speakerId, isUser: false };
+						const additionalQueue = calculateResponseQueue(
+							selectedCharacter,
+							newMessage.text,
+							false, // isUserMessage = false (this is a character message)
+							lastSpeaker.speakerId,
+							characters
+						);
+
+						// Add any newly triggered characters to our processing queue
+						if (additionalQueue.length > 0) {
+							console.log(`${speakerCharacter.name} triggered additional characters: [${additionalQueue.join(', ')}]`);
+							// Add to the end of our processing queue (will be processed in this same loop)
+							processQueue.push(...additionalQueue);
+							// Update the displayed queue state
+							setResponseQueue([...processQueue]);
+						} else {
+							console.log(`${speakerCharacter.name}'s response did not trigger any additional characters`);
+						}
+					} else if (stopQueueRef.current) {
+						console.log(`Skipping additional character triggers - queue stop requested`);
+					}
+				}
+
+				// Ensure state has time to propagate before next character responds
+				await new Promise(resolve => setTimeout(resolve, 100));
 			}
+		} finally {
+			console.log('Queue processing finished - cleaning up state');
+			// Clean up queue state
+			setIsProcessingQueue(false);
+			setCurrentlyTypingCharacter(null);
+			setResponseQueue([]);
+			setShouldStopQueue(false);
+			stopQueueRef.current = false;
+		}
+	};
 
-			// Build the prompt with the updated chat that includes the new message
+	/**
+	 * Generate a response for a specific character in a group chat
+	 */
+	const generateCharacterResponse = async (speakerId: number, speakerName: string, _userMessage: string, currentMessages?: Message[]): Promise<Message | null> => {
+		if (!selectedCharacter || activeChatId === null) return null;
+
+		try {
+			// Use the provided current messages or fall back to activeMessages
+			const messagesToUse = currentMessages || activeMessages;
+			
+			// Get the most current chat state with up-to-date messages
+			// This ensures characters see responses from previous characters in the queue
+			const currentActiveChat = {
+				id: activeChatId,
+				messages: messagesToUse, // Use the most current messages passed from the queue
+				isActive: true,
+				lastActivity: Date.now()
+			};
+
+			// Build the prompt with the current chat state, specifying the next speaker
 			const { prompt, settings } = buildPrompt(
 				selectedCharacter,
-				activeChat,
+				currentActiveChat,
 				"User",
+				isGroupChat(selectedCharacter) ? characters : undefined,
+				speakerId // Pass the speaker ID to the prompt builder
 			);
 
 			// Call the API
-			let response = await callGeminiAPI(prompt, settings);
+			const response = await callGeminiAPI(prompt, settings);
 
 			// Check for errors
 			if (response.error) {
@@ -455,7 +649,7 @@ const AppContent: React.FC = () => {
 
 			if (visualNovelMode) {
 				console.log(
-					`Character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
+					`Character message emotion (${speakerName}): ${detectedEmotion || "not classified (HF API key not set)"}`,
 				);
 			} else {
 				console.log(
@@ -463,32 +657,201 @@ const AppContent: React.FC = () => {
 				);
 			}
 
-			// First, immediately show the message without waiting for emotion classification
-			const initialResponseMessage: Message = {
-				id: generatingMsgId, // Replace the generating message
+			// Create the character response message
+			const responseMessage: Message = {
+				id: Date.now() + Math.random(), // Ensure unique ID
 				text: sanitizedResponse,
 				sender: "character",
-				timestamp: Date.now() + 1000,
+				timestamp: Date.now(),
+				speakerId: speakerId,
+				speakerName: speakerName,
+				emotion: detectedEmotion || undefined,
 			};
 
-			// Update messages immediately without waiting for emotion classification
-			const initialMessages = [...updatedMessages, initialResponseMessage];
-			setActiveMessages(initialMessages);
-			await updateChatMessagesAsync(initialMessages, false);
+			// Update messages and save to character state
+			// Use a callback to ensure we get the latest state and save immediately
+			let updatedMessages: Message[] = [];
+			setActiveMessages(currentMessages => {
+				updatedMessages = [...currentMessages, responseMessage];
+				return updatedMessages;
+			});
 
-			// Then update with emotion once classification is complete
-			if (detectedEmotion) {
-				const responseWithEmotion: Message = {
-					...initialResponseMessage,
-					emotion: detectedEmotion,
-				};
+			// Wait for the message to be fully saved before returning
+			// Use the updatedMessages from the state callback, not stale activeMessages
+			await updateChatMessagesAsync(updatedMessages, false);
+			
+			// Return the new message so the queue can use it for subsequent characters
+			return responseMessage;
 
-				const finalMessages = initialMessages.map((msg) =>
-					msg.id === generatingMsgId ? responseWithEmotion : msg,
+		} catch (err) {
+			console.error(`Character response generation error (${speakerName}):`, err);
+
+			// Add error message
+			const errorMsg =
+				err instanceof Error ? err.message : "Unknown error occurred";
+			const errorMessage: Message = {
+				id: Date.now() + Math.random(),
+				text: `Failed to generate response from ${speakerName}: ${errorMsg}.`,
+				sender: "system",
+				timestamp: Date.now(),
+				isError: true,
+			};
+
+			let messagesWithError: Message[] = [];
+			setActiveMessages(currentMessages => {
+				messagesWithError = [...currentMessages, errorMessage];
+				return messagesWithError;
+			});
+
+			// Wait for the error message to be fully saved before returning
+			await updateChatMessagesAsync(messagesWithError, false);
+			
+			// Return null on error so queue processing continues
+			return null;
+		}
+	};
+
+	const handleSendMessage = async (text: string) => {
+		if (!selectedCharacter || activeChatId === null) return;
+
+		const newMessage: Message = {
+			id: Date.now(),
+			text,
+			sender: "user",
+			timestamp: Date.now(),
+		};
+
+		const updatedMessages = [...activeMessages, newMessage];
+
+		// First update local state
+		setActiveMessages(updatedMessages);
+
+		// Then update in character state but keep current active chat
+		// We need to wait for the chat messages to be updated properly
+		await updateChatMessagesAsync(updatedMessages, false);
+
+		try {
+
+			// Handle group chat vs individual character differently
+			if (isGroupChat(selectedCharacter)) {
+				// For group chats, calculate response queue
+				const lastSpeaker = getLastSpeaker(updatedMessages);
+				console.log(`User message: "${text}"`);
+				console.log(`Last speaker from getLastSpeaker:`, lastSpeaker);
+				
+				const queue = calculateResponseQueue(
+					selectedCharacter,
+					text,
+					true, // isUserMessage
+					lastSpeaker.speakerId,
+					characters
 				);
 
-				setActiveMessages(finalMessages);
-				updateChatMessages(finalMessages, false);
+				console.log(`Initial queue from user message: [${queue.join(', ')}]`);
+				
+				// Process the queue with the updated messages that include the user message
+				await processResponseQueue(queue, text, updatedMessages);
+			} else {
+				// For individual characters, use the original logic
+				// Add a loading/generating message
+				const generatingMsgId = Date.now() + 1;
+				const generatingMessage: Message = {
+					id: generatingMsgId,
+					text: "...",
+					sender: "character",
+					timestamp: Date.now() + 1,
+					isGenerating: true,
+				};
+
+				const messagesWithGenerating = [...updatedMessages, generatingMessage];
+				setActiveMessages(messagesWithGenerating);
+
+				// Build the prompt with the current chat state that includes the new message
+				const currentActiveChat = {
+					id: activeChatId,
+					messages: messagesWithGenerating,
+					isActive: true,
+					lastActivity: Date.now()
+				};
+				
+				const { prompt, settings } = buildPrompt(
+					selectedCharacter,
+					currentActiveChat,
+					"User",
+					isGroupChat(selectedCharacter) ? characters : undefined,
+				);
+
+				// Call the API
+				const response = await callGeminiAPI(prompt, settings);
+
+				// Check for errors
+				if (response.error) {
+					let errorMessage = response.error;
+
+					// Add helpful suggestions based on error type
+					if (response.errorType === "RATE_LIMIT") {
+						errorMessage += " This typically resolves within a minute.";
+					} else if (response.errorType === "API_KEY") {
+						errorMessage += " Go to API Settings to update your key.";
+					} else if (response.errorType === "BLOCKED_CONTENT") {
+						errorMessage +=
+							" Try rewording your message or adjusting the conversation.";
+					} else if (response.errorType === "MODEL_ERROR") {
+						errorMessage += " You can select a different model in API Settings.";
+					}
+
+					throw new Error(errorMessage);
+				}
+
+				// Process the response
+				const sanitizedResponse = sanitizeResponse(response.text);
+
+				// Only classify emotion if in Visual Novel mode or if HF API key is not available
+				const detectedEmotion =
+					visualNovelMode && huggingFaceApiKey
+						? await emotionClassifier.classify(
+								sanitizedResponse,
+								huggingFaceApiKey,
+							)
+						: null;
+
+				if (visualNovelMode) {
+					console.log(
+						`Character message emotion: ${detectedEmotion || "not classified (HF API key not set)"}`,
+					);
+				} else {
+					console.log(
+						"Emotion classification skipped (not in Visual Novel mode)",
+					);
+				}
+
+				// First, immediately show the message without waiting for emotion classification
+				const initialResponseMessage: Message = {
+					id: generatingMsgId, // Replace the generating message
+					text: sanitizedResponse,
+					sender: "character",
+					timestamp: Date.now() + 1000,
+				};
+
+				// Update messages immediately without waiting for emotion classification
+				const initialMessages = [...updatedMessages, initialResponseMessage];
+				setActiveMessages(initialMessages);
+				await updateChatMessagesAsync(initialMessages, false);
+
+				// Then update with emotion once classification is complete
+				if (detectedEmotion) {
+					const responseWithEmotion: Message = {
+						...initialResponseMessage,
+						emotion: detectedEmotion,
+					};
+
+					const finalMessages = initialMessages.map((msg) =>
+						msg.id === generatingMsgId ? responseWithEmotion : msg,
+					);
+
+					setActiveMessages(finalMessages);
+					updateChatMessages(finalMessages, false);
+				}
 			}
 		} catch (err) {
 			console.error("Message generation error:", err);
@@ -557,15 +920,20 @@ const AppContent: React.FC = () => {
 				messages: messagesForPrompt,
 			};
 
+			// For group chats, use the same speaker ID as the original message
+			const speakerId = messageToRegenerate.speakerId;
+
 			// Build the prompt
 			const { prompt, settings } = buildPrompt(
 				selectedCharacter,
 				tempChat,
 				"User",
+				isGroupChat(selectedCharacter) ? characters : undefined,
+				speakerId // Use the original speaker ID for regeneration
 			);
 
 			// Call the API
-			let response = await callGeminiAPI(prompt, settings);
+			const response = await callGeminiAPI(prompt, settings);
 
 			// Check for errors
 			if (response.error) {
@@ -604,6 +972,7 @@ const AppContent: React.FC = () => {
 						text: sanitizedResponse,
 						isGenerating: false,
 						timestamp: Date.now(),
+						emotion: detectedEmotion || msg.emotion,
 						// Preserve the regenHistory from the updated message
 						regenHistory: currentUpdatedMsg?.regenHistory || [],
 					};
@@ -615,24 +984,22 @@ const AppContent: React.FC = () => {
 			setActiveMessages(initialRegeneratedMessages);
 			await updateChatMessagesAsync(initialRegeneratedMessages, false);
 
-			// Then update with emotion once classification is complete
-			if (detectedEmotion) {
-				const regeneratedMessagesWithEmotion = initialRegeneratedMessages.map(
-					(msg) => {
-						if (msg.id === messageId) {
-							return {
-								...msg,
-								emotion: detectedEmotion,
-							};
-						}
-						return msg;
-					},
+			// For group chats, check if this message should trigger additional responses
+			if (isGroupChat(selectedCharacter) && messageToRegenerate.sender === 'character') {
+				const lastSpeaker = { speakerId: messageToRegenerate.speakerId, isUser: false };
+				const queue = calculateResponseQueue(
+					selectedCharacter,
+					sanitizedResponse,
+					false, // isUserMessage = false (this is a character message)
+					lastSpeaker.speakerId,
+					characters
 				);
 
-				// Update the UI with emotion data
-				setActiveMessages(regeneratedMessagesWithEmotion);
-				await updateChatMessagesAsync(regeneratedMessagesWithEmotion, false);
+				if (queue.length > 0) {
+					await processResponseQueue(queue, sanitizedResponse, activeMessages);
+				}
 			}
+
 		} catch (err) {
 			console.error("Message regeneration error:", err);
 
@@ -713,11 +1080,11 @@ const AppContent: React.FC = () => {
 				selectedCharacter,
 				tempChat,
 				"User",
-				true, // isContinuation flag
+				isGroupChat(selectedCharacter) ? characters : undefined,
 			);
 
 			// Call the API
-			let response = await callGeminiAPI(prompt, settings);
+			const response = await callGeminiAPI(prompt, settings);
 
 			// Check for errors
 			if (response.error) {
@@ -869,47 +1236,39 @@ const AppContent: React.FC = () => {
 		messages: Message[],
 		switchChat: boolean = false,
 	): Promise<void> => {
-		return new Promise((resolve) => {
-			if (!selectedCharacter || activeChatId === null) {
-				resolve();
-				return;
-			}
+		if (!selectedCharacter || activeChatId === null) {
+			return;
+		}
 
-			try {
-				const updatedChats = selectedCharacter.chats.map((chat) => {
-					if (chat.id === activeChatId) {
-						const updatedChat = {
-							...chat,
-							messages,
-							lastActivity: Date.now(),
-							isActive: true, // Ensure this chat stays active
-						};
-
-						// Update activeChat state
-						if (!switchChat) {
-							setActiveChat(updatedChat);
-						}
-
-						return updatedChat;
-					}
-					return {
+		try {
+			const updatedChats = selectedCharacter.chats.map((chat) => {
+				if (chat.id === activeChatId) {
+					const updatedChat = {
 						...chat,
-						isActive: false, // Mark other chats as not active
+						messages,
+						lastActivity: Date.now(),
+						isActive: true, // Ensure this chat stays active
 					};
-				});
 
-				// Update character but keep current active chat
-				updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+					// Update activeChat state
+					if (!switchChat) {
+						setActiveChat(updatedChat);
+					}
 
-				// Wait for a short tick to ensure state updates are processed
-				setTimeout(() => {
-					resolve();
-				}, 10);
-			} catch (err) {
-				setLocalError(`Failed to update chat: ${err}`);
-				resolve();
-			}
-		});
+					return updatedChat;
+				}
+				return {
+					...chat,
+					isActive: false, // Mark other chats as not active
+				};
+			});
+
+			// Update character and properly wait for it to complete
+			await updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+			
+		} catch (err) {
+			setLocalError(`Failed to update chat: ${err}`);
+		}
 	};
 
 	const handleUpdateForm = (field: string, value: any) => {
@@ -950,12 +1309,11 @@ const AppContent: React.FC = () => {
 	};
 
 	/**
-	 * 5. Handle creating group chat (placeholder for now)
+	 * 5. Handle creating group chat - opens the Group Chat creation modal
 	 */
 	const handleCreateGroupChat = () => {
 		setShowNewCharacterModal(false);
-		// TODO: Implement group chat creation
-		alert("Group Chat feature coming soon! This will allow you to create chats with multiple characters.");
+		setShowGroupChatCreationModal(true);
 	};
 
 	/**
@@ -963,6 +1321,43 @@ const AppContent: React.FC = () => {
 	 */
 	const handleCloseImageToTextModal = () => {
 		setShowImageToTextModal(false);
+	};
+
+	/**
+	 * 7. Handle closing the GroupChatCreationModal
+	 */
+	const handleCloseGroupChatCreationModal = () => {
+		setShowGroupChatCreationModal(false);
+	};
+
+	/**
+	 * 8. Handle creating the group chat from the modal
+	 */
+	const handleCreateGroupChatFromModal = async (groupName: string, members: GroupMember[]) => {
+		try {
+			// Generate composite image for the group chat
+			let compositeImage: string;
+			try {
+				compositeImage = await generateGroupChatImage(members, characters);
+			} catch (imageError) {
+				console.warn('Failed to generate composite image, using fallback:', imageError);
+				compositeImage = generateFallbackGroupImage();
+			}
+			
+			// Create the group chat character with the composite image
+			const groupChat = createGroupChat(groupName, members, compositeImage);
+			
+			// Add the group chat using the existing context method
+			await addGeneratedCharacter(groupChat);
+			
+			// Close the modal
+			setShowGroupChatCreationModal(false);
+			
+			console.log('✅ Group chat created successfully:', groupName);
+		} catch (error) {
+			console.error('Error creating group chat:', error);
+			setLocalError('Failed to create group chat. Please try again.');
+		}
 	};
 
 	/**
@@ -1170,11 +1565,13 @@ const AppContent: React.FC = () => {
 				<ChatHeader
 					selectedCharacter={selectedCharacter}
 					onNewChat={handleNewChat}
+					onNewGroupChat={handleNewGroupChat}
 					onEditChat={handleEditChat}
 					onDeleteChat={handleDeleteChat}
 					onSelectChat={handleSelectChat}
 					activeChatId={activeChatId}
 					setShowHelpModal={setShowHelpModal}
+					allCharacters={characters}
 				/>
 
 				{selectedCharacter && selectedCharacter.chats.length === 0 ? (
@@ -1208,23 +1605,48 @@ const AppContent: React.FC = () => {
 						onDeleteErrorMessage={handleDeleteErrorMessage}
 						onEditMessage={handleEditMessage}
 						onDeleteMessage={handleDeleteMessage}
+						allCharacters={characters}
 					/>
 				)}
 
 				{/* Show chat input only when there's an active chat */}
 				{activeChatId !== null && (
-					<ChatInput onSendMessage={handleSendMessage} />
+					<ChatInput 
+						onSendMessage={handleSendMessage} 
+						isProcessingQueue={isProcessingQueue}
+						currentlyTypingCharacter={currentlyTypingCharacter}
+						responseQueue={responseQueue}
+						selectedCharacter={selectedCharacter}
+						allCharacters={characters}
+						onStopQueue={() => {
+							console.log('Stop queue button clicked');
+							setShouldStopQueue(true);
+							stopQueueRef.current = true;
+						}}
+						shouldStopQueue={shouldStopQueue}
+					/>
 				)}
 			</main>
 
 			{/* Right Panel */}
 			<SidePanel side="right" isMobile={isMobile}>
 				{selectedCharacter ? (
-					<CharacterForm
-						character={selectedCharacter}
-						onUpdateCharacter={handleUpdateForm}
-						onDeleteCharacter={deleteCharacter}
-					/>
+					isGroupChat(selectedCharacter) ? (
+						<GroupChatConfig
+							groupChat={selectedCharacter}
+							allCharacters={characters}
+							onUpdateCharacter={handleUpdateForm}
+							onDeleteCharacter={deleteCharacter}
+							onForceResponse={handleForceResponse}
+							isProcessingQueue={isProcessingQueue}
+						/>
+					) : (
+						<CharacterForm
+							character={selectedCharacter}
+							onUpdateCharacter={handleUpdateForm}
+							onDeleteCharacter={deleteCharacter}
+						/>
+					)
 				) : (
 					<div className="no-character">Please select a character</div>
 				)}
@@ -1270,6 +1692,14 @@ const AppContent: React.FC = () => {
 					isOpen={showImageToTextModal}
 					onClose={handleCloseImageToTextModal}
 					onAccept={handleAcceptGeneratedCharacter}
+				/>
+			)}
+			{showGroupChatCreationModal && (
+				<GroupChatCreationModal
+					isOpen={showGroupChatCreationModal}
+					onClose={handleCloseGroupChatCreationModal}
+					onCreateGroupChat={handleCreateGroupChatFromModal}
+					availableCharacters={characters}
 				/>
 			)}
 		</div>

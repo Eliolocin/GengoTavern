@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type React from "react";
-import type { Character } from "../../types/interfaces";
+import type { Character, GroupGreeting } from "../../types/interfaces";
 import ChatDropdown from "./ChatDropdown";
 import ApiKeyModal from "../shared/ApiKeyModal";
 import PersonaModal from "../shared/PersonaModal";
@@ -15,6 +15,12 @@ interface ChatHeaderProps {
 		greeting: string,
 		background: string,
 	) => void;
+	onNewGroupChat?: (
+		chatName: string,
+		scenario: string,
+		greetings: GroupGreeting[],
+		background: string,
+	) => void;
 	onEditChat: (
 		chatId: number,
 		chatName: string,
@@ -25,16 +31,19 @@ interface ChatHeaderProps {
 	onSelectChat: (chatId: number) => void;
 	activeChatId: number | null;
 	setShowHelpModal: (show: boolean) => void;
+	allCharacters?: Character[];
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
 	selectedCharacter,
 	onNewChat,
+	onNewGroupChat,
 	onEditChat,
 	onDeleteChat,
 	onSelectChat,
 	activeChatId,
 	setShowHelpModal,
+	allCharacters = [],
 }) => {
 	const {
 		apiKey,
@@ -106,8 +115,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					activeChatId={activeChatId}
 					onSelectChat={onSelectChat}
 					onNewChat={onNewChat}
+					onNewGroupChat={onNewGroupChat}
 					onEditChat={onEditChat}
 					onDeleteChat={onDeleteChat}
+					allCharacters={allCharacters}
 				/>
 			)}
 
