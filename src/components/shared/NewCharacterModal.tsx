@@ -1,4 +1,5 @@
 import type React from 'react';
+import { XMarkIcon } from "@heroicons/react/20/solid";
 
 interface NewCharacterModalProps {
 	isOpen: boolean;
@@ -61,7 +62,7 @@ const NewCharacterModal: React.FC<NewCharacterModalProps> = ({
 						onClick={onClose}
 						aria-label="Close modal"
 					>
-						×
+						<XMarkIcon className="w-5 h-5" />
 					</button>
 				</div>
 				

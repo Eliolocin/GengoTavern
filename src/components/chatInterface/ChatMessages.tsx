@@ -8,6 +8,7 @@ import { useUserSettings } from "../../contexts/UserSettingsContext";
 import { replaceNamePlaceholders } from "../../utils/promptBuilder";
 import VisualNovelMode from "./VisualNovelMode";
 import { useApp } from "../../contexts/AppContext";
+import { XMarkIcon, ArrowPathIcon, ForwardIcon, PencilIcon } from "@heroicons/react/20/solid";
 
 interface ChatMessagesProps {
 	messages: Message[];
@@ -249,7 +250,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 										title="Delete error message"
 										onClick={() => onDeleteErrorMessage?.(message.id)}
 									>
-										×
+										<XMarkIcon className="w-4 h-4" />
 									</button>
 								</div>
 							</div>
@@ -335,7 +336,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 													title="Regenerate response"
 													onClick={() => onRegenerateMessage(message.id)}
 												>
-													🔄︎
+													<ArrowPathIcon className="w-4 h-4" />
 												</button>
 											)}
 											{onContinueMessage && (
@@ -345,7 +346,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 													title="Continue response"
 													onClick={() => onContinueMessage(message.id)}
 												>
-													⏭︎
+													<ForwardIcon className="w-4 h-4" />
 												</button>
 											)}
 										</>
@@ -356,7 +357,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 									title="Edit message"
 									onClick={() => handleStartEditing(message)}
 								>
-									✎
+									<PencilIcon className="w-4 h-4" />
 								</button>
 								<button
 									type="button"
@@ -364,7 +365,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 									title="Delete message"
 									onClick={() => handleStartDeleting(message)}
 								>
-									×
+									<XMarkIcon className="w-4 h-4" />
 								</button>
 							</div>
 						</div>

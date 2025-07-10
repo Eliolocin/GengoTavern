@@ -5,6 +5,7 @@ import { storageManager } from "../../utils/storageManager";
 import placeholderImg from "../../assets/placeholder.jpg";
 import MarkdownRenderer from "../shared/MarkdownRenderer";
 import { isGroupChat, getOrderedGroupMembers } from "../../utils/groupChatUtils";
+import { ArrowPathIcon, ForwardIcon, PencilIcon, XMarkIcon } from "@heroicons/react/20/solid";
 
 interface VisualNovelModeProps {
 	character: Character;
@@ -423,7 +424,7 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 										title="Regenerate response"
 										onClick={() => onRegenerateMessage(message.id)}
 									>
-										🔄︎
+										<ArrowPathIcon className="w-4 h-4" />
 									</button>
 								)}
 								{onContinueMessage && (
@@ -433,7 +434,7 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 										title="Continue response"
 										onClick={() => onContinueMessage(message.id)}
 									>
-										⏭︎
+										<ForwardIcon className="w-4 h-4" />
 									</button>
 								)}
 							</>
@@ -445,7 +446,7 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 							title="Edit message"
 							onClick={() => onStartEditing(message)}
 						>
-							✎
+							<PencilIcon className="w-4 h-4" />
 						</button>
 					)}
 					{onStartDeleting && (
@@ -455,7 +456,7 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 							title="Delete message"
 							onClick={() => onStartDeleting(message)}
 						>
-							×
+							<XMarkIcon className="w-4 h-4" />
 						</button>
 					)}
 				</div>

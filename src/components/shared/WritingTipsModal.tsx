@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import MarkdownRenderer from "./MarkdownRenderer";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
 
@@ -63,7 +64,7 @@ in your desired Foreign Language in order for the AI to speak it.
 to communicate at a comprehensible level.
 `;
 
-	return (
+	const modalContent = (
 		<div className="modal-backdrop">
 			<div
 				className="modal-content writing-tips-modal"
@@ -91,6 +92,8 @@ to communicate at a comprehensible level.
 			</div>
 		</div>
 	);
+
+	return createPortal(modalContent, document.body);
 };
 
 export default WritingTipsModal;

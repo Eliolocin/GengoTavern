@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import DeleteConfirmationModal from "../shared/DeleteConfirmationModal";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
@@ -140,7 +141,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
 		input.click();
 	};
 
-	return (
+	const modalContent = (
 		<div className="modal-backdrop">
 			<div
 				className="modal-content persona-modal"
@@ -153,40 +154,44 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
 					</button>
 				</div>
 				<div className="modal-body">
-					<p className="modal-description">
-						Customize how the Chatbots refer to you / your character, as well as
-						what information you want them to remember.
-					</p>
-
-					<div className="form-group">
-						<label htmlFor="persona-name-input">User's Name:</label>
-						<input
-							id="persona-name-input"
-							type="text"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							onKeyDown={handleKeyDown}
-							placeholder="Enter your preferred name"
-						/>
+					<div className="persona-form-description">
+						<p>
+							Customize how the Chatbots refer to you / your character, as well as
+							what information you want them to remember.
+						</p>
 					</div>
 
-					<div className="form-group">
-						<label htmlFor="persona-description-input">
-							User's Description:
-						</label>
-						<textarea
-							id="persona-description-input"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							onKeyDown={handleKeyDown}
-							placeholder="Describe yourself, your personality, or how you'd like to be portrayed in the chat"
-							rows={4}
-						/>
-						<div className="input-hint">
-							This description will be provided to the AI to better understand
-							your character
+					<form className="persona-form">
+						<div className="form-group">
+							<label htmlFor="persona-name-input">User's Name</label>
+							<input
+								id="persona-name-input"
+								type="text"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								onKeyDown={handleKeyDown}
+								placeholder="Enter your preferred name"
+							/>
 						</div>
-					</div>
+
+						<div className="form-group">
+							<label htmlFor="persona-description-input">
+								User's Description
+							</label>
+							<textarea
+								id="persona-description-input"
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								onKeyDown={handleKeyDown}
+								placeholder="Describe yourself, your personality, or how you'd like to be portrayed in the chat"
+								rows={5}
+							/>
+							<div className="input-hint">
+								This description will be provided to the AI to better understand
+								your character
+							</div>
+						</div>
+					</form>
 				</div>
 
 				{/* Data Management section commented out
@@ -212,25 +217,25 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
         </div>
         */}
 
-				<div className="danger-zone">
-					<h4>Danger Zone</h4>
+				<div className="persona-modal danger-zone">
+					<h3>Danger Zone</h3>
+					<p>
+						This will delete all characters, chats, and settings.
+					</p>
 					<button
-						className="reset-app-data-button"
+						className="modal-button danger"
 						onClick={handleResetAppData}
 						type="button"
 					>
 						Reset App Data
 					</button>
-					<p className="danger-note">
-						This will delete all characters, chats, and settings.
-					</p>
 				</div>
 
 				<div className="modal-footer">
-					<button className="cancel-button" onClick={onClose}>
+					<button className="modal-button secondary" onClick={onClose}>
 						Cancel
 					</button>
-					<button className="save-button" onClick={handleSave}>
+					<button className="modal-button primary" onClick={handleSave}>
 						Save Persona
 					</button>
 				</div>
@@ -247,6 +252,8 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
 			)}
 		</div>
 	);
+
+	return createPortal(modalContent, document.body);
 };
 
 export default PersonaModal;
