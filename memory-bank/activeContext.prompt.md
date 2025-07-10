@@ -18,17 +18,32 @@ This feature allows users to engage in group conversations with multiple charact
    - `styles/components/Modals.css`
    - `styles/layout/Layout.css`
    - `styles/base/Variables.css`
-3. **Update component imports** and test thoroughly
+3. **Update component imports** without breaking functionality:
+   - Ensure all components import their respective CSS files correctly.
+   - Test each component after import to verify no visual regressions.
 
-### 🎯 **Phase 2: Component Polish + Icon Integration (Medium Risk)**
-4. **Polish components organically** while replacing emoji placeholders:
-   - **Buttons, inputs, forms** → replace ✏️📤 etc. with custom icons
-   - **Chat interface** → replace 🔄⏭️× etc. with styled icons  
-   - **Settings panels** → replace ⚙️📁 etc. with clean icons
-   - **Create organized icon structure**: `./img/icons/chat/`, `./img/icons/ui/`, etc.
-   - **Build icon system as we go** - more natural and thorough approach
+### 🎯 **Phase 2: Component Polish + HeroIcons Integration (Medium Risk)**
+4. **Replace emoji placeholders with HeroIcons**:
+   - **HeroIcons**: Use SVG icons from HeroIcons for consistency and scalability.
+   - **Emoji placeholders**: Replace with appropriate HeroIcons in components.
+   - **Example replacements**:
+     - ✏️ → PencilIcon
+     - 📤 → UploadIcon
+     - 🔄 → RefreshIcon
+     - ⏭️ → ForwardIcon
+     - × → XMarkIcon
+     - ⚙️ → CogIcon
+     - 📁 → FolderIcon
+     - 🗑️ → TrashIcon
 
-**Strategy:** No external CSS frameworks (Tailwind/Heroicons) - keep full control with custom CSS and icon pack for safer, specialized language learning app optimization.
+The 24x24 outline icons can be imported from @heroicons/react/24/outline, the 24x24 solid icons can be imported from @heroicons/react/24/solid, the 20x20 solid icons can be imported from @heroicons/react/20/solid, and 16x16 solid icons can be imported from @heroicons/react/16/solid.
+Icons use an upper camel case naming convention and are always suffixed with the word Icon.
+       
+5. **Polish components organically** while replacing emoji placeholders:
+   - **Buttons, inputs, forms** → replace ✏️📤 etc.
+   - **Chat interface** → replace 🔄⏭️× etc. 
+   - **Settings panels** → replace ⚙️📁 etc. 
+   - **Large outline icons VS small solid icons** → use outline for large buttons, solid for small
 
 ### 🎯 **Final Priority:**
 **Implicit Grammar Correction Module** - Language learning features with grammar feedback

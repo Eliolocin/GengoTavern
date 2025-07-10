@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { GEMINI_MODELS } from "../../contexts/UserSettingsContext";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
 import { emotionClassifier } from "../../utils/emotionClassifier";
@@ -143,7 +144,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 		return "Schizo";
 	};
 
-	return (
+	const modalContent = (
 		<div className="modal-backdrop" onKeyDown={handleKeyDown}>
 			<div className="modal-content api-key-modal">
 				<div className="modal-header">
@@ -381,6 +382,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return createPortal(modalContent, document.body);
 };
 
 export default ApiKeyModal;

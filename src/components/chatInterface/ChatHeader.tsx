@@ -6,6 +6,7 @@ import ApiKeyModal from "../shared/ApiKeyModal";
 import PersonaModal from "../shared/PersonaModal";
 import WritingTipsModal from "../shared/WritingTipsModal";
 import { useUserSettings } from "../../contexts/UserSettingsContext";
+import { UserIcon, KeyIcon, PencilSquareIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
 interface ChatHeaderProps {
 	selectedCharacter: Character | null;
@@ -81,7 +82,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					onClick={() => setShowPersonaModal(true)}
 					title="User Persona Settings"
 				>
-					🎭
+					<UserIcon className="w-5 h-5" />
 				</button>
 				<button
 					type="button"
@@ -89,7 +90,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					onClick={() => setShowApiKeyModal(true)}
 					title="API Settings"
 				>
-					🔑
+					<KeyIcon className="w-5 h-5" />
 				</button>
 				<button
 					type="button"
@@ -97,7 +98,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					onClick={handleWritingTipsClick}
 					title="Writing Tips"
 				>
-					✍️
+					<PencilSquareIcon className="w-5 h-5" />
 				</button>
 				<button
 					type="button"
@@ -105,7 +106,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					onClick={handleHelpClick}
 					title="Help"
 				>
-					❔
+					<QuestionMarkCircleIcon className="w-5 h-5" />
 				</button>
 			</div>
 

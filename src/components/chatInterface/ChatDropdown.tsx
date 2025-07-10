@@ -6,6 +6,7 @@ import GroupChatNewChatModal from './GroupChatNewChatModal';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import { saveChatAsJson } from '../../utils/chatExport';
 import { isGroupChat } from '../../utils/groupChatUtils';
+import { XMarkIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, PencilIcon, ArrowUpTrayIcon } from "@heroicons/react/20/solid";
 
 interface ChatDropdownProps {
   selectedCharacter: Character | null;
@@ -144,7 +145,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             onClick={handleNewClick}
             title="New chat"
           >
-            +
+            <PlusIcon className="w-4 h-4" />
           </button>
           <button 
             type="button" 
@@ -153,7 +154,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Edit chat"
             disabled={!activeChatId || hasNoChats}
           >
-            ✎
+            <PencilIcon className="w-4 h-4" />
           </button>
           <button 
             type="button" 
@@ -162,7 +163,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Export chat as JSON"
             disabled={!activeChatId || hasNoChats}
           >
-            ⏏
+            <ArrowUpTrayIcon className="w-4 h-4" />
           </button>
           
           
@@ -173,9 +174,9 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Delete chat"
             disabled={!activeChatId || hasNoChats}
           >
-            ×
+            <XMarkIcon className="w-4 h-4" />
           </button>
-          {!hasNoChats && <span className="chat-dropdown-arrow">{isOpen ? '▲' : '▼'}</span>}
+          {!hasNoChats && <span className="chat-dropdown-arrow">{isOpen ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}</span>}
         </div>
       </div>
 
