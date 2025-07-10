@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Character } from '../../types/interfaces';
+import type { Character, GroupGreeting } from '../../types/interfaces';
 import EditChatModal from './EditChatModal';
 import NewChatModal from './NewChatModal';
+import GroupChatNewChatModal from './GroupChatNewChatModal';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import { saveChatAsJson } from '../../utils/chatExport';
+import { isGroupChat } from '../../utils/groupChatUtils';
 
 interface ChatDropdownProps {
   selectedCharacter: Character | null;
   activeChatId: number | null;
   onSelectChat: (chatId: number) => void;
   onNewChat: (chatName: string, scenario: string, greeting: string, background: string) => void;
+  onNewGroupChat?: (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => void;
   onEditChat: (chatId: number, chatName: string, scenario: string, background: string) => void;
   onDeleteChat: (chatId: number) => void;
+  allCharacters?: Character[];
 }
 
 const ChatDropdown: React.FC<ChatDropdownProps> = ({
@@ -19,8 +23,10 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   activeChatId,
   onSelectChat,
   onNewChat,
+  onNewGroupChat,
   onEditChat,
-  onDeleteChat
+  onDeleteChat,
+  allCharacters = []
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -99,6 +105,13 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
 
   const handleNewSubmit = (chatName: string, scenario: string, greeting: string, background: string) => {
     onNewChat(chatName, scenario, greeting, background);
+    setShowNewModal(false);
+  };
+
+  const handleNewGroupSubmit = (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => {
+    if (onNewGroupChat) {
+      onNewGroupChat(chatName, scenario, greetings, background);
+    }
     setShowNewModal(false);
   };
 
@@ -188,12 +201,21 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
         />
       )}
 
-      {showNewModal && (
-        <NewChatModal
-          character={selectedCharacter}
-          onSave={handleNewSubmit}
-          onCancel={() => setShowNewModal(false)}
-        />
+      {showNewModal && selectedCharacter && (
+        isGroupChat(selectedCharacter) ? (
+          <GroupChatNewChatModal
+            groupChat={selectedCharacter}
+            allCharacters={allCharacters}
+            onSave={handleNewGroupSubmit}
+            onCancel={() => setShowNewModal(false)}
+          />
+        ) : (
+          <NewChatModal
+            character={selectedCharacter}
+            onSave={handleNewSubmit}
+            onCancel={() => setShowNewModal(false)}
+          />
+        )
       )}
 
       {showDeleteModal && activeChat && (

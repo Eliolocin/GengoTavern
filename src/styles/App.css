@@ -500,6 +500,171 @@ html {
 	margin-bottom: 10px;
 }
 
+/* Queue Status Indicator */
+.queue-status-indicator {
+	background-color: rgba(18, 18, 18, 0.6);
+	border-radius: 8px;
+	padding: 10px;
+	z-index: 3;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.typing-indicator {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	color: #ccc;
+}
+
+.typing-character {
+	font-weight: bold;
+	color: #4CAF50;
+}
+
+.queue-info {
+	font-size: 12px;
+	color: #999;
+	opacity: 0.8;
+}
+
+.stop-queue-button {
+	background-color: #f44336 !important;
+	color: white !important;
+}
+
+.stop-queue-button:hover {
+	background-color: #d32f2f !important;
+}
+
+.stop-queue-button:disabled {
+	background-color: #9e9e9e !important;
+	color: #616161 !important;
+	cursor: not-allowed !important;
+}
+
+/* Group Chat New Chat Modal */
+.group-chat-new-chat-modal {
+	max-width: 600px;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.group-chat-new-chat-form {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.scenario-source-selector,
+.background-source-selector {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 10px;
+	padding: 10px;
+	background-color: rgba(42, 42, 42, 0.5);
+	border-radius: 6px;
+}
+
+.scenario-source-selector label,
+.background-source-selector label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.scenario-source-selector input[type="radio"],
+.background-source-selector input[type="radio"] {
+	margin: 0;
+}
+
+.character-greetings {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+.character-greeting-item {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.character-greeting-item label {
+	font-weight: bold;
+	color: #fff;
+}
+
+.character-greeting-item textarea {
+	padding: 8px;
+	border: 1px solid #555;
+	border-radius: 4px;
+	background-color: #2a2a2a;
+	color: #fff;
+	resize: vertical;
+	min-height: 60px;
+}
+
+.character-greeting-item textarea:focus {
+	outline: none;
+	border-color: #007acc;
+}
+
+/* Order Control Buttons */
+.order-control {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	align-items: flex-start;
+}
+
+.order-buttons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.order-button {
+	background-color: #333;
+	color: #fff;
+	border: 1px solid #555;
+	border-radius: 4px;
+	padding: 4px 8px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background-color 0.2s ease;
+	min-width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.order-button:hover:not(:disabled) {
+	background-color: #4CAF50;
+}
+
+.order-button:disabled {
+	background-color: #1a1a1a;
+	color: #666;
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.order-display {
+	font-weight: bold;
+	font-size: 14px;
+	color: #fff;
+	min-width: 30px;
+	text-align: center;
+}
+
 .vn-mode-toggle-container {
 	display: flex;
 	justify-content: center;
@@ -2960,6 +3125,205 @@ html {
 	transition: opacity 0.3s ease-in-out; /* Add transition for fade effect */
 }
 
+/* NEW: Isolated Group Chat Sprite Backdrop - Completely Independent Container */
+.group-chat-sprite-backdrop {
+	position: fixed;
+	top: 100px; /* 100px from top to avoid header overlap */
+	left: 40px; /* Horizontally smaller for centering */
+	right: 40px; /* Horizontally smaller for centering */
+	bottom: 0; /* Full height to bottom */
+	width: calc(100vw - 80px); /* Account for left/right margins */
+	height: calc(100vh - 100px); /* Account for top offset */
+	display: flex;
+	justify-content: center; /* Center sprites in the middle */
+	align-items: flex-end; /* Align sprites to bottom */
+	gap: 50px; /* Small gap between sprites instead of wide separation */
+	z-index: 0; /* Behind chat UI but above app backdrop */
+	pointer-events: none; /* Allow clicks through container */
+	padding: 0; /* No padding - clean edges */
+	box-sizing: border-box;
+}
+
+/* Group Chat Sprite Container within Backdrop - FORCE 2:3 ASPECT RATIO */
+.group-chat-sprite-container {
+	position: relative;
+	width: calc((100vh - 130px) * 2 / 3); /* FORCE container width to 2:3 ratio */
+	height: calc(100vh - 130px); /* FORCE container height to full height */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	transition: all 0.3s ease-in-out;
+	pointer-events: auto; /* Allow sprite interactions */
+	flex: 0 0 auto; /* Don't grow or shrink */
+}
+
+/* SIMPLIFIED: Container IS the sprite - no nested image needed */
+/* All sprite rendering handled by background-image on the container */
+
+/* Current Speaker Highlighting */
+.group-chat-sprite-container.current-speaker {
+	transform: scale(1.05);
+	z-index: 1;
+}
+
+.group-chat-sprite-container.current-speaker .visual-novel-character-sprite {
+	filter: brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+}
+
+/* Character Name Labels for Group Chat */
+.group-chat-sprite-container .character-name-label {
+	position: absolute;
+	bottom: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: #fff;
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 500;
+	text-align: center;
+	white-space: nowrap;
+	backdrop-filter: blur(5px);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+	.group-chat-sprite-backdrop {
+		top: 80px; /* Reduce top offset on tablets */
+		left: 20px; /* Smaller horizontal margins */
+		right: 20px;
+		width: calc(100vw - 40px);
+		gap: 30px; /* Smaller gap on tablets */
+	}
+	
+	.group-chat-sprite-container {
+		/* FORCE container to 2:3 aspect ratio on tablets */
+		width: calc((100vh - 130px) * 2 / 3); /* FORCE container width */
+		height: calc(100vh - 130px); /* FORCE container height */
+	}
+}
+
+@media (max-width: 480px) {
+	.group-chat-sprite-backdrop {
+		top: 60px; /* Further reduce top offset on mobile */
+		left: 10px; /* Minimal horizontal margins */
+		right: 10px;
+		width: calc(100vw - 20px);
+		gap: 20px; /* Even smaller gap on mobile */
+	}
+	
+	.group-chat-sprite-container {
+		/* FORCE container to 2:3 aspect ratio on mobile */
+		width: calc((100vh - 130px) * 2 / 3); /* FORCE container width */
+		height: calc(100vh - 130px); /* FORCE container height */
+	}
+	
+	.group-chat-sprite-container .character-name-label {
+		font-size: 10px; /* Smaller font on mobile */
+		padding: 2px 6px;
+	}
+}
+
+/* Legacy: Keep old classes for backward compatibility */
+.visual-novel-group-sprites {
+	position: fixed;
+	top: 80px;
+	left: 0;
+	right: 0;
+	bottom: 120px;
+	width: 100vw;
+	height: calc(100vh - 200px);
+	display: flex;
+	justify-content: space-evenly;
+	align-items: flex-end;
+	z-index: 0;
+	pointer-events: none;
+	padding: 0 20px;
+	box-sizing: border-box;
+}
+
+.group-sprite-container {
+	position: relative;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	transition: all 0.3s ease-in-out;
+	pointer-events: auto;
+	flex: 0 0 auto;
+}
+
+/* Current speaker highlighting */
+.group-sprite-container.current-speaker {
+	transform: scale(1.05);
+	filter: brightness(1.2);
+	z-index: 10; /* Bring current speaker to front */
+}
+
+/* Group sprite images - Now full height using entire viewport */
+.visual-novel-character-sprite.group-sprite {
+	height: 100%; /* Use full container height (which is viewport-based) */
+	width: auto; /* Let width be determined by aspect ratio at full height */
+	max-width: 350px; /* Reduced to ensure multiple sprites fit in viewport */
+	object-fit: contain;
+	object-position: bottom center;
+	filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+	transition: opacity 0.3s ease-in-out;
+}
+
+/* Character name labels below sprites */
+.character-name-label {
+	position: absolute;
+	bottom: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: rgba(0, 0, 0, 0.7);
+	color: white;
+	padding: 5px 10px;
+	border-radius: 15px;
+	font-size: 0.8rem;
+	font-weight: bold;
+	white-space: nowrap;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	pointer-events: none;
+}
+
+/* Responsive adjustments for group sprites */
+@media (max-width: 768px) {
+	.visual-novel-character-sprite.group-sprite {
+		max-width: 280px; /* Smaller max width on tablets */
+	}
+	
+	.visual-novel-group-sprites {
+		padding: 0 15px; /* Slightly more padding on tablets */
+	}
+	
+	.character-name-label {
+		font-size: 0.7rem;
+		padding: 3px 8px;
+	}
+}
+
+@media (max-width: 480px) {
+	.visual-novel-character-sprite.group-sprite {
+		max-width: 220px; /* Smaller max width on phones */
+	}
+	
+	.visual-novel-group-sprites {
+		padding: 0 10px; /* More padding on phones */
+	}
+	
+	.character-name-label {
+		bottom: -25px;
+		font-size: 0.6rem;
+		padding: 2px 6px;
+	}
+}
+
 /* Sprite fade states */
 .sprite-fade-in {
 	opacity: 0;
@@ -3395,6 +3759,628 @@ html {
 
 	.option-content p {
 		font-size: 0.9rem;
+	}
+}
+
+/* Group Chat Creation Modal Styles */
+.group-chat-creation-modal {
+	max-width: 700px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+.group-chat-creation-modal .modal-body {
+	padding: 20px;
+}
+
+.group-chat-creation-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.group-chat-creation-modal label {
+	display: block;
+	margin-bottom: 10px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.group-chat-creation-modal .form-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.group-chat-creation-modal .form-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.character-selection-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	padding: 10px;
+	background-color: rgba(20, 20, 20, 0.5);
+}
+
+.character-selection-item {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 15px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	transition: background-color 0.2s ease;
+}
+
+.character-selection-item:last-child {
+	border-bottom: none;
+}
+
+.character-selection-item:hover {
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+.character-info {
+	display: flex;
+	align-items: center;
+}
+
+.character-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	color: #fff;
+	font-size: 16px;
+}
+
+.character-checkbox input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: #646cff;
+}
+
+.character-thumbnail {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.character-name {
+	font-weight: 500;
+}
+
+.probability-control {
+	margin-left: 60px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.probability-control label {
+	font-size: 14px;
+	color: #ccc;
+	margin-bottom: 5px;
+}
+
+.probability-input-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.probability-slider {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 3px;
+	outline: none;
+	transition: background 0.2s ease;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.probability-slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.probability-slider::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	border: none;
+	cursor: pointer;
+}
+
+.probability-number {
+	width: 60px;
+	min-width: 60px;
+	max-width: 60px;
+	padding: 6px 8px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 14px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.probability-unit {
+	color: #ccc;
+	font-size: 14px;
+	min-width: 15px;
+}
+
+.probability-help {
+	color: #aaa;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.no-characters-message {
+	text-align: center;
+	color: #aaa;
+	font-style: italic;
+	padding: 40px 20px;
+	border: 2px dashed rgba(255, 255, 255, 0.2);
+	border-radius: 6px;
+	margin: 20px 0;
+}
+
+.group-chat-creation-modal .modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 15px;
+	padding: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsive adjustments for group chat creation modal */
+@media (max-width: 768px) {
+	.group-chat-creation-modal {
+		width: 95%;
+		max-width: none;
+		max-height: 95vh;
+	}
+
+	.character-selection-list {
+		max-height: 300px;
+	}
+
+	.probability-control {
+		margin-left: 20px;
+	}
+
+	.probability-input-group {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+		max-width: 100%;
+	}
+
+	.probability-number {
+		width: 100%;
+		min-width: auto;
+		max-width: 100%;
+	}
+
+	.group-chat-creation-modal .modal-footer {
+		flex-direction: column;
+		gap: 10px;
+		padding: 15px;
+	}
+}
+
+/* Group Chat Configuration Styles */
+.group-chat-config {
+	width: 100%;
+	max-width: 100%;
+	padding: 20px;
+	box-sizing: border-box;
+	overflow-x: hidden;
+}
+
+.group-chat-config .form-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 25px;
+	padding-bottom: 15px;
+	border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-chat-config .form-header h2 {
+	margin: 0;
+	color: #fff;
+	font-size: 24px;
+}
+
+.group-chat-config .group-chat-icon {
+	font-size: 32px;
+	opacity: 0.7;
+}
+
+.group-chat-config .form-section {
+	margin-bottom: 30px;
+}
+
+.group-chat-config .form-section h3 {
+	margin: 0 0 15px 0;
+	color: #fff;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.group-chat-config .character-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.group-chat-config .character-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+/* Members List */
+.members-list {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.member-item {
+	background-color: rgba(20, 20, 20, 0.6);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	padding: 20px;
+	transition: background-color 0.2s ease;
+}
+
+.member-item:hover {
+	background-color: rgba(30, 30, 30, 0.6);
+}
+
+.member-info {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	margin-bottom: 15px;
+}
+
+.member-avatar {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.member-details {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.member-name {
+	font-size: 18px;
+	font-weight: 600;
+	color: #fff;
+}
+
+.member-order {
+	font-size: 14px;
+	color: #aaa;
+}
+
+.member-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+	width: 100%;
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.probability-control {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.probability-control label {
+	font-size: 14px;
+	color: #ccc;
+	font-weight: 500;
+}
+
+.probability-input-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.probability-slider {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 3px;
+	outline: none;
+	transition: background 0.2s ease;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.probability-slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.probability-slider::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	border: none;
+	cursor: pointer;
+}
+
+.probability-number {
+	width: 60px;
+	min-width: 60px;
+	max-width: 60px;
+	padding: 6px 8px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 14px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.probability-unit {
+	color: #ccc;
+	font-size: 14px;
+	min-width: 15px;
+}
+
+.order-control {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.order-control label {
+	font-size: 14px;
+	color: #ccc;
+	min-width: 100px;
+}
+
+.order-select {
+	padding: 6px 8px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 14px;
+}
+
+.force-response-button {
+	padding: 8px 16px;
+	background-color: #52c41a;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background-color 0.2s ease;
+	margin-right: 10px;
+	align-self: flex-start;
+}
+
+.force-response-button:hover {
+	background-color: #73d13d;
+}
+
+.force-response-button:disabled {
+	background-color: #d9d9d9;
+	color: #999;
+	cursor: not-allowed;
+}
+
+.remove-member-button {
+	padding: 8px 16px;
+	background-color: #ff4d4f;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background-color 0.2s ease;
+	align-self: flex-start;
+}
+
+.remove-member-button:hover {
+	background-color: #ff7875;
+}
+
+/* Available Characters */
+.available-characters {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 15px;
+}
+
+.available-character {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px;
+	background-color: rgba(20, 20, 20, 0.4);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	transition: background-color 0.2s ease;
+}
+
+.available-character:hover {
+	background-color: rgba(30, 30, 30, 0.4);
+}
+
+.available-character .character-thumbnail {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.available-character .character-name {
+	flex: 1;
+	color: #fff;
+	font-size: 14px;
+}
+
+.add-member-button {
+	padding: 6px 12px;
+	background-color: #52c41a;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	transition: background-color 0.2s ease;
+}
+
+.add-member-button:hover {
+	background-color: #73d13d;
+}
+
+
+/* Form Actions */
+.group-chat-config .form-actions {
+	display: flex;
+	gap: 15px;
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.export-button {
+	padding: 12px 24px;
+	background-color: #1890ff;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: background-color 0.2s ease;
+}
+
+.export-button:hover {
+	background-color: #40a9ff;
+}
+
+.delete-button {
+	padding: 12px 24px;
+	background-color: #ff4d4f;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: background-color 0.2s ease;
+}
+
+.delete-button:hover {
+	background-color: #ff7875;
+}
+
+.no-members-message {
+	text-align: center;
+	color: #aaa;
+	font-style: italic;
+	padding: 40px 20px;
+	border: 2px dashed rgba(255, 255, 255, 0.2);
+	border-radius: 6px;
+	margin: 20px 0;
+}
+
+/* Mobile responsive adjustments for group chat config */
+@media (max-width: 768px) {
+	.group-chat-config {
+		padding: 15px;
+	}
+
+	.member-controls {
+		gap: 10px;
+	}
+
+	.probability-input-group {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+		max-width: 100%;
+	}
+
+	.probability-number {
+		width: 100%;
+		min-width: auto;
+		max-width: 100%;
+	}
+
+	.order-control {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 5px;
+	}
+
+	.order-control label {
+		min-width: auto;
+	}
+
+	.available-characters {
+		grid-template-columns: 1fr;
+	}
+
+	.group-chat-config .form-actions {
+		flex-direction: column;
 	}
 }
 

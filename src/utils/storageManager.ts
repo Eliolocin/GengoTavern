@@ -1,6 +1,7 @@
 import { extractCharacterFromPng, embedCharacterIntoPng } from "./pngMetadata";
 import type { Character, Sprite } from "../types/interfaces";
 import { SUPPORTED_EMOTIONS, type SupportedEmotion } from "./emotionClassifier";
+import { isGroupChat } from "./groupChatUtils";
 
 // Define UserPersona interface locally
 interface UserPersona {
@@ -16,6 +17,7 @@ const DIRECTORIES = {
 	characters: "characters",
 	settings: "settings",
 	backgrounds: "backgrounds",
+	groupchats: "groupchats",
 } as const;
 
 /**
@@ -343,6 +345,13 @@ export class StorageManager {
 	private async saveCharacterToFileSystem(character: Character): Promise<void> {
 		if (!this.rootHandle) throw new Error("No root directory handle");
 
+		// Handle group chats differently from individual characters
+		if (isGroupChat(character)) {
+			await this.saveGroupChatToFileSystem(character);
+			return;
+		}
+
+		// Individual character logic (existing PNG embedding)
 		const charactersDir = await this.rootHandle.getDirectoryHandle(
 			DIRECTORIES.characters,
 		);
@@ -375,14 +384,56 @@ export class StorageManager {
 		console.log(`✅ Character saved to file system: ${filename}`);
 	}
 
+	/**
+	 * Save group chat as JSON file in groupchats directory
+	 */
+	private async saveGroupChatToFileSystem(groupChat: Character): Promise<void> {
+		if (!this.rootHandle) throw new Error("No root directory handle");
+
+		const groupChatsDir = await this.rootHandle.getDirectoryHandle(
+			DIRECTORIES.groupchats,
+		);
+		const filename = `${this.sanitizeFilename(groupChat.name)}.json`;
+
+		// Handle renaming
+		if (groupChat.originalFilename && groupChat.originalFilename !== filename) {
+			try {
+				await groupChatsDir.removeEntry(groupChat.originalFilename);
+			} catch (error) {
+				console.warn(
+					`Could not delete old group chat file: ${groupChat.originalFilename}`,
+					error,
+				);
+			}
+		}
+
+		// Save as JSON
+		const jsonData = JSON.stringify(groupChat, null, 2);
+		const encoder = new TextEncoder();
+		const jsonBuffer = encoder.encode(jsonData);
+
+		// Write file
+		const fileHandle = await groupChatsDir.getFileHandle(filename, {
+			create: true,
+		});
+		const writable = await fileHandle.createWritable();
+		await writable.write(jsonBuffer);
+		await writable.close();
+
+		groupChat.originalFilename = filename;
+		console.log(`✅ Group chat saved to file system: ${filename}`);
+	}
+
 	private async loadCharactersFromFileSystem(): Promise<Character[]> {
 		if (!this.rootHandle) return [];
 
+		const allCharacters: Character[] = [];
+
+		// Load individual characters from PNG files
 		try {
 			const charactersDir = await this.rootHandle.getDirectoryHandle(
 				DIRECTORIES.characters,
 			);
-			const characters: Character[] = [];
 
 			// @ts-ignore - entries() is not yet in TypeScript types
 			for await (const [name, handle] of charactersDir.entries()) {
@@ -399,9 +450,14 @@ export class StorageManager {
 							continue;
 						}
 						
+						// Ensure individual characters have the correct type
+						if (!character.type) {
+							character.type = 'individual';
+						}
+						
 						// Clean up any orphaned sprite references
 						const cleanedCharacter = this.cleanOrphanedSprites(character);
-						characters.push(cleanedCharacter);
+						allCharacters.push(cleanedCharacter);
 					} catch (error) {
 						console.warn(`Error loading character ${name}:`, error.message || error);
 						// Continue with other characters
@@ -409,12 +465,51 @@ export class StorageManager {
 				}
 			}
 
-			console.log(`✅ Loaded ${characters.length} characters from file system`);
-			return characters;
+			console.log(`✅ Loaded ${allCharacters.length} individual characters from file system`);
 		} catch (error) {
-			console.error("Error loading characters from file system:", error);
-			return [];
+			console.warn("Characters directory not found or error loading individual characters:", error);
 		}
+
+		// Load group chats from JSON files
+		try {
+			const groupChatsDir = await this.rootHandle.getDirectoryHandle(
+				DIRECTORIES.groupchats,
+			);
+
+			// @ts-ignore - entries() is not yet in TypeScript types  
+			for await (const [name, handle] of groupChatsDir.entries()) {
+				if (handle.kind === "file" && name.endsWith(".json")) {
+					try {
+						// @ts-ignore - getFile is available on FileSystemFileHandle
+						const file = await (handle as FileSystemFileHandle).getFile();
+						const jsonText = await file.text();
+						const groupChat: Character = JSON.parse(jsonText);
+						groupChat.originalFilename = name;
+						
+						// Validate group chat data
+						if (!groupChat.id || !groupChat.name || !groupChat.members) {
+							console.warn(`Invalid group chat data in ${name} - missing required fields`);
+							continue;
+						}
+						
+						// Ensure group chats have the correct type
+						groupChat.type = 'group';
+						
+						allCharacters.push(groupChat);
+					} catch (error) {
+						console.warn(`Error loading group chat ${name}:`, error.message || error);
+						// Continue with other group chats
+					}
+				}
+			}
+
+			console.log(`✅ Loaded ${allCharacters.filter(c => c.type === 'group').length} group chats from file system`);
+		} catch (error) {
+			console.warn("Group chats directory not found or error loading group chats:", error);
+		}
+
+		console.log(`✅ Total loaded: ${allCharacters.length} characters (${allCharacters.filter(c => c.type !== 'group').length} individual + ${allCharacters.filter(c => c.type === 'group').length} groups)`);
+		return allCharacters;
 	}
 
 	private async deleteCharacterFromFileSystem(id: number): Promise<boolean> {
@@ -426,14 +521,21 @@ export class StorageManager {
 
 			if (!character?.originalFilename) return false;
 
-			const charactersDir = await this.rootHandle.getDirectoryHandle(
-				DIRECTORIES.characters,
-			);
-			await charactersDir.removeEntry(character.originalFilename);
+			// Delete from appropriate directory based on character type
+			if (isGroupChat(character)) {
+				const groupChatsDir = await this.rootHandle.getDirectoryHandle(
+					DIRECTORIES.groupchats,
+				);
+				await groupChatsDir.removeEntry(character.originalFilename);
+				console.log(`✅ Group chat deleted from file system: ${character.originalFilename}`);
+			} else {
+				const charactersDir = await this.rootHandle.getDirectoryHandle(
+					DIRECTORIES.characters,
+				);
+				await charactersDir.removeEntry(character.originalFilename);
+				console.log(`✅ Character deleted from file system: ${character.originalFilename}`);
+			}
 
-			console.log(
-				`✅ Character deleted from file system: ${character.originalFilename}`,
-			);
 			return true;
 		} catch (error) {
 			console.error(`Error deleting character ${id}:`, error);
@@ -493,6 +595,7 @@ export class StorageManager {
 				},
 				selectedModel: data.selectedModel || "gemini-2.5-flash",
 				temperature: data.temperature || 1.5,
+				visualNovelMode: data.visualNovelMode || false,
 			};
 		} catch {
 			return this.getDefaultSettings();
@@ -505,6 +608,13 @@ export class StorageManager {
 	private async saveCharacterToLocalStorage(
 		character: Character,
 	): Promise<void> {
+		// Handle group chats differently from individual characters
+		if (isGroupChat(character)) {
+			await this.saveGroupChatToLocalStorage(character);
+			return;
+		}
+
+		// Individual character logic (existing PNG logic)
 		const filename = `${this.sanitizeFilename(character.name)}.png`;
 
 		if (character.originalFilename && character.originalFilename !== filename) {
@@ -520,18 +630,42 @@ export class StorageManager {
 		console.log(`✅ Character saved to localStorage: ${filename}`);
 	}
 
-	private async loadCharactersFromLocalStorage(): Promise<Character[]> {
-		const characters: Character[] = [];
-		const prefix = "gengoTavern_file_characters_";
+	/**
+	 * Save group chat to localStorage as JSON
+	 */
+	private async saveGroupChatToLocalStorage(groupChat: Character): Promise<void> {
+		const filename = `${this.sanitizeFilename(groupChat.name)}.json`;
 
+		if (groupChat.originalFilename && groupChat.originalFilename !== filename) {
+			const oldKey = `gengoTavern_file_groupchats_${groupChat.originalFilename.replace(".json", "")}_json`;
+			localStorage.removeItem(oldKey);
+		}
+
+		const groupChatData = { ...groupChat, originalFilename: filename };
+		const storageKey = `gengoTavern_file_groupchats_${filename.replace(".json", "")}_json`;
+		localStorage.setItem(storageKey, JSON.stringify(groupChatData));
+
+		groupChat.originalFilename = filename;
+		console.log(`✅ Group chat saved to localStorage: ${filename}`);
+	}
+
+	private async loadCharactersFromLocalStorage(): Promise<Character[]> {
+		const allCharacters: Character[] = [];
+		
+		// Load individual characters
+		const charactersPrefix = "gengoTavern_file_characters_";
 		for (let i = 0; i < localStorage.length; i++) {
 			const key = localStorage.key(i);
-			if (key?.startsWith(prefix) && key.endsWith("_png")) {
+			if (key?.startsWith(charactersPrefix) && key.endsWith("_png")) {
 				try {
 					const data = localStorage.getItem(key);
 					if (data) {
 						const character = JSON.parse(data) as Character;
-						characters.push(character);
+						// Ensure individual characters have the correct type
+						if (!character.type) {
+							character.type = 'individual';
+						}
+						allCharacters.push(character);
 					}
 				} catch (error) {
 					console.warn("Error loading character from localStorage:", error);
@@ -539,8 +673,27 @@ export class StorageManager {
 			}
 		}
 
-		console.log(`✅ Loaded ${characters.length} characters from localStorage`);
-		return characters;
+		// Load group chats
+		const groupChatsPrefix = "gengoTavern_file_groupchats_";
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (key?.startsWith(groupChatsPrefix) && key.endsWith("_json")) {
+				try {
+					const data = localStorage.getItem(key);
+					if (data) {
+						const groupChat = JSON.parse(data) as Character;
+						// Ensure group chats have the correct type
+						groupChat.type = 'group';
+						allCharacters.push(groupChat);
+					}
+				} catch (error) {
+					console.warn("Error loading group chat from localStorage:", error);
+				}
+			}
+		}
+
+		console.log(`✅ Loaded ${allCharacters.length} characters from localStorage (${allCharacters.filter(c => c.type !== 'group').length} individual + ${allCharacters.filter(c => c.type === 'group').length} groups)`);
+		return allCharacters;
 	}
 
 	private async deleteCharacterFromLocalStorage(id: number): Promise<boolean> {
@@ -549,12 +702,17 @@ export class StorageManager {
 
 		if (!character?.originalFilename) return false;
 
-		const storageKey = `gengoTavern_file_characters_${character.originalFilename.replace(".png", "")}_png`;
-		localStorage.removeItem(storageKey);
+		// Delete from appropriate storage key based on character type
+		if (isGroupChat(character)) {
+			const storageKey = `gengoTavern_file_groupchats_${character.originalFilename.replace(".json", "")}_json`;
+			localStorage.removeItem(storageKey);
+			console.log(`✅ Group chat deleted from localStorage: ${character.originalFilename}`);
+		} else {
+			const storageKey = `gengoTavern_file_characters_${character.originalFilename.replace(".png", "")}_png`;
+			localStorage.removeItem(storageKey);
+			console.log(`✅ Character deleted from localStorage: ${character.originalFilename}`);
+		}
 
-		console.log(
-			`✅ Character deleted from localStorage: ${character.originalFilename}`,
-		);
 		return true;
 	}
 
@@ -597,6 +755,7 @@ export class StorageManager {
 					},
 					selectedModel: parsed.selectedModel || "gemini-2.5-flash",
 					temperature: parsed.temperature || 1.5,
+					visualNovelMode: parsed.visualNovelMode || false,
 				};
 			}
 		} catch (error) {
