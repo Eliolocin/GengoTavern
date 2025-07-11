@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
 import { ReactCrop } from "react-image-crop";
@@ -157,38 +158,75 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 		tempImage.src = src;
 	};
 
-	return (
-		<div className="image-cropper-modal">
-			<div className="image-cropper-content">
-				<h3>Crop Image (2:3 Aspect Ratio)</h3>
-				<p>Resize the crop area while maintaining the 2:3 portrait ratio</p>
-				<div className="crop-container">
-					<ReactCrop
-						crop={crop}
-						onChange={onCropChange}
-						onComplete={onCropComplete}
-						aspect={2 / 3} // Fixed 2:3 aspect ratio
-						keepSelection
-						minWidth={30}
-						minHeight={45} // 30 * (3/2) = 45
+	/**
+	 * Handle backdrop click to close modal
+	 */
+	const handleBackdropClick = (e: React.MouseEvent) => {
+		if (e.target === e.currentTarget) {
+			onCancel();
+		}
+	};
+
+	/**
+	 * Handle keyboard events for accessibility
+	 */
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			onCancel();
+		}
+	};
+
+	const modalContent = (
+		<div 
+			className="modal-overlay image-cropper-overlay" 
+			onClick={handleBackdropClick}
+			onKeyDown={handleKeyDown}
+			tabIndex={-1}
+		>
+			<div className="modal-content image-cropper-modal">
+				<div className="modal-header">
+					<h2>Crop Image (2:3 Aspect Ratio)</h2>
+					<button 
+						type="button" 
+						className="modal-close" 
+						onClick={onCancel}
+						aria-label="Close modal"
 					>
-						<img
-							ref={imgRef}
-							src={src}
-							alt="Crop preview"
-							style={{ maxHeight: "500px", maxWidth: "100%" }}
-							crossOrigin="anonymous"
-						/>
-					</ReactCrop>
+						×
+					</button>
 				</div>
-				<div className="cropper-actions">
-					<button type="button" onClick={onCancel} className="cancel-button">
+				
+				<div className="modal-body">
+					<p>Resize the crop area while maintaining the 2:3 portrait ratio</p>
+					<div className="crop-container">
+						<ReactCrop
+							crop={crop}
+							onChange={onCropChange}
+							onComplete={onCropComplete}
+							aspect={2 / 3} // Always enforce 2:3 aspect ratio
+							keepSelection
+							minWidth={30}
+							minHeight={45} // 30 * (3/2) = 45
+						>
+							<img
+								ref={imgRef}
+								src={src}
+								alt="Crop preview"
+								style={{ maxHeight: "500px", maxWidth: "100%" }}
+								crossOrigin="anonymous"
+							/>
+						</ReactCrop>
+					</div>
+				</div>
+
+				<div className="modal-footer">
+					<button type="button" onClick={onCancel} className="modal-button secondary">
 						Cancel
 					</button>
 					<button
 						type="button"
 						onClick={handleCropImage}
-						className="confirm-button"
+						className="modal-button primary"
 					>
 						Confirm Crop
 					</button>
@@ -196,6 +234,9 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 			</div>
 		</div>
 	);
+
+	// Render using portal to ensure proper z-index layering
+	return createPortal(modalContent, document.body);
 };
 
 export default ImageCropper;

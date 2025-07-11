@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import { storageManager } from "../../utils/storageManager";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
+import { TrashIcon } from "@heroicons/react/20/solid";
 
 interface BackgroundManagerModalProps {
 	onClose: () => void;
@@ -100,24 +102,48 @@ const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 		}
 	};
 
-	return (
-		<div className="modal-backdrop">
-			<div
-				className="modal-content background-manager-modal"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
-				role="document"
-			>
+	/**
+	 * Handle backdrop click to close modal
+	 */
+	const handleBackdropClick = (e: React.MouseEvent) => {
+		if (e.target === e.currentTarget) {
+			onClose();
+		}
+	};
+
+	/**
+	 * Handle keyboard events for accessibility
+	 */
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			onClose();
+		}
+	};
+
+	const modalContent = (
+		<div 
+			className="modal-overlay background-manager-overlay" 
+			onClick={handleBackdropClick}
+			onKeyDown={handleKeyDown}
+			tabIndex={-1}
+		>
+			<div className="modal-content background-manager-modal">
 				<div className="modal-header">
-					<h3>Manage Backgrounds</h3>
-					<button className="close-button" onClick={onClose} type="button">
+					<h2>Manage Backgrounds</h2>
+					<button 
+						type="button" 
+						className="modal-close" 
+						onClick={onClose}
+						aria-label="Close modal"
+					>
 						×
 					</button>
 				</div>
+				
 				<div className="modal-body">
 					{error && <div className="error-toast">{error}</div>}
 					<div className="background-upload">
-						<label htmlFor="background-upload-input" className="primary-button">
+						<label htmlFor="background-upload-input" className="modal-button primary">
 							Upload New Background
 						</label>
 						<input
@@ -154,8 +180,9 @@ const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 												className="delete-button-small"
 												onClick={() => handleDelete(filename)}
 												type="button"
+												title="Delete background"
 											>
-												🗑️
+												<TrashIcon className="w-4 h-4" />
 											</button>
 										</div>
 									</div>
@@ -167,6 +194,9 @@ const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 			</div>
 		</div>
 	);
+
+	// Render using portal to ensure proper z-index layering
+	return createPortal(modalContent, document.body);
 };
 
 export default BackgroundManagerModal;

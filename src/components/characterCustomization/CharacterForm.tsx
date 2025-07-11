@@ -540,15 +540,6 @@ const CharacterForm: FC<CharacterFormProps> = ({
 
 			<div className="character-form-header">
 				<h3>Edit Character</h3>
-				{onDeleteCharacter && (
-					<button
-						type="button"
-						className="delete-character-button"
-						onClick={() => setShowDeleteConfirmation(true)}
-					>
-						Delete
-					</button>
-				)}
 			</div>
 
 			<div className="character-avatar-wrapper">
@@ -579,11 +570,15 @@ const CharacterForm: FC<CharacterFormProps> = ({
 				>
 					Export Character
 				</button>
-				{/* JSON export button temporarily disabled
-        <button type="button" className="save-json-button" onClick={handleSaveAsJson}>
-          Save as JSON
-        </button>
-        */}
+				{onDeleteCharacter && (
+					<button
+						type="button"
+						className="delete-character-button"
+						onClick={() => setShowDeleteConfirmation(true)}
+					>
+						Delete Character
+					</button>
+				)}
 			</div>
 
 			<div className="form-group">
@@ -668,15 +663,15 @@ const CharacterForm: FC<CharacterFormProps> = ({
 									readOnly
 								/>
 							</div>
+							<button
+								type="button"
+								className="remove-dialogue"
+								onClick={() => removeDialogue(index)}
+								disabled={dialogues.length <= 1}
+							>
+								Remove Dialogue
+							</button>
 						</div>
-						<button
-							type="button"
-							className="remove-dialogue"
-							onClick={() => removeDialogue(index)}
-							disabled={dialogues.length <= 1}
-						>
-							-
-						</button>
 					</div>
 				))}
 				<button type="button" className="add-dialogue" onClick={addDialogue}>
@@ -747,7 +742,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
 								/>
 							</div>
 						)}
-						<div className="background-actions">
+						<div className="form-actions">
 							<button
 								type="button"
 								className="primary-button"

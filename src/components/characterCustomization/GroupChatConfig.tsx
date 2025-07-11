@@ -3,14 +3,14 @@ import type { FC } from "react";
 import type { Character, GroupMember } from "../../types/interfaces";
 import { useCharacters } from "../../contexts/CharacterContext";
 import DeleteConfirmationModal from "../shared/DeleteConfirmationModal";
-import { 
-	isGroupChat, 
-	getOrderedGroupMembers, 
+import {
+	isGroupChat,
+	getOrderedGroupMembers,
 	updateMemberProbability,
 	addGroupMember,
 	removeGroupMember,
 	moveGroupMemberUp,
-	moveGroupMemberDown
+	moveGroupMemberDown,
 } from "../../utils/groupChatUtils";
 
 interface GroupChatConfigProps {
@@ -40,49 +40,71 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 	/**
 	 * Update group chat name
 	 */
-	const handleNameChange = useCallback((newName: string) => {
-		onUpdateCharacter('name', newName);
-	}, [onUpdateCharacter]);
+	const handleNameChange = useCallback(
+		(newName: string) => {
+			onUpdateCharacter("name", newName);
+		},
+		[onUpdateCharacter],
+	);
 
 	/**
 	 * Update member response probability
 	 */
-	const handleProbabilityChange = useCallback((characterId: number, probability: number) => {
-		const updatedGroupChat = updateMemberProbability(groupChat, characterId, probability);
-		onUpdateCharacter('members', updatedGroupChat.members || []);
-	}, [groupChat, onUpdateCharacter]);
+	const handleProbabilityChange = useCallback(
+		(characterId: number, probability: number) => {
+			const updatedGroupChat = updateMemberProbability(
+				groupChat,
+				characterId,
+				probability,
+			);
+			onUpdateCharacter("members", updatedGroupChat.members || []);
+		},
+		[groupChat, onUpdateCharacter],
+	);
 
 	/**
 	 * Add a new member to the group chat
 	 */
-	const handleAddMember = useCallback((characterId: number) => {
-		const updatedGroupChat = addGroupMember(groupChat, characterId, 50); // Default 50% probability
-		onUpdateCharacter('members', updatedGroupChat.members || []);
-	}, [groupChat, onUpdateCharacter]);
+	const handleAddMember = useCallback(
+		(characterId: number) => {
+			const updatedGroupChat = addGroupMember(groupChat, characterId, 50); // Default 50% probability
+			onUpdateCharacter("members", updatedGroupChat.members || []);
+		},
+		[groupChat, onUpdateCharacter],
+	);
 
 	/**
 	 * Remove a member from the group chat
 	 */
-	const handleRemoveMember = useCallback((characterId: number) => {
-		const updatedGroupChat = removeGroupMember(groupChat, characterId);
-		onUpdateCharacter('members', updatedGroupChat.members || []);
-	}, [groupChat, onUpdateCharacter]);
+	const handleRemoveMember = useCallback(
+		(characterId: number) => {
+			const updatedGroupChat = removeGroupMember(groupChat, characterId);
+			onUpdateCharacter("members", updatedGroupChat.members || []);
+		},
+		[groupChat, onUpdateCharacter],
+	);
 
 	/**
 	 * Move member up in display order
 	 */
-	const handleMoveUp = useCallback((characterId: number) => {
-		const updatedGroupChat = moveGroupMemberUp(groupChat, characterId);
-		onUpdateCharacter('members', updatedGroupChat.members || []);
-	}, [groupChat, onUpdateCharacter]);
+	const handleMoveUp = useCallback(
+		(characterId: number) => {
+			const updatedGroupChat = moveGroupMemberUp(groupChat, characterId);
+			onUpdateCharacter("members", updatedGroupChat.members || []);
+		},
+		[groupChat, onUpdateCharacter],
+	);
 
 	/**
 	 * Move member down in display order
 	 */
-	const handleMoveDown = useCallback((characterId: number) => {
-		const updatedGroupChat = moveGroupMemberDown(groupChat, characterId);
-		onUpdateCharacter('members', updatedGroupChat.members || []);
-	}, [groupChat, onUpdateCharacter]);
+	const handleMoveDown = useCallback(
+		(characterId: number) => {
+			const updatedGroupChat = moveGroupMemberDown(groupChat, characterId);
+			onUpdateCharacter("members", updatedGroupChat.members || []);
+		},
+		[groupChat, onUpdateCharacter],
+	);
 
 	/**
 	 * Export group chat as JSON
@@ -91,7 +113,7 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 		try {
 			await exportCharacterAsJson(groupChat);
 		} catch (error) {
-			console.error('Error exporting group chat as JSON:', error);
+			console.error("Error exporting group chat as JSON:", error);
 		}
 	}, [exportCharacterAsJson, groupChat]);
 
@@ -116,19 +138,20 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 
 	const members = groupChat.members || [];
 	const orderedMembers = getOrderedGroupMembers(groupChat);
-	
+
 	// Get character objects for the members
 	const memberCharacters = orderedMembers
-		.map(member => ({
+		.map((member) => ({
 			member,
-			character: allCharacters.find(char => char.id === member.characterId)
+			character: allCharacters.find((char) => char.id === member.characterId),
 		}))
-		.filter(item => item.character); // Only include members whose characters still exist
+		.filter((item) => item.character); // Only include members whose characters still exist
 
 	// Get available characters that aren't already in the group
-	const availableCharacters = allCharacters.filter(char => 
-		char.type !== 'group' && 
-		!members.some(member => member.characterId === char.id)
+	const availableCharacters = allCharacters.filter(
+		(char) =>
+			char.type !== "group" &&
+			!members.some((member) => member.characterId === char.id),
 	);
 
 	return (
@@ -136,7 +159,27 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 			{/* Header */}
 			<div className="form-header">
 				<h2>Group Chat Configuration</h2>
-				<div className="group-chat-icon">👥</div>
+			</div>
+
+			{/* Action Buttons - moved to top like CharacterForm */}
+			<div className="form-actions">
+				<button
+					type="button"
+					onClick={handleExportAsJson}
+					className="export-button"
+				>
+					Export as JSON
+				</button>
+
+				{onDeleteCharacter && (
+					<button
+						type="button"
+						onClick={handleDeleteClick}
+						className="delete-button"
+					>
+						Delete Group Chat
+					</button>
+				)}
 			</div>
 
 			{/* Group Chat Name */}
@@ -161,97 +204,118 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 					</div>
 				) : (
 					<div className="members-list">
-						{memberCharacters.map(({ member, character }) => character && (
-							<div key={member.characterId} className="member-item">
-								<div className="member-info">
-									<img 
-										src={character.image} 
-										alt={character.name}
-										className="member-avatar"
-									/>
-									<div className="member-details">
-										<span className="member-name">{character.name}</span>
-										<span className="member-order">Display Order: #{member.displayOrder + 1}</span>
-									</div>
-								</div>
+						{memberCharacters.map(
+							({ member, character }) =>
+								character && (
+									<div key={member.characterId} className="member-item">
+										<div className="member-info">
+											<img
+												src={character.image}
+												alt={character.name}
+												className="member-avatar"
+											/>
+											<div className="member-details">
+												<span className="member-name">{character.name}</span>
+												<span className="member-order">
+													Display Order: #{member.displayOrder + 1}
+												</span>
+											</div>
+										</div>
 
-								<div className="member-controls">
-									{/* Response Probability Slider */}
-									<div className="probability-control">
-										<label htmlFor={`prob-${member.characterId}`}>
-											Response Probability: {member.responseProbability}%
-										</label>
-										<div className="probability-input-group">
-											<input
-												id={`prob-${member.characterId}`}
-												type="range"
-												min="0"
-												max="100"
-												value={member.responseProbability}
-												onChange={(e) => handleProbabilityChange(member.characterId, Number(e.target.value))}
-												className="probability-slider"
-											/>
-											<input
-												type="number"
-												min="0"
-												max="100"
-												value={member.responseProbability}
-												onChange={(e) => handleProbabilityChange(member.characterId, Number(e.target.value))}
-												className="probability-number"
-											/>
-											<span className="probability-unit">%</span>
+										<div className="member-controls">
+											{/* Response Probability Slider */}
+											<div className="probability-control">
+												<label htmlFor={`prob-${member.characterId}`}>
+													Response Probability: {member.responseProbability}%
+												</label>
+												<div className="probability-input-group">
+													<input
+														id={`prob-${member.characterId}`}
+														type="range"
+														min="0"
+														max="100"
+														value={member.responseProbability}
+														onChange={(e) =>
+															handleProbabilityChange(
+																member.characterId,
+																Number(e.target.value),
+															)
+														}
+														className="probability-slider"
+													/>
+													<input
+														type="number"
+														min="0"
+														max="100"
+														value={member.responseProbability}
+														onChange={(e) =>
+															handleProbabilityChange(
+																member.characterId,
+																Number(e.target.value),
+															)
+														}
+														className="probability-number"
+													/>
+													<span className="probability-unit">%</span>
+												</div>
+											</div>
+
+											{/* Display Order Control */}
+											<div className="order-control">
+												<label>Display Order:</label>
+												<div className="order-buttons">
+													<button
+														type="button"
+														onClick={() => handleMoveUp(member.characterId)}
+														className="order-button up-button"
+														disabled={member.displayOrder === 0}
+														title="Move up"
+													>
+														▲
+													</button>
+													<span className="order-display">
+														#{member.displayOrder + 1}
+													</span>
+													<button
+														type="button"
+														onClick={() => handleMoveDown(member.characterId)}
+														className="order-button down-button"
+														disabled={
+															member.displayOrder ===
+															memberCharacters.length - 1
+														}
+														title="Move down"
+													>
+														▼
+													</button>
+												</div>
+											</div>
+
+											{/* Action Buttons */}
+											<div className="form-actions">
+												<button
+													type="button"
+													onClick={() => onForceResponse?.(member.characterId)}
+													className="force-response-button member-action-button"
+													title="Force this character to respond"
+													disabled={isProcessingQueue}
+												>
+													Force Response
+												</button>
+
+												<button
+													type="button"
+													onClick={() => handleRemoveMember(member.characterId)}
+													className="remove-member-button member-action-button"
+													title="Remove from group"
+												>
+													Remove Member
+												</button>
+											</div>
 										</div>
 									</div>
-
-									{/* Display Order Control */}
-									<div className="order-control">
-										<label>Display Order:</label>
-										<div className="order-buttons">
-											<button
-												type="button"
-												onClick={() => handleMoveUp(member.characterId)}
-												className="order-button up-button"
-												disabled={member.displayOrder === 0}
-												title="Move up"
-											>
-												▲
-											</button>
-											<span className="order-display">#{member.displayOrder + 1}</span>
-											<button
-												type="button"
-												onClick={() => handleMoveDown(member.characterId)}
-												className="order-button down-button"
-												disabled={member.displayOrder === memberCharacters.length - 1}
-												title="Move down"
-											>
-												▼
-											</button>
-										</div>
-									</div>
-
-									{/* Force Response Button */}
-									<button
-										type="button"
-										onClick={() => onForceResponse?.(member.characterId)}
-										className="force-response-button"
-										title="Force this character to respond"
-										disabled={isProcessingQueue}
-									>
-										Force Response
-									</button>
-
-									{/* Remove Member Button */}
-									<button
-										type="button"
-										onClick={() => handleRemoveMember(member.characterId)}
-										className="remove-member-button"
-										title="Remove from group"
-									>
-										Remove
-									</button>
-								</div>
-							</div>
-						))}
+								),
+						)}
 					</div>
 				)}
 			</div>
@@ -261,10 +325,10 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 				<div className="form-section">
 					<h3>Add Members</h3>
 					<div className="available-characters">
-						{availableCharacters.map(character => (
+						{availableCharacters.map((character) => (
 							<div key={character.id} className="available-character">
-								<img 
-									src={character.image} 
+								<img
+									src={character.image}
 									alt={character.name}
 									className="character-thumbnail"
 								/>
@@ -281,28 +345,6 @@ const GroupChatConfig: FC<GroupChatConfigProps> = ({
 					</div>
 				</div>
 			)}
-
-
-			{/* Action Buttons */}
-			<div className="form-actions">
-				<button
-					type="button"
-					onClick={handleExportAsJson}
-					className="export-button"
-				>
-					Export as JSON
-				</button>
-
-				{onDeleteCharacter && (
-					<button
-						type="button"
-						onClick={handleDeleteClick}
-						className="delete-button"
-					>
-						Delete Group Chat
-					</button>
-				)}
-			</div>
 
 			{/* Delete Confirmation Modal */}
 			{showDeleteConfirmation && (
