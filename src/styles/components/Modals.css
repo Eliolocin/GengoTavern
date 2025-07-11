@@ -1,3 +1,6 @@
+.primary-button {
+	background-color: rgba(100, 108, 255, 0.7);
+}
 /* Modal styles for better visibility on backgrounds */
 .modal-backdrop,
 .modal-overlay {
@@ -692,12 +695,13 @@
 
 /* Save As Options Modal */
 .save-as-modal {
-	max-width: 450px;
+	max-width: 350px;
 	width: 90%;
+	min-width: 300px;
 }
 
 .save-as-modal .modal-body {
-	padding: 20px;
+	padding: 15px;
 }
 
 /* Vertical layout for save options */
@@ -709,9 +713,9 @@
 
 .save-option {
 	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 15px;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px;
 	background-color: rgba(42, 42, 42, 0.7);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 8px;
@@ -730,20 +734,40 @@
 	accent-color: #646cff;
 }
 
-.save-option-content {
-	flex: 1;
+.save-option-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
 }
 
-.save-option-title {
+.save-option-header h4 {
+	margin: 0;
 	font-weight: 600;
 	color: #fff;
-	margin-bottom: 4px;
+	font-size: 1rem;
 }
 
-.save-option-description {
+.save-option-tag {
+	background-color: #646cff;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+
+.save-option p {
+	margin: 0 0 4px 0;
 	color: #ccc;
-	font-size: 0.9rem;
-	line-height: 1.4;
+	font-size: 0.85rem;
+	line-height: 1.3;
+}
+
+.save-option-note {
+	font-size: 0.8rem !important;
+	color: #999 !important;
+	font-style: italic;
 }
 
 /* Delete Confirmation Modal */
@@ -810,11 +834,11 @@
 .editable-field {
 	position: relative;
 	cursor: pointer;
-	padding: 8px 12px;
 	background-color: rgba(30, 30, 30, 0.8);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 4px;
 	transition: background-color 0.2s ease;
+	padding: 0;
 }
 
 .editable-field:hover {
@@ -892,8 +916,9 @@
 }
 
 /* File System Setup Modal */
-.file-system-setup-modal {
-	max-width: 600px;
+.file-system-setup-modal,
+.setup-modal {
+	max-width: 500px;
 	width: 90%;
 }
 
@@ -1002,4 +1027,595 @@
 .writing-tips-content blockquote p {
 	margin: 0;
 	font-style: italic;
+}
+
+/* Image to Text Modal */
+.image-to-text-modal {
+	max-width: 700px;
+	width: 90%;
+	max-height: 85vh;
+}
+
+.image-to-text-modal .modal-body {
+	padding: 25px;
+}
+
+.image-to-text-modal .form-group {
+	margin-bottom: 20px;
+}
+
+.image-to-text-modal label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #fff;
+	font-size: 14px;
+}
+
+.image-to-text-modal .file-input,
+.image-to-text-modal .text-input,
+.image-to-text-modal .textarea-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 14px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.image-to-text-modal .file-input:focus,
+.image-to-text-modal .text-input:focus,
+.image-to-text-modal .textarea-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.image-to-text-modal .textarea-input {
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.image-to-text-modal .input-hint {
+	font-size: 12px;
+	color: #94a3b8;
+	margin-top: 6px;
+	line-height: 1.4;
+	font-style: italic;
+}
+
+.image-to-text-modal .image-preview {
+	margin-top: 15px;
+	text-align: center;
+}
+
+.image-to-text-modal .image-preview img {
+	max-width: 150px;
+	max-height: 150px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	object-fit: cover;
+}
+
+.image-to-text-modal .edit-crop-button {
+	margin-top: 10px;
+	padding: 6px 12px;
+	background-color: rgba(100, 108, 255, 0.8);
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	transition: background-color 0.2s ease;
+}
+
+.image-to-text-modal .edit-crop-button:hover {
+	background-color: #535bf2;
+}
+
+.image-to-text-modal .generating-section {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.image-to-text-modal .loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 15px;
+}
+
+.image-to-text-modal .loading-spinner {
+	width: 40px;
+	height: 40px;
+	border: 3px solid rgba(255, 255, 255, 0.1);
+	border-top: 3px solid #646cff;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.image-to-text-modal .preview-section {
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+.image-to-text-modal .character-preview {
+	display: flex;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.image-to-text-modal .preview-image {
+	flex-shrink: 0;
+}
+
+.image-to-text-modal .preview-image img {
+	width: 120px;
+	height: 120px;
+	border-radius: 8px;
+	object-fit: cover;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.image-to-text-modal .character-details {
+	flex: 1;
+	min-width: 0;
+}
+
+.image-to-text-modal .character-details h3 {
+	margin: 0 0 15px 0;
+	color: #fff;
+	font-size: 18px;
+}
+
+.image-to-text-modal .detail-section {
+	margin-bottom: 15px;
+}
+
+.image-to-text-modal .detail-section h4 {
+	margin: 0 0 8px 0;
+	color: #646cff;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.image-to-text-modal .detail-section p {
+	margin: 0;
+	color: #ccc;
+	line-height: 1.4;
+	font-size: 13px;
+}
+
+.image-to-text-modal .sample-dialogues {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.image-to-text-modal .dialogue-pair {
+	background-color: rgba(20, 20, 20, 0.5);
+	padding: 10px;
+	border-radius: 6px;
+	border-left: 3px solid #646cff;
+}
+
+.image-to-text-modal .user-line,
+.image-to-text-modal .character-line {
+	margin-bottom: 5px;
+	font-size: 13px;
+	line-height: 1.3;
+}
+
+.image-to-text-modal .user-line:last-child,
+.image-to-text-modal .character-line:last-child {
+	margin-bottom: 0;
+}
+
+.image-to-text-modal .user-line strong,
+.image-to-text-modal .character-line strong {
+	color: #fff;
+}
+
+.image-to-text-modal .error-section {
+	text-align: center;
+	padding: 30px 20px;
+}
+
+.image-to-text-modal .error-message h3 {
+	color: #f44336;
+	margin-bottom: 10px;
+}
+
+.image-to-text-modal .error-message p {
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.image-to-text-modal .modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 25px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.image-to-text-modal .cancel-button,
+.image-to-text-modal .generate-button,
+.image-to-text-modal .accept-button,
+.image-to-text-modal .reject-button,
+.image-to-text-modal .retry-button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	min-width: 100px;
+}
+
+.image-to-text-modal .cancel-button,
+.image-to-text-modal .reject-button {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.image-to-text-modal .cancel-button:hover,
+.image-to-text-modal .reject-button:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.image-to-text-modal .generate-button,
+.image-to-text-modal .accept-button,
+.image-to-text-modal .retry-button {
+	background-color: #646cff;
+	color: white;
+}
+
+.image-to-text-modal .generate-button:hover,
+.image-to-text-modal .accept-button:hover,
+.image-to-text-modal .retry-button:hover {
+	background-color: #535bf2;
+}
+
+.image-to-text-modal .generate-button:disabled,
+.image-to-text-modal .cancel-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Responsive adjustments for Image to Text Modal */
+@media screen and (max-width: 768px) {
+	.image-to-text-modal .character-preview {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.image-to-text-modal .preview-image img {
+		width: 100px;
+		height: 100px;
+	}
+}
+
+/* Group Chat Creation Modal */
+.group-chat-creation-modal {
+	max-width: 600px;
+	width: 90%;
+	max-height: 80vh;
+}
+
+.group-chat-creation-modal .modal-body {
+	padding: 25px;
+}
+
+.group-chat-creation-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.group-chat-creation-modal label {
+	display: block;
+	margin-bottom: 10px;
+	font-weight: 600;
+	color: #fff;
+	font-size: 14px;
+}
+
+.group-chat-creation-modal .form-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 14px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.group-chat-creation-modal .form-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.group-chat-creation-modal .no-characters-message {
+	text-align: center;
+	color: #999;
+	font-style: italic;
+	padding: 20px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 6px;
+}
+
+.group-chat-creation-modal .character-selection-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	background-color: rgba(20, 20, 20, 0.3);
+}
+
+.group-chat-creation-modal .character-selection-item {
+	padding: 15px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+	transition: background-color 0.2s ease;
+}
+
+.group-chat-creation-modal .character-selection-item:last-child {
+	border-bottom: none;
+}
+
+.group-chat-creation-modal .character-selection-item:hover {
+	background-color: rgba(40, 40, 40, 0.5);
+}
+
+.group-chat-creation-modal .character-info {
+	margin-bottom: 15px;
+}
+
+.group-chat-creation-modal .character-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	color: #fff;
+	font-size: 14px;
+}
+
+.group-chat-creation-modal .character-checkbox input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: #646cff;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .character-thumbnail {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	transition: border-color 0.2s ease;
+}
+
+.group-chat-creation-modal .character-checkbox:hover .character-thumbnail {
+	border-color: #646cff;
+}
+
+.group-chat-creation-modal .character-name {
+	font-weight: 500;
+}
+
+.group-chat-creation-modal .probability-control {
+	margin-left: 30px;
+	background-color: rgba(30, 30, 30, 0.5);
+	padding: 15px;
+	border-radius: 6px;
+	border-left: 3px solid #646cff;
+}
+
+.group-chat-creation-modal .probability-control label {
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: #ccc;
+}
+
+.group-chat-creation-modal .probability-input-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.group-chat-creation-modal .probability-slider {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 3px;
+	outline: none;
+	transition: background 0.2s ease;
+}
+
+.group-chat-creation-modal .probability-slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .probability-slider::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	border: none;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .probability-number {
+	width: 60px;
+	padding: 6px 8px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 13px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.group-chat-creation-modal .probability-unit {
+	color: #ccc;
+	font-size: 13px;
+	min-width: 15px;
+}
+
+.group-chat-creation-modal .probability-help {
+	margin-top: 8px;
+	color: #94a3b8;
+	font-size: 12px;
+	line-height: 1.3;
+	font-style: italic;
+}
+
+.group-chat-creation-modal .modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 25px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-chat-creation-modal .button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	min-width: 120px;
+}
+
+.group-chat-creation-modal .button-secondary {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.group-chat-creation-modal .button-secondary:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.group-chat-creation-modal .button-primary {
+	background-color: #646cff;
+	color: white;
+}
+
+.group-chat-creation-modal .button-primary:hover:not(:disabled) {
+	background-color: #535bf2;
+}
+
+.group-chat-creation-modal .button-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Responsive adjustments for Group Chat Creation Modal */
+@media screen and (max-width: 768px) {
+	.group-chat-creation-modal .character-checkbox {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+
+	.group-chat-creation-modal .probability-control {
+		margin-left: 0;
+		margin-top: 10px;
+	}
+
+	.group-chat-creation-modal .probability-input-group {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.group-chat-creation-modal .probability-number {
+		width: 100%;
+	}
+}
+
+/* Image Cropper Modal Overlay - Higher z-index to appear above other modals */
+.image-cropper-overlay {
+	z-index: 100001 !important; /* Higher than regular modal overlays */
+}
+
+.image-cropper-modal {
+	max-width: 900px;
+	width: 95%;
+	max-height: 90vh;
+	z-index: 100002 !important; /* Higher than regular modal content */
+}
+
+.image-cropper-modal .modal-body {
+	padding: 20px;
+}
+
+.image-cropper-modal .crop-container {
+	margin-bottom: 20px;
+	display: flex;
+	justify-content: center;
+	max-height: 500px;
+	overflow: hidden;
+}
+
+.image-cropper-modal .crop-preview {
+	margin-top: 20px;
+	text-align: center;
+}
+
+.image-cropper-modal .crop-preview h4 {
+	margin-bottom: 10px;
+	color: #fff;
+}
+
+.image-cropper-modal .crop-preview-image {
+	max-width: 200px;
+	max-height: 200px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+}
+
+/* Background Manager Modal Overlay - Higher z-index to appear above other modals */
+.background-manager-overlay {
+	z-index: 100001 !important; /* Higher than regular modal overlays */
+}
+
+.background-manager-modal {
+	max-width: 600px;
+	width: 90%;
+	max-height: 80vh;
+	z-index: 100002 !important; /* Higher than regular modal content */
+}
+
+/* Responsive adjustments for Save As Modal */
+@media screen and (max-width: 768px) {
+	.save-as-modal {
+		width: 95%;
+		min-width: unset;
+	}
 }

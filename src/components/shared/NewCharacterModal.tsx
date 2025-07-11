@@ -1,5 +1,5 @@
 import type React from 'react';
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { XMarkIcon, DocumentTextIcon, PhotoIcon, UserGroupIcon } from "@heroicons/react/20/solid";
 
 interface NewCharacterModalProps {
 	isOpen: boolean;
@@ -76,7 +76,9 @@ const NewCharacterModal: React.FC<NewCharacterModalProps> = ({
 							className="character-option-button"
 							onClick={onCreateEmpty}
 						>
-							<div className="option-icon">📝</div>
+							<div className="option-icon">
+								<DocumentTextIcon className="w-8 h-8" />
+							</div>
 							<div className="option-content">
 								<h3>Empty Character</h3>
 								<p>Start with a blank character and customize everything yourself</p>
@@ -89,7 +91,9 @@ const NewCharacterModal: React.FC<NewCharacterModalProps> = ({
 							className="character-option-button"
 							onClick={onCreateFromImage}
 						>
-							<div className="option-icon">🖼️</div>
+							<div className="option-icon">
+								<PhotoIcon className="w-8 h-8" />
+							</div>
 							<div className="option-content">
 								<h3>Character from Image</h3>
 								<p>Upload an image and let AI create the character for you</p>
@@ -102,7 +106,9 @@ const NewCharacterModal: React.FC<NewCharacterModalProps> = ({
 							className="character-option-button"
 							onClick={onCreateGroupChat}
 						>
-							<div className="option-icon">👥</div>
+							<div className="option-icon">
+								<UserGroupIcon className="w-8 h-8" />
+							</div>
 							<div className="option-content">
 								<h3>Group Chat</h3>
 								<p>Create a group chat with multiple existing characters</p>

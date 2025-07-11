@@ -5,47 +5,12 @@ This constantly changing file contains the current focus and active issues for t
 **Group Chat Feature Development:**
 The Group Chat feature is now **100% COMPLETE** ✅ including Visual Novel Mode integration!
 This feature allows users to engage in group conversations with multiple characters, enhancing the interactive storytelling experience.
+**CSS Refactoring and UI Polish (Component-by-Component Approach)**
 
 ## Current Implementation Focus
-**CSS Refactoring and UI Polish (Component-by-Component Approach):**
-
-### 🎯 **Phase 1: CSS Organization (Low Risk)**
-1. **Analyze App.css structure** and identify logical sections
-2. **Split into organized files in `/src/styles/`:**
-   - `styles/components/VisualNovel.css` ⭐ (preserve working sprite system!)
-   - `styles/components/ChatInterface.css`
-   - `styles/components/CharacterCustomization.css`
-   - `styles/components/Modals.css`
-   - `styles/layout/Layout.css`
-   - `styles/base/Variables.css`
-3. **Update component imports** without breaking functionality:
-   - Ensure all components import their respective CSS files correctly.
-   - Test each component after import to verify no visual regressions.
-
-### 🎯 **Phase 2: Component Polish + HeroIcons Integration (Medium Risk)**
-4. **Replace emoji placeholders with HeroIcons**:
-   - **HeroIcons**: Use SVG icons from HeroIcons for consistency and scalability.
-   - **Emoji placeholders**: Replace with appropriate HeroIcons in components.
-   - **Example replacements**:
-     - ✏️ → PencilIcon
-     - 📤 → UploadIcon
-     - 🔄 → RefreshIcon
-     - ⏭️ → ForwardIcon
-     - × → XMarkIcon
-     - ⚙️ → CogIcon
-     - 📁 → FolderIcon
-     - 🗑️ → TrashIcon
-
-The 24x24 outline icons can be imported from @heroicons/react/24/outline, the 24x24 solid icons can be imported from @heroicons/react/24/solid, the 20x20 solid icons can be imported from @heroicons/react/20/solid, and 16x16 solid icons can be imported from @heroicons/react/16/solid.
-Icons use an upper camel case naming convention and are always suffixed with the word Icon.
-       
-5. **Polish components organically** while replacing emoji placeholders:
-   - **Buttons, inputs, forms** → replace ✏️📤 etc.
-   - **Chat interface** → replace 🔄⏭️× etc. 
-   - **Settings panels** → replace ⚙️📁 etc. 
-   - **Large outline icons VS small solid icons** → use outline for large buttons, solid for small
-
-### 🎯 **Final Priority:**
-**Implicit Grammar Correction Module** - Language learning features with grammar feedback
-
+**Implicit Grammar Correction** (NOT YET STARTED)
+1. The first experimental language learning module. Implicitly corrects a user's grammar mistakes. Whenever a user sends a message, it will first go through another LLM acting as a grammar tutor before it is sent to the roleplaying LLM playing the character. If the tutor LLM catches a grammar mistake in the message, it will send a System message in the chat (with a static message reminding that the user can edit their messages). If there is no grammar mistake, no system message happens and the message will be sent as-is to the roleplaying LLM (basically the tutor is just an extra layer)
+2. Can be toggled right above the chatInterface chat box (beside the Visual Novel Toggle). Has three modes: Off (default), Implicit Feedback, Narrative Suggestion
+3. Implicit Feedback sends implicit feedback through the form of conversational recast. Example: "I likes tea" is detected as a grammar mistake, the tutor LLM would send a response "Ohh, You like tea, I see" (requires prompt engineering)
+4. Narrative Suggestion sends implicit feedback in the form of role-playing suggestions. This is unique such that it would also correct the user's role-playing, not just their grammar, so it's two birds with one stone, as well as masks language mistakes as fun suggestions. For instance: "I likes tea" is detected as a grammar mistake that the tutor LLM would reply: "How about, "I like tea, Lilim, how about you ...? " That would also encourage Lilim to open up more!" (requires prompt engineering)
 
