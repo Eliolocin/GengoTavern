@@ -2,6 +2,7 @@ import { extractCharacterFromPng, embedCharacterIntoPng } from "./pngMetadata";
 import type { Character, Sprite } from "../types/interfaces";
 import { SUPPORTED_EMOTIONS, type SupportedEmotion } from "./emotionClassifier";
 import { isGroupChat } from "./groupChatUtils";
+import type { GrammarCorrectionMode } from "../types/grammarCorrection";
 
 // Define UserPersona interface locally
 interface UserPersona {
@@ -315,6 +316,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode?: boolean;
+		grammarCorrectionMode?: GrammarCorrectionMode;
 	}): Promise<void> {
 		if (this.strategy === "filesystem") {
 			await this.saveSettingsToFileSystem(settings);
@@ -331,6 +333,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode: boolean;
+		grammarCorrectionMode: GrammarCorrectionMode;
 	}> {
 		if (this.strategy === "filesystem") {
 			return await this.loadSettingsFromFileSystem();
@@ -550,6 +553,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode?: boolean;
+		grammarCorrectionMode?: GrammarCorrectionMode;
 	}): Promise<void> {
 		if (!this.rootHandle) throw new Error("No root directory handle");
 
@@ -573,6 +577,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode: boolean;
+		grammarCorrectionMode: GrammarCorrectionMode;
 	}> {
 		if (!this.rootHandle) return this.getDefaultSettings();
 
@@ -596,6 +601,7 @@ export class StorageManager {
 				selectedModel: data.selectedModel || "gemini-2.5-flash",
 				temperature: data.temperature || 1.5,
 				visualNovelMode: data.visualNovelMode || false,
+				grammarCorrectionMode: (data.grammarCorrectionMode as GrammarCorrectionMode) || "off",
 			};
 		} catch {
 			return this.getDefaultSettings();
@@ -723,6 +729,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode?: boolean;
+		grammarCorrectionMode?: GrammarCorrectionMode;
 	}): Promise<void> {
 		localStorage.setItem(
 			"gengoTavern_file_settings_settings_json",
@@ -738,6 +745,7 @@ export class StorageManager {
 		selectedModel: string;
 		temperature: number;
 		visualNovelMode: boolean;
+		grammarCorrectionMode: GrammarCorrectionMode;
 	}> {
 		try {
 			const data = localStorage.getItem(
@@ -756,6 +764,7 @@ export class StorageManager {
 					selectedModel: parsed.selectedModel || "gemini-2.5-flash",
 					temperature: parsed.temperature || 1.5,
 					visualNovelMode: parsed.visualNovelMode || false,
+					grammarCorrectionMode: parsed.grammarCorrectionMode || "off",
 				};
 			}
 		} catch (error) {
@@ -779,6 +788,7 @@ export class StorageManager {
 			selectedModel: "gemini-2.5-flash",
 			temperature: 1.5,
 			visualNovelMode: false,
+			grammarCorrectionMode: "off" as GrammarCorrectionMode,
 		};
 	}
 

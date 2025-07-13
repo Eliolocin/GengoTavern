@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { FC, KeyboardEvent } from "react";
 import { useUserSettings } from "../../contexts/UserSettingsContext";
 import type { Character } from "../../types/interfaces";
+import type { GrammarCorrectionMode } from "../../types/grammarCorrection";
 
 interface ChatInputProps {
 	onSendMessage: (message: string) => void;
@@ -29,7 +30,12 @@ const ChatInput: FC<ChatInputProps> = ({
 }) => {
 	const [message, setMessage] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const { visualNovelMode, setVisualNovelMode } = useUserSettings();
+	const { 
+		visualNovelMode, 
+		setVisualNovelMode, 
+		grammarCorrectionMode, 
+		setGrammarCorrectionMode 
+	} = useUserSettings();
 
 	// Auto-resize the textarea as content grows
 	useEffect(() => {
@@ -55,6 +61,48 @@ const ChatInput: FC<ChatInputProps> = ({
 
 	const toggleVisualNovelMode = () => {
 		setVisualNovelMode(!visualNovelMode);
+	};
+
+	/**
+	 * Cycle through grammar correction modes: off → implicit → narrative → off
+	 */
+	const cycleGrammarMode = () => {
+		const modes: GrammarCorrectionMode[] = ["off", "implicit", "narrative"];
+		const currentIndex = modes.indexOf(grammarCorrectionMode);
+		const nextIndex = (currentIndex + 1) % modes.length;
+		setGrammarCorrectionMode(modes[nextIndex]);
+	};
+
+	/**
+	 * Get display text for current grammar mode
+	 */
+	const getGrammarModeText = () => {
+		switch (grammarCorrectionMode) {
+			case "off":
+				return "Grammar: Off";
+			case "implicit":
+				return "Grammar: Implicit";
+			case "narrative":
+				return "Grammar: Narrative";
+			default:
+				return "Grammar: Off";
+		}
+	};
+
+	/**
+	 * Get tooltip text for current grammar mode
+	 */
+	const getGrammarModeTooltip = () => {
+		switch (grammarCorrectionMode) {
+			case "off":
+				return "Click to enable Implicit Feedback mode";
+			case "implicit":
+				return "Click to enable Narrative Suggestion mode";
+			case "narrative":
+				return "Click to disable grammar correction";
+			default:
+				return "Click to enable grammar correction";
+		}
 	};
 
 	const handleStopQueue = () => {
@@ -89,7 +137,7 @@ const ChatInput: FC<ChatInputProps> = ({
 
 	return (
 		<div className="chat-input-container">
-			<div className="vn-mode-toggle-container">
+			<div className="mode-toggles-container">
 				<button
 					type="button"
 					className={`vn-mode-toggle-button ${visualNovelMode ? "active" : ""}`}
@@ -101,6 +149,15 @@ const ChatInput: FC<ChatInputProps> = ({
 					}
 				>
 					{visualNovelMode ? "Chat Mode" : "Visual Novel Mode"}
+				</button>
+				
+				<button
+					type="button"
+					className={`grammar-mode-toggle-button ${grammarCorrectionMode !== "off" ? "active" : ""} mode-${grammarCorrectionMode}`}
+					onClick={cycleGrammarMode}
+					title={getGrammarModeTooltip()}
+				>
+					{getGrammarModeText()}
 				</button>
 			</div>
 			

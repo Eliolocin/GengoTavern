@@ -9,6 +9,15 @@
 	color: white;
 }
 
+/* Mode toggles container - holds both VN and Grammar toggles */
+.mode-toggles-container {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
 /* VN Mode Toggle Button - Ensure it's always visible */
 .vn-mode-toggle-button {
 	display: flex;
@@ -26,7 +35,6 @@
 	opacity: 0.95;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	min-width: 140px;
-	margin: 0 auto;
 }
 
 .vn-mode-toggle-button:hover {
@@ -42,6 +50,70 @@
 
 .vn-mode-toggle-button.active:hover {
 	background-color: rgba(100, 108, 255, 0.9);
+}
+
+/* Grammar Correction Toggle Button */
+.grammar-mode-toggle-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(42, 42, 42, 0.8);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 12px 20px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 1.1rem;
+	font-weight: 600;
+	opacity: 0.95;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	min-width: 160px;
+}
+
+.grammar-mode-toggle-button:hover {
+	background-color: rgba(60, 60, 60, 0.9);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Grammar mode specific colors */
+.grammar-mode-toggle-button.mode-off {
+	background-color: rgba(42, 42, 42, 0.8);
+	color: #ccc;
+}
+
+.grammar-mode-toggle-button.mode-implicit.active {
+	background-color: rgba(46, 204, 113, 0.8);
+	color: white;
+}
+
+.grammar-mode-toggle-button.mode-implicit.active:hover {
+	background-color: rgba(46, 204, 113, 0.9);
+}
+
+.grammar-mode-toggle-button.mode-narrative.active {
+	background-color: rgba(155, 89, 182, 0.8);
+	color: white;
+}
+
+.grammar-mode-toggle-button.mode-narrative.active:hover {
+	background-color: rgba(155, 89, 182, 0.9);
+}
+
+/* Mobile responsive adjustments for mode toggles */
+@media (max-width: 768px) {
+	.mode-toggles-container {
+		gap: 8px;
+		flex-direction: column;
+	}
+	
+	.vn-mode-toggle-button,
+	.grammar-mode-toggle-button {
+		min-width: 120px;
+		font-size: 1rem;
+		padding: 10px 16px;
+	}
 }
 
 /* Visual Novel Mode Container */

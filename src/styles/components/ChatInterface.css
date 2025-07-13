@@ -556,3 +556,173 @@
 		min-width: 150px;
 	}
 }
+
+/* Tutor Popup Styles */
+.tutor-popup {
+	position: absolute;
+	left: -240px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 220px;
+	background: linear-gradient(135deg, rgba(63, 63, 70, 0.95), rgba(39, 39, 42, 0.95));
+	border: 1px solid rgba(148, 163, 184, 0.3);
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(10px);
+	z-index: 1000;
+	font-size: 0.85rem;
+	max-height: 300px;
+	overflow-y: auto;
+	animation: fadeIn 0.3s ease-out;
+}
+
+.tutor-popup-enter {
+	animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-50%) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(-50%) scale(1);
+	}
+}
+
+@keyframes slideInLeft {
+	from {
+		opacity: 0;
+		transform: translateY(-50%) translateX(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(-50%) translateX(0);
+	}
+}
+
+.tutor-popup-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+	background: rgba(55, 65, 81, 0.3);
+	border-radius: 12px 12px 0 0;
+}
+
+.tutor-popup-title-section {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-grow: 1;
+}
+
+.tutor-popup-icon {
+	font-size: 0.9rem;
+	opacity: 0.8;
+}
+
+.tutor-popup-title {
+	font-weight: 600;
+	color: rgba(226, 232, 240, 0.9);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.tutor-popup-dismiss {
+	background: none;
+	border: none;
+	color: rgba(148, 163, 184, 0.7);
+	cursor: pointer;
+	padding: 2px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tutor-popup-dismiss:hover {
+	background-color: rgba(239, 68, 68, 0.2);
+	color: rgba(248, 113, 113, 1);
+}
+
+.tutor-popup-dismiss-icon {
+	width: 14px;
+	height: 14px;
+}
+
+.tutor-popup-content {
+	padding: 12px;
+	color: rgba(226, 232, 240, 0.85);
+	line-height: 1.4;
+}
+
+/* Mode-specific styling */
+.tutor-popup-implicit {
+	border-left: 3px solid rgba(34, 197, 94, 0.6);
+}
+
+.tutor-popup-narrative {
+	border-left: 3px solid rgba(168, 85, 247, 0.6);
+}
+
+.tutor-popup-default {
+	border-left: 3px solid rgba(59, 130, 246, 0.6);
+}
+
+/* Debug info (development only) */
+.tutor-popup-debug {
+	border-top: 1px solid rgba(148, 163, 184, 0.2);
+	padding: 8px 12px;
+	font-size: 0.7rem;
+	background: rgba(17, 24, 39, 0.3);
+	border-radius: 0 0 12px 12px;
+}
+
+.tutor-popup-debug summary {
+	cursor: pointer;
+	color: rgba(156, 163, 175, 0.8);
+	font-weight: 500;
+	margin-bottom: 4px;
+}
+
+.tutor-popup-debug-content {
+	margin-top: 6px;
+	padding-left: 8px;
+}
+
+.tutor-popup-debug-content p {
+	margin: 2px 0;
+	color: rgba(209, 213, 219, 0.7);
+}
+
+.tutor-popup-debug-content strong {
+	color: rgba(226, 232, 240, 0.8);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.tutor-popup {
+		left: -200px;
+		width: 180px;
+		font-size: 0.8rem;
+	}
+	
+	.tutor-popup-content {
+		padding: 10px;
+	}
+}
+
+/* Make sure popup doesn't interfere with message interactions */
+.message.user-message {
+	position: relative;
+}
+
+/* Ensure popup is positioned correctly relative to user messages */
+.user-message .tutor-popup {
+	position: absolute;
+}
