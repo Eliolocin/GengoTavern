@@ -59,6 +59,9 @@ export const GrammarCorrectionProvider: React.FC<GrammarCorrectionProviderProps>
 	// Message-specific tutor data storage (messageId -> tutorData)
 	const [messageTutorData, setMessageTutorDataState] = useState<Map<number, MessageTutorData>>(new Map());
 
+	// Unread tutor suggestions tracking (for VN mode notifications)
+	const [unreadTutorSuggestions, setUnreadTutorSuggestions] = useState<Set<number>>(new Set());
+
 	/**
 	 * Update settings (placeholder for future extensibility)
 	 */
@@ -82,13 +85,24 @@ export const GrammarCorrectionProvider: React.FC<GrammarCorrectionProviderProps>
 			mode: data.mode,
 			has_mistake: data.response.has_mistake,
 			confidence: data.response.confidence_score,
-			system_message: data.response.system_message ? "Present" : "None"
+			system_message: data.response.system_message ? "Present" : "None",
+			hasBeenSeen: data.hasBeenSeen
 		});
 		setMessageTutorDataState(prev => {
 			const newMap = new Map(prev);
 			newMap.set(messageId, data);
 			return newMap;
 		});
+
+		// Add to unread set if this is a new suggestion that hasn't been seen
+		if (data.response.has_mistake && !data.hasBeenSeen) {
+			setUnreadTutorSuggestions(prev => {
+				const newSet = new Set(prev);
+				newSet.add(messageId);
+				console.log(`📬 Added message ${messageId} to unread tutor suggestions (total: ${newSet.size})`);
+				return newSet;
+			});
+		}
 	}, []);
 
 	/**
@@ -112,6 +126,80 @@ export const GrammarCorrectionProvider: React.FC<GrammarCorrectionProviderProps>
 		});
 	}, []);
 
+	/**
+	 * Get count of unread tutor suggestions
+	 */
+	const getUnreadCount = useCallback(() => {
+		return unreadTutorSuggestions.size;
+	}, [unreadTutorSuggestions]);
+
+	/**
+	 * Check if there are any unread tutor suggestions
+	 */
+	const hasUnreadSuggestions = useCallback(() => {
+		return unreadTutorSuggestions.size > 0;
+	}, [unreadTutorSuggestions]);
+
+	/**
+	 * Mark a specific tutor suggestion as read
+	 */
+	const markTutorAsRead = useCallback((messageId: number) => {
+		console.log(`👁️ Marking tutor suggestion ${messageId} as read`);
+		
+		// Remove from unread set
+		setUnreadTutorSuggestions(prev => {
+			const newSet = new Set(prev);
+			newSet.delete(messageId);
+			return newSet;
+		});
+
+		// Update the tutor data to mark as seen
+		setMessageTutorDataState(prev => {
+			const existingData = prev.get(messageId);
+			if (existingData) {
+				const newMap = new Map(prev);
+				newMap.set(messageId, {
+					...existingData,
+					hasBeenSeen: true,
+				});
+				return newMap;
+			}
+			return prev;
+		});
+	}, []);
+
+	/**
+	 * Mark all tutor suggestions as read (e.g., when switching to chat mode)
+	 */
+	const markAllTutorAsRead = useCallback(() => {
+		const unreadCount = unreadTutorSuggestions.size;
+		if (unreadCount > 0) {
+			console.log(`👁️ Marking all ${unreadCount} tutor suggestions as read`);
+			
+			// Clear unread set
+			setUnreadTutorSuggestions(new Set());
+
+			// Update all unread tutor data to mark as seen
+			setMessageTutorDataState(prev => {
+				const newMap = new Map(prev);
+				let updated = false;
+				
+				for (const messageId of unreadTutorSuggestions) {
+					const existingData = newMap.get(messageId);
+					if (existingData && !existingData.hasBeenSeen) {
+						newMap.set(messageId, {
+							...existingData,
+							hasBeenSeen: true,
+						});
+						updated = true;
+					}
+				}
+				
+				return updated ? newMap : prev;
+			});
+		}
+	}, [unreadTutorSuggestions]);
+
 	// Context value
 	const contextValue = useMemo(() => ({
 		// Settings
@@ -130,6 +218,13 @@ export const GrammarCorrectionProvider: React.FC<GrammarCorrectionProviderProps>
 		getMessageTutorData,
 		setMessageTutorData,
 		dismissTutorPopup,
+		
+		// Unread state management
+		unreadTutorSuggestions,
+		getUnreadCount,
+		hasUnreadSuggestions,
+		markTutorAsRead,
+		markAllTutorAsRead,
 	}), [
 		settings,
 		updateSettings,
@@ -140,6 +235,11 @@ export const GrammarCorrectionProvider: React.FC<GrammarCorrectionProviderProps>
 		getMessageTutorData,
 		setMessageTutorData,
 		dismissTutorPopup,
+		unreadTutorSuggestions,
+		getUnreadCount,
+		hasUnreadSuggestions,
+		markTutorAsRead,
+		markAllTutorAsRead,
 	]);
 
 	return (

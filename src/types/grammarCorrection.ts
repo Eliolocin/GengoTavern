@@ -57,6 +57,7 @@ export interface MessageTutorData {
   response: TutorResponse;                  // Full tutor response
   dismissed: boolean;                       // Whether user has dismissed the pop-up
   timestamp: number;                        // When tutor response was received
+  hasBeenSeen: boolean;                     // Whether user has seen this suggestion (for VN mode)
 }
 
 /**
@@ -99,4 +100,11 @@ export interface GrammarCorrectionContextType {
   getMessageTutorData: (messageId: number) => MessageTutorData | null;
   setMessageTutorData: (messageId: number, data: MessageTutorData) => void;
   dismissTutorPopup: (messageId: number) => void;
+  
+  // Unread state management (for VN mode notifications)
+  unreadTutorSuggestions: Set<number>;
+  getUnreadCount: () => number;
+  hasUnreadSuggestions: () => boolean;
+  markTutorAsRead: (messageId: number) => void;
+  markAllTutorAsRead: () => void;
 }
