@@ -1,3 +1,5 @@
+import type { MessageTutorData } from "./grammarCorrection";
+
 export interface DialoguePair {
   user: string;
   character: string;
@@ -35,6 +37,7 @@ export interface Message {
   emotion?: string; // Detected emotion for character messages, used for sprite selection
   speakerId?: number; // Character ID that sent this message (for group chats)
   speakerName?: string; // Character name for easy access (for group chats)
+  tutorData?: MessageTutorData; // Grammar correction data (only for user messages)
 }
 
 export interface Chat {

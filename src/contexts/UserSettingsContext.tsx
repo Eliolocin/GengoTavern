@@ -10,6 +10,7 @@ import {
 import type React from "react";
 import type { ReactNode } from "react";
 import { storageManager } from "../utils/storageManager";
+import type { GrammarCorrectionMode } from "../types/grammarCorrection";
 
 export interface UserPersona {
 	name: string;
@@ -38,6 +39,8 @@ interface UserSettingsContextType {
 	setTemperature: (temp: number) => void;
 	visualNovelMode: boolean;
 	setVisualNovelMode: (enabled: boolean) => void;
+	grammarCorrectionMode: GrammarCorrectionMode;
+	setGrammarCorrectionMode: (mode: GrammarCorrectionMode) => void;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
@@ -71,6 +74,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 	);
 	const [temperature, setTemperatureState] = useState<number>(1.5);
 	const [visualNovelMode, setVisualNovelModeState] = useState<boolean>(false);
+	const [grammarCorrectionMode, setGrammarCorrectionModeState] = useState<GrammarCorrectionMode>("off");
 	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
 	// Use refs to always get current values without stale closures
@@ -84,6 +88,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		selectedModel: GEMINI_MODELS.FLASH_EXP,
 		temperature: 1.5,
 		visualNovelMode: false,
+		grammarCorrectionMode: "off" as GrammarCorrectionMode,
 	});
 
 	// Update refs whenever state changes
@@ -95,6 +100,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			selectedModel,
 			temperature,
 			visualNovelMode,
+			grammarCorrectionMode,
 		};
 	}, [
 		apiKey,
@@ -103,6 +109,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		selectedModel,
 		temperature,
 		visualNovelMode,
+		grammarCorrectionMode,
 	]);
 
 	// Unified save function that always uses current values
@@ -141,11 +148,13 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 				setSelectedModelState(settings.selectedModel);
 				setTemperatureState(settings.temperature);
 				setVisualNovelModeState(settings.visualNovelMode || false);
+				setGrammarCorrectionModeState(settings.grammarCorrectionMode || "off");
 
 				// 5. If new fields are missing from loaded settings, re-save to add them
 				if (
 					(!settings.huggingFaceApiKey ||
-						settings.visualNovelMode === undefined) &&
+						settings.visualNovelMode === undefined ||
+						settings.grammarCorrectionMode === undefined) &&
 					Object.keys(settings).length > 1
 				) {
 					console.log("🔄 Adding missing fields to existing settings");
@@ -153,6 +162,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 						...settings,
 						huggingFaceApiKey: settings.huggingFaceApiKey || "",
 						visualNovelMode: settings.visualNovelMode || false,
+						grammarCorrectionMode: settings.grammarCorrectionMode || ("off" as GrammarCorrectionMode),
 					};
 					await storageManager.saveSettings(updatedSettings);
 				}
@@ -236,6 +246,16 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 		[saveCurrentSettings],
 	);
 
+	const setGrammarCorrectionMode = useCallback(
+		(mode: GrammarCorrectionMode) => {
+			console.log("✏️ Setting Grammar Correction Mode:", mode);
+			setGrammarCorrectionModeState(mode);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
 	// Compute derived state
 	const isApiKeySet = useMemo(() => apiKey.trim().length > 0, [apiKey]);
 
@@ -255,6 +275,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			setTemperature,
 			visualNovelMode,
 			setVisualNovelMode,
+			grammarCorrectionMode,
+			setGrammarCorrectionMode,
 		}),
 		[
 			apiKey,
@@ -270,6 +292,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
 			setTemperature,
 			visualNovelMode,
 			setVisualNovelMode,
+			grammarCorrectionMode,
+			setGrammarCorrectionMode,
 		],
 	);
 

@@ -6,6 +6,7 @@ import type { Message, Chat, Character, GroupMember, GroupGreeting } from "../ty
 import { buildPrompt } from "../utils/promptBuilder";
 import { callGeminiAPI, sanitizeResponse } from "../utils/geminiAPI";
 import { emotionClassifier } from "../utils/emotionClassifier";
+import { callTutorLLM, extractChatHistoryForTutor, shouldProcessWithTutor } from "../utils/grammarTutor";
 import { createGroupChat, isGroupChat, calculateResponseQueue, getLastSpeaker } from "../utils/groupChatUtils";
 import { generateGroupChatImage, generateFallbackGroupImage } from "../utils/compositeImageGenerator";
 import SidePanel from "../components/layout/SidePanel";
@@ -21,6 +22,7 @@ import {
 	useUserSettings,
 } from "../contexts/UserSettingsContext";
 import { AppProvider, useAppContext } from "../contexts/AppContext";
+import { GrammarCorrectionProvider, useGrammarCorrection } from "../contexts/GrammarCorrectionContext";
 import HelpModal from "../components/shared/HelpModal";
 import FileSystemSetupModal from "../components/shared/FileSystemSetupModal";
 import NewCharacterModal from "../components/shared/NewCharacterModal";
@@ -36,10 +38,23 @@ const App: React.FC = () => {
 		<AppProvider>
 			<UserSettingsProvider>
 				<CharacterProvider>
-					<AppContent />
+					<GrammarCorrectionWrapper>
+						<AppContent />
+					</GrammarCorrectionWrapper>
 				</CharacterProvider>
 			</UserSettingsProvider>
 		</AppProvider>
+	);
+};
+
+// Wrapper to connect UserSettings with GrammarCorrection
+const GrammarCorrectionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const { grammarCorrectionMode, setGrammarCorrectionMode } = useUserSettings();
+	
+	return (
+		<GrammarCorrectionProvider mode={grammarCorrectionMode} setMode={setGrammarCorrectionMode}>
+			{children}
+		</GrammarCorrectionProvider>
 	);
 };
 
@@ -54,7 +69,6 @@ const AppContent: React.FC = () => {
 		selectCharacter,
 		updateCharacter,
 		deleteCharacter,
-		saveCharacter,
 		addGeneratedCharacter,
 		importCharacter,
 	} = useCharacters();
@@ -63,18 +77,22 @@ const AppContent: React.FC = () => {
 		openSetupModal,
 		closeSetupModal,
 		setStorageStrategy,
-		userSettings,
 	} = useAppContext();
 	const {
-		apiKey,
 		huggingFaceApiKey,
-		selectedModel,
-		temperature,
 		visualNovelMode,
+		grammarCorrectionMode,
 	} = useUserSettings();
+	const {
+		settings: grammarSettings,
+		setIsProcessingTutor,
+		getMessageTutorData,
+		setMessageTutorData,
+		dismissTutorPopup,
+	} = useGrammarCorrection();
 
-	const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-	const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+	const [isLeftCollapsed] = useState(false);
+	const [isRightCollapsed] = useState(false);
 	const [activeMessages, setActiveMessages] = useState<Message[]>([]);
 	const [activeChatId, setActiveChatId] = useState<number | null>(null);
 	const [localError, setLocalError] = useState<string | null>(null);
@@ -141,6 +159,7 @@ const AppContent: React.FC = () => {
 				setActiveChatId(activeChat.id);
 				setActiveChat(activeChat);
 				setActiveMessages(activeChat.messages);
+				loadTutorDataFromMessages(activeChat.messages);
 			} else {
 				// No chats exist for this character
 				setActiveMessages([]);
@@ -399,6 +418,7 @@ const AppContent: React.FC = () => {
 				if (chat) {
 					setActiveMessages(chat.messages);
 					setActiveChat(chat);
+					loadTutorDataFromMessages(chat.messages);
 				}
 			}
 		} catch (err) {
@@ -446,6 +466,7 @@ const AppContent: React.FC = () => {
 					setActiveChatId(newActiveChat.id);
 					setActiveMessages(newActiveChat.messages);
 					setActiveChat(newActiveChat);
+					loadTutorDataFromMessages(newActiveChat.messages);
 				} else {
 					// No chats left
 					setActiveChatId(null);
@@ -479,6 +500,7 @@ const AppContent: React.FC = () => {
 			setActiveChatId(chatId);
 			setActiveChat(newActiveChat);
 			setActiveMessages(newActiveChat.messages);
+			loadTutorDataFromMessages(newActiveChat.messages);
 		} catch (err) {
 			setLocalError(`Failed to switch chat: ${err}`);
 		}
@@ -711,6 +733,167 @@ const AppContent: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Process grammar correction feedback asynchronously (non-blocking)
+	 */
+	const processTutorFeedback = async (userMessage: string, messageId: number, messagesContext: Message[]) => {
+		try {
+			setIsProcessingTutor(true);
+			
+			// Extract chat history for context
+			const chatHistory = extractChatHistoryForTutor(
+				{ messages: messagesContext } as Chat,
+				grammarSettings.maxChatHistoryForTutor
+			);
+			
+			// Call tutor LLM
+			const tutorResponse = await callTutorLLM(
+				userMessage,
+				grammarCorrectionMode,
+				selectedCharacter?.type === 'individual' ? selectedCharacter : undefined,
+				chatHistory
+			);
+			
+			// Handle tutor response
+			if (tutorResponse.response && tutorResponse.response.has_mistake) {
+				const confidence = tutorResponse.response.confidence_score || 0;
+				
+				// Create complete tutor data for storage (including full response for analysis)
+				const tutorData = {
+					mode: grammarCorrectionMode,
+					response: tutorResponse.response, // Full response with all fields
+					dismissed: false,
+					timestamp: Date.now(),
+				};
+				
+				console.log(`📋 Complete tutor data being saved:`, {
+					messageId,
+					mode: tutorData.mode,
+					has_mistake: tutorData.response.has_mistake,
+					confidence: tutorData.response.confidence_score,
+					grammar_mistakes: tutorData.response.grammar_mistakes,
+					roleplay_mistakes: tutorData.response.roleplay_mistakes,
+					system_message: tutorData.response.system_message
+				});
+				
+				// Store tutor data in context for immediate UI updates
+				setMessageTutorData(messageId, tutorData);
+				
+				// Update the actual message object with tutor data using functional update
+				setActiveMessages(currentMessages => {
+					const updatedMessages = currentMessages.map(msg => 
+						msg.id === messageId 
+							? { ...msg, tutorData }
+							: msg
+					);
+					
+					// Log the message we're trying to update
+					const targetMessage = updatedMessages.find(msg => msg.id === messageId);
+					if (targetMessage) {
+						console.log(`🎯 Updated message ${messageId} with tutor data:`, {
+							id: targetMessage.id,
+							text: targetMessage.text.substring(0, 30) + '...',
+							has_tutorData: !!targetMessage.tutorData,
+							tutorData_preview: targetMessage.tutorData ? {
+								mode: targetMessage.tutorData.mode,
+								has_mistake: targetMessage.tutorData.response.has_mistake,
+								dismissed: targetMessage.tutorData.dismissed
+							} : null
+						});
+					} else {
+						console.warn(`⚠️ Could not find message ${messageId} to update with tutor data`);
+					}
+					
+					// Save to storage asynchronously (don't block UI)
+					updateChatMessages(updatedMessages, false);
+					
+					return updatedMessages;
+				});
+				
+				// Only show popup if confidence meets threshold
+				if (confidence >= grammarSettings.showConfidenceThreshold) {
+					console.log(`✏️ Grammar correction feedback for message ${messageId}:`, tutorResponse.response.system_message);
+				} else {
+					console.log(`✏️ Grammar correction confidence too low (${confidence}) - not showing popup`);
+				}
+			} else if (tutorResponse.error) {
+				console.warn(`❌ Tutor error: ${tutorResponse.error}`);
+			} else {
+				console.log("✅ No grammar/roleplay issues detected");
+			}
+		} catch (error) {
+			console.error("❌ Error processing tutor feedback:", error);
+		} finally {
+			setIsProcessingTutor(false);
+		}
+	};
+
+	/**
+	 * Handle dismissing tutor popup and persist to storage
+	 */
+	const handleDismissTutorPopup = (messageId: number) => {
+		// Update context first
+		dismissTutorPopup(messageId);
+		
+		// Update message object using functional update and save to storage
+		setActiveMessages(currentMessages => {
+			const updatedMessages = currentMessages.map(msg => {
+				if (msg.id === messageId && msg.tutorData) {
+					const updatedMessage = {
+						...msg,
+						tutorData: {
+							...msg.tutorData,
+							dismissed: true,
+						}
+					};
+					console.log(`🗑️ Marked tutor popup as dismissed for message ${messageId}`);
+					return updatedMessage;
+				}
+				return msg;
+			});
+			
+			// Save to storage if any changes were made
+			const messageFound = updatedMessages.some(msg => msg.id === messageId && msg.tutorData);
+			if (messageFound) {
+				updateChatMessages(updatedMessages, false);
+				console.log(`💾 Persisted dismissal of tutor popup for message ${messageId}`);
+			} else {
+				console.warn(`⚠️ Could not find message ${messageId} with tutor data to dismiss`);
+			}
+			
+			return updatedMessages;
+		});
+	};
+
+	/**
+	 * Load existing tutor data from messages into context
+	 */
+	const loadTutorDataFromMessages = (messages: Message[]) => {
+		const messagesWithTutorData = messages.filter(msg => msg.tutorData && msg.sender === 'user');
+		
+		if (messagesWithTutorData.length > 0) {
+			console.log(`📥 Loading ${messagesWithTutorData.length} messages with tutor data from storage:`,
+				messagesWithTutorData.map(msg => ({
+					id: msg.id,
+					text: msg.text.substring(0, 30) + '...',
+					tutor_mode: msg.tutorData?.mode,
+					tutor_dismissed: msg.tutorData?.dismissed,
+					tutor_has_mistake: msg.tutorData?.response.has_mistake,
+					tutor_confidence: msg.tutorData?.response.confidence_score
+				}))
+			);
+		} else {
+			console.log(`📭 No messages with tutor data found in ${messages.length} total messages`);
+		}
+		
+		for (const message of messages) {
+			if (message.tutorData && message.sender === 'user') {
+				setMessageTutorData(message.id, message.tutorData);
+				console.log(`🔄 Restored tutor data for message ${message.id} from storage`);
+			}
+		}
+	};
+
 	const handleSendMessage = async (text: string) => {
 		if (!selectedCharacter || activeChatId === null) return;
 
@@ -729,6 +912,14 @@ const AppContent: React.FC = () => {
 		// Then update in character state but keep current active chat
 		// We need to wait for the chat messages to be updated properly
 		await updateChatMessagesAsync(updatedMessages, false);
+
+		// Start tutor processing if grammar correction is enabled (async, non-blocking)
+		if (shouldProcessWithTutor(text, grammarCorrectionMode)) {
+			console.log(`🔍 Starting tutor analysis for message: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}" (mode: ${grammarCorrectionMode})`);
+			processTutorFeedback(text, newMessage.id, updatedMessages);
+		} else {
+			console.log(`⏭️ Skipping tutor analysis (mode: ${grammarCorrectionMode}, message too short: ${text.length} chars)`);
+		}
 
 		try {
 
@@ -1202,6 +1393,20 @@ const AppContent: React.FC = () => {
 		if (!selectedCharacter || activeChatId === null) return;
 
 		try {
+			// Log tutor data being saved
+			const messagesWithTutorData = messages.filter(msg => msg.tutorData);
+			if (messagesWithTutorData.length > 0) {
+				console.log(`💾 Saving ${messagesWithTutorData.length} messages with tutor data:`, 
+					messagesWithTutorData.map(msg => ({
+						id: msg.id,
+						text: msg.text.substring(0, 30) + '...',
+						has_tutorData: !!msg.tutorData,
+						tutor_mode: msg.tutorData?.mode,
+						tutor_dismissed: msg.tutorData?.dismissed
+					}))
+				);
+			}
+
 			const updatedChats = selectedCharacter.chats.map((chat) => {
 				if (chat.id === activeChatId) {
 					const updatedChat = {
@@ -1226,8 +1431,14 @@ const AppContent: React.FC = () => {
 
 			// Update character but keep current active chat
 			updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+			
+			// Confirm save completion
+			if (messagesWithTutorData.length > 0) {
+				console.log(`✅ Chat update completed for ${messagesWithTutorData.length} messages with tutor data`);
+			}
 		} catch (err) {
 			setLocalError(`Failed to update chat: ${err}`);
+			console.error(`❌ Error saving chat with tutor data:`, err);
 		}
 	};
 
@@ -1606,6 +1817,8 @@ const AppContent: React.FC = () => {
 						onEditMessage={handleEditMessage}
 						onDeleteMessage={handleDeleteMessage}
 						allCharacters={characters}
+						getMessageTutorData={getMessageTutorData}
+						onDismissTutorPopup={handleDismissTutorPopup}
 					/>
 				)}
 

@@ -1,9 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import type { FC } from "react";
 import type { Message, Character } from "../../types/interfaces";
+import type { MessageTutorData } from "../../types/grammarCorrection";
 import EditMessageModal from "./EditMessageModal";
 import DeleteConfirmationModal from "../shared/DeleteConfirmationModal";
 import MarkdownRenderer from "../shared/MarkdownRenderer";
+import TutorPopup from "./TutorPopup";
 import { useUserSettings } from "../../contexts/UserSettingsContext";
 import { replaceNamePlaceholders } from "../../utils/promptBuilder";
 import VisualNovelMode from "./VisualNovelMode";
@@ -20,6 +22,9 @@ interface ChatMessagesProps {
 	onEditMessage?: (messageId: number, newText: string) => void;
 	onDeleteMessage?: (messageId: number) => void;
 	allCharacters?: Character[]; // Add this to look up individual character info
+	// Grammar correction props
+	getMessageTutorData?: (messageId: number) => MessageTutorData | null;
+	onDismissTutorPopup?: (messageId: number) => void;
 }
 
 const ChatMessages: FC<ChatMessagesProps> = ({
@@ -33,6 +38,8 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 	onEditMessage,
 	onDeleteMessage,
 	allCharacters = [],
+	getMessageTutorData,
+	onDismissTutorPopup,
 }) => {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const prevMessagesLengthRef = useRef<number>(0);
@@ -368,6 +375,22 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 									<XMarkIcon className="w-4 h-4" />
 								</button>
 							</div>
+							
+							{/* Tutor Popup for user messages */}
+							{message.sender === "user" && onDismissTutorPopup && (
+								(() => {
+									// Prefer tutor data from message object (persistent), fallback to context
+									const tutorData = message.tutorData || (getMessageTutorData ? getMessageTutorData(message.id) : null);
+									return tutorData ? (
+										<TutorPopup
+											tutorData={tutorData}
+											messageId={message.id}
+											onDismiss={onDismissTutorPopup}
+											isVisible={!tutorData.dismissed}
+										/>
+									) : null;
+								})()
+							)}
 						</div>
 					);
 				})
