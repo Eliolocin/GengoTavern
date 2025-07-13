@@ -3,7 +3,7 @@ import type { FC, KeyboardEvent } from "react";
 import { useUserSettings } from "../../contexts/UserSettingsContext";
 import { useGrammarCorrection } from "../../contexts/GrammarCorrectionContext";
 import NotificationBadge from "../shared/NotificationBadge";
-import type { Character } from "../../types/interfaces";
+import type { Character, Message } from "../../types/interfaces";
 import type { GrammarCorrectionMode } from "../../types/grammarCorrection";
 
 interface ChatInputProps {
@@ -17,6 +17,8 @@ interface ChatInputProps {
 	allCharacters?: Character[];
 	onStopQueue?: () => void;
 	shouldStopQueue?: boolean;
+	// Latest message for blank send functionality
+	latestMessage?: Message | null;
 }
 
 const ChatInput: FC<ChatInputProps> = ({
@@ -29,6 +31,7 @@ const ChatInput: FC<ChatInputProps> = ({
 	allCharacters = [],
 	onStopQueue,
 	shouldStopQueue = false,
+	latestMessage = null,
 }) => {
 	const [message, setMessage] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,7 +53,12 @@ const ChatInput: FC<ChatInputProps> = ({
 	}, [message]);
 
 	const handleSendMessage = () => {
-		if (message.trim() && !isProcessing && !isProcessingQueue) {
+		// Allow sending if:
+		// 1. Message has content, OR
+		// 2. Message is blank but latest message is from user (triggers response to last user message)
+		const canSend = (message.trim() || (latestMessage?.sender === "user")) && !isProcessing && !isProcessingQueue;
+		
+		if (canSend) {
 			onSendMessage(message);
 			setMessage("");
 		}
@@ -230,7 +238,7 @@ const ChatInput: FC<ChatInputProps> = ({
 					<button
 						type="button"
 						onClick={handleSendMessage}
-						disabled={!message.trim() || isProcessing || isProcessingQueue}
+						disabled={!(message.trim() || (latestMessage?.sender === "user")) || isProcessing || isProcessingQueue}
 					>
 						Send
 					</button>

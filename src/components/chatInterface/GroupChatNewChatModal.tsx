@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import type { Character, GroupGreeting } from "../../types/interfaces";
 import { isGroupChat, getOrderedGroupMembers } from "../../utils/groupChatUtils";
@@ -186,9 +187,9 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 		return null;
 	}
 
-	return (
+	const modalContent = (
 		<div
-			className="modal-overlay"
+			className="modal-overlay new-chat-modal-overlay"
 			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			role="dialog"
@@ -201,14 +202,14 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 				/>
 			)}
 			<div
-				className="modal-content group-chat-new-chat-modal"
+				className="modal-content new-chat-modal"
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={(e) => e.stopPropagation()}
 				role="document"
 			>
 				<h3>Create New Group Chat</h3>
 
-				<form onSubmit={handleSubmit} className="group-chat-new-chat-form">
+				<form onSubmit={handleSubmit} className="new-chat-form">
 					<div className="form-group">
 						<label htmlFor="group-chat-name">Chat Name:</label>
 						<input
@@ -359,6 +360,9 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 			</div>
 		</div>
 	);
+
+	// Use React Portal to render directly to document.body, bypassing all stacking contexts
+	return createPortal(modalContent, document.body);
 };
 
 export default GroupChatNewChatModal;

@@ -548,11 +548,5 @@ export function shouldProcessWithTutor(
 		return false;
 	}
 
-	// Skip messages that are just punctuation or emotes
-	const cleanMessage = message.replace(/[^\w\s]/g, "").trim();
-	if (cleanMessage.length < 3) {
-		return false;
-	}
-
 	return true;
 }

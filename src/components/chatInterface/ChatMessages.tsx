@@ -308,7 +308,11 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 								</div>
 								<div className="message-text">
 									{message.isGenerating ? (
-										"..."
+										<div className="typing-indicator">
+											<span className="dot"></span>
+											<span className="dot"></span>
+											<span className="dot"></span>
+										</div>
 									) : (
 										<MarkdownRenderer
 											content={
