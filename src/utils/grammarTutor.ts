@@ -294,9 +294,9 @@ export async function callTutorLLM(
 
 		// Configure generation parameters
 		const generationConfig = {
-			temperature: 0.3, // Lower temperature for more consistent corrections
-			topP: 0.8,
-			maxOutputTokens: 2048, // Smaller limit for structured responses
+			temperature: 1.0, // Lower temperature for more consistent corrections
+			topP: 0.9,
+			maxOutputTokens: 8192, // Smaller limit for structured responses
 			responseMimeType: "application/json",
 			responseSchema: responseSchema as any, // TypeScript workaround for complex schemas
 		};

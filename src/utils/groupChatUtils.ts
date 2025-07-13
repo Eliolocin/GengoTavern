@@ -298,8 +298,18 @@ export function calculateResponseQueue(
 		}
 	}
 
-	// 3. Sort response queue by display order for consistent ordering
-	const sortedQueue = responseQueue.sort((a, b) => {
+	// 3. Remove any duplicates that might have slipped through
+	const uniqueQueue = [...new Set(responseQueue)];
+	if (uniqueQueue.length !== responseQueue.length) {
+		console.warn('⚠️ Duplicate character IDs detected and removed:', {
+			original: responseQueue,
+			unique: uniqueQueue,
+			duplicates: responseQueue.filter((id, index) => responseQueue.indexOf(id) !== index)
+		});
+	}
+
+	// 4. Sort response queue by display order for consistent ordering
+	const sortedQueue = uniqueQueue.sort((a, b) => {
 		const memberA = groupChat.members?.find(m => m.characterId === a);
 		const memberB = groupChat.members?.find(m => m.characterId === b);
 		if (!memberA || !memberB) return 0;
@@ -311,7 +321,8 @@ export function calculateResponseQueue(
 		isUserMessage,
 		lastSpeakerId,
 		nameTriggered: validNameTriggers,
-		finalQueue: sortedQueue
+		finalQueue: sortedQueue,
+		deduplicationApplied: uniqueQueue.length !== responseQueue.length
 	});
 
 	return sortedQueue;
