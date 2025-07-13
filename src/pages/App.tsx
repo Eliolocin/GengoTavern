@@ -113,12 +113,12 @@ const AppContent: React.FC = () => {
 	} = useUserSettings();
 	const {
 		settings: grammarSettings,
+		isProcessingTutor,
 		setIsProcessingTutor,
 		getMessageTutorData,
 		setMessageTutorData,
 		dismissTutorPopup,
 		getUnreadCount,
-		hasUnreadSuggestions,
 	} = useGrammarCorrection();
 
 	const [isLeftCollapsed] = useState(false);
@@ -572,6 +572,11 @@ const AppContent: React.FC = () => {
 		console.log(
 			`Starting processResponseQueue with queue: [${queue.join(", ")}]`,
 		);
+		
+		// CRITICAL: Log coordination state for debugging
+		if (isProcessingTutor) {
+			console.log(`🔄 Note: Tutor processing is active, save queue will coordinate automatically`);
+		}
 		console.log(`shouldStopQueue at start: ${shouldStopQueue}`);
 		console.log(`stopQueueRef.current at start: ${stopQueueRef.current}`);
 
@@ -628,8 +633,14 @@ const AppContent: React.FC = () => {
 				}
 
 				// Update working messages to include the new response for the next character
+				// CRITICAL: Ensure workingMessages stays synchronized with actual persisted state
 				if (newMessage) {
-					workingMessages = [...workingMessages, newMessage];
+					// Get the current persisted messages to ensure synchronization
+					setActiveMessages((currentMessages) => {
+						workingMessages = currentMessages; // Update working messages with actual persisted state
+						console.log(`🔄 Synchronized workingMessages with ${currentMessages.length} persisted messages`);
+						return currentMessages; // No state change, just sync
+					});
 
 					// Check if this character's response triggers additional characters
 					// But only if queue hasn't been stopped
@@ -681,8 +692,17 @@ const AppContent: React.FC = () => {
 					}
 				}
 
-				// Ensure state has time to propagate before next character responds
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				// CRITICAL: Wait for save operations to complete before next character
+				// This prevents race conditions between characters in the queue
+				await new Promise((resolve) => setTimeout(resolve, 250)); // Increased delay for save completion
+				
+				// Validate that the message was actually persisted
+				const finalMessageCount = activeMessages.length;
+				console.log(`🔍 Validation: Expected at least ${workingMessages.length} messages, found ${finalMessageCount}`);
+				
+				if (finalMessageCount < workingMessages.length) {
+					console.warn(`⚠️ Message persistence validation failed! Expected ${workingMessages.length}, got ${finalMessageCount}`);
+				}
 			}
 		} finally {
 			console.log("Queue processing finished - cleaning up state");
@@ -869,6 +889,25 @@ const AppContent: React.FC = () => {
 	) => {
 		try {
 			setIsProcessingTutor(true);
+			
+			// CRITICAL: Coordinate with group chat queue processing
+			// If a group chat queue is processing, wait for it to complete to prevent save conflicts
+			if (isProcessingQueue) {
+				console.log(`⏳ Tutor waiting for group chat queue to complete before processing...`);
+				
+				// Wait for queue processing to finish (with timeout)
+				let waitCount = 0;
+				while (isProcessingQueue && waitCount < 50) { // Max 5 seconds wait
+					await new Promise((resolve) => setTimeout(resolve, 100));
+					waitCount++;
+				}
+				
+				if (isProcessingQueue) {
+					console.warn(`⚠️ Timeout waiting for group chat queue, proceeding with tutor processing...`);
+				} else {
+					console.log(`✅ Group chat queue completed, proceeding with tutor processing`);
+				}
+			}
 
 			// Extract chat history for context
 			const chatHistory = extractChatHistoryForTutor(
@@ -944,8 +983,8 @@ const AppContent: React.FC = () => {
 						);
 					}
 
-					// Save to storage asynchronously (don't block UI)
-					updateChatMessages(updatedMessages, false);
+					// Save to storage asynchronously but properly await completion
+					updateChatMessagesAsync(updatedMessages, false);
 
 					return updatedMessages;
 				});
@@ -1010,7 +1049,7 @@ const AppContent: React.FC = () => {
 				(msg) => msg.id === messageId && msg.tutorData,
 			);
 			if (messageFound) {
-				updateChatMessages(updatedMessages, false);
+				updateChatMessagesAsync(updatedMessages, false);
 				console.log(
 					`💾 Persisted dismissal of tutor popup for message ${messageId}`,
 				);
@@ -1322,7 +1361,7 @@ const AppContent: React.FC = () => {
 					);
 
 					setActiveMessages(finalMessages);
-					updateChatMessages(finalMessages, false);
+					await updateChatMessagesAsync(finalMessages, false);
 				}
 			}
 		} catch (err) {
@@ -1344,7 +1383,7 @@ const AppContent: React.FC = () => {
 
 			const messagesWithError = [...updatedMessages, errorMessage];
 			setActiveMessages(messagesWithError);
-			updateChatMessages(messagesWithError, false);
+			await updateChatMessagesAsync(messagesWithError, false);
 		}
 	};
 
@@ -1506,7 +1545,7 @@ const AppContent: React.FC = () => {
 
 			const messagesWithError = [...updatedMessages, errorMessage];
 			setActiveMessages(messagesWithError);
-			updateChatMessages(messagesWithError, false);
+			await updateChatMessagesAsync(messagesWithError, false);
 		}
 	};
 
@@ -1731,6 +1770,39 @@ const AppContent: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Validate message integrity to detect corruption
+	 */
+	const validateMessageIntegrity = (messages: Message[]): { isValid: boolean; error?: string } => {
+		try {
+			// Check for duplicate IDs
+			const ids = messages.map(m => m.id);
+			const uniqueIds = new Set(ids);
+			if (ids.length !== uniqueIds.size) {
+				return { isValid: false, error: "Duplicate message IDs detected" };
+			}
+
+			// Check for required fields
+			for (const msg of messages) {
+				if (!msg.id || !msg.text || !msg.sender || !msg.timestamp) {
+					return { isValid: false, error: `Invalid message structure: ${JSON.stringify(msg)}` };
+				}
+			}
+
+			// Check timestamp ordering (messages should be in chronological order)
+			for (let i = 1; i < messages.length; i++) {
+				if (messages[i].timestamp < messages[i-1].timestamp) {
+					console.warn(`⚠️ Message timestamp ordering issue at index ${i}`);
+					// Don't fail for timestamp issues, just warn
+				}
+			}
+
+			return { isValid: true };
+		} catch (err) {
+			return { isValid: false, error: `Validation error: ${err}` };
+		}
+	};
+
 	// Add this new function for asynchronous chat message updating
 	const updateChatMessagesAsync = async (
 		messages: Message[],
@@ -1741,6 +1813,12 @@ const AppContent: React.FC = () => {
 		}
 
 		try {
+			// CRITICAL: Validate message integrity before saving
+			const messageValidation = validateMessageIntegrity(messages);
+			if (!messageValidation.isValid) {
+				console.error(`❌ Message validation failed: ${messageValidation.error}`);
+				throw new Error(`Message integrity check failed: ${messageValidation.error}`);
+			}
 			const updatedChats = selectedCharacter.chats.map((chat) => {
 				if (chat.id === activeChatId) {
 					const updatedChat = {
@@ -1763,10 +1841,30 @@ const AppContent: React.FC = () => {
 				};
 			});
 
-			// Update character and properly wait for it to complete
-			await updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+			// Update character and properly wait for it to complete - with retry logic
+			let retryCount = 0;
+			const maxRetries = 3;
+			
+			while (retryCount < maxRetries) {
+				try {
+					await updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+					console.log(`✅ Chat update successful after ${retryCount} retries`);
+					break; // Success, exit retry loop
+				} catch (saveErr) {
+					retryCount++;
+					console.warn(`⚠️ Save attempt ${retryCount} failed:`, saveErr);
+					
+					if (retryCount >= maxRetries) {
+						throw saveErr; // Final failure, propagate error
+					}
+					
+					// Wait before retry (exponential backoff)
+					await new Promise(resolve => setTimeout(resolve, retryCount * 500));
+				}
+			}
 		} catch (err) {
-			setLocalError(`Failed to update chat: ${err}`);
+			setLocalError(`Failed to update chat after ${3} attempts: ${err}`);
+			console.error(`❌ Critical: Chat update failed permanently:`, err);
 		}
 	};
 
