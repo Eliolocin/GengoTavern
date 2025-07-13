@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import type { FC, KeyboardEvent } from "react";
 import { useUserSettings } from "../../contexts/UserSettingsContext";
+import { useGrammarCorrection } from "../../contexts/GrammarCorrectionContext";
+import NotificationBadge from "../shared/NotificationBadge";
 import type { Character } from "../../types/interfaces";
 import type { GrammarCorrectionMode } from "../../types/grammarCorrection";
 
@@ -17,8 +19,8 @@ interface ChatInputProps {
 	shouldStopQueue?: boolean;
 }
 
-const ChatInput: FC<ChatInputProps> = ({ 
-	onSendMessage, 
+const ChatInput: FC<ChatInputProps> = ({
+	onSendMessage,
 	isProcessing = false,
 	isProcessingQueue = false,
 	currentlyTypingCharacter = null,
@@ -26,16 +28,18 @@ const ChatInput: FC<ChatInputProps> = ({
 	selectedCharacter = null,
 	allCharacters = [],
 	onStopQueue,
-	shouldStopQueue = false
+	shouldStopQueue = false,
 }) => {
 	const [message, setMessage] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const { 
-		visualNovelMode, 
-		setVisualNovelMode, 
-		grammarCorrectionMode, 
-		setGrammarCorrectionMode 
+	const {
+		visualNovelMode,
+		setVisualNovelMode,
+		grammarCorrectionMode,
+		setGrammarCorrectionMode,
 	} = useUserSettings();
+	const { getUnreadCount, hasUnreadSuggestions, markAllTutorAsRead } =
+		useGrammarCorrection();
 
 	// Auto-resize the textarea as content grows
 	useEffect(() => {
@@ -60,7 +64,16 @@ const ChatInput: FC<ChatInputProps> = ({
 	};
 
 	const toggleVisualNovelMode = () => {
-		setVisualNovelMode(!visualNovelMode);
+		const newMode = !visualNovelMode;
+		setVisualNovelMode(newMode);
+
+		// When switching from VN mode to Chat mode, mark all tutor suggestions as read
+		if (!newMode && hasUnreadSuggestions()) {
+			console.log(
+				"📖 Switching to Chat Mode - marking all tutor suggestions as read",
+			);
+			markAllTutorAsRead();
+		}
 	};
 
 	/**
@@ -79,13 +92,13 @@ const ChatInput: FC<ChatInputProps> = ({
 	const getGrammarModeText = () => {
 		switch (grammarCorrectionMode) {
 			case "off":
-				return "Grammar: Off";
+				return "Suggestions: Off";
 			case "implicit":
-				return "Grammar: Implicit";
+				return "Suggestions: Implicit";
 			case "narrative":
-				return "Grammar: Narrative";
+				return "Suggestions: Narrative";
 			default:
-				return "Grammar: Off";
+				return "Suggestions: Off";
 		}
 	};
 
@@ -114,7 +127,9 @@ const ChatInput: FC<ChatInputProps> = ({
 	// Get the name of the character currently typing
 	const getTypingCharacterName = () => {
 		if (currentlyTypingCharacter && allCharacters) {
-			const character = allCharacters.find(c => c.id === currentlyTypingCharacter);
+			const character = allCharacters.find(
+				(c) => c.id === currentlyTypingCharacter,
+			);
 			return character?.name || "Unknown";
 		}
 		return null;
@@ -123,8 +138,8 @@ const ChatInput: FC<ChatInputProps> = ({
 	// Get names of characters in the queue
 	const getQueueCharacterNames = () => {
 		if (responseQueue && responseQueue.length > 0 && allCharacters) {
-			return responseQueue.map(id => {
-				const character = allCharacters.find(c => c.id === id);
+			return responseQueue.map((id) => {
+				const character = allCharacters.find((c) => c.id === id);
 				return character?.name || "Unknown";
 			});
 		}
@@ -133,7 +148,7 @@ const ChatInput: FC<ChatInputProps> = ({
 
 	const typingCharacterName = getTypingCharacterName();
 	const queueCharacterNames = getQueueCharacterNames();
-	const isGroupChat = selectedCharacter?.type === 'group';
+	const isGroupChat = selectedCharacter?.type === "group";
 
 	return (
 		<div className="chat-input-container">
@@ -144,13 +159,23 @@ const ChatInput: FC<ChatInputProps> = ({
 					onClick={toggleVisualNovelMode}
 					title={
 						visualNovelMode
-							? "Switch to Chat Mode"
+							? hasUnreadSuggestions()
+								? `Switch to Chat Mode (${getUnreadCount()} unread grammar suggestion${getUnreadCount() === 1 ? "" : "s"})`
+								: "Switch to Chat Mode"
 							: "Switch to Visual Novel Mode"
 					}
 				>
 					{visualNovelMode ? "Chat Mode" : "Visual Novel Mode"}
+
+					{/* Show notification badge only when in VN mode and there are unread suggestions */}
+					{visualNovelMode && hasUnreadSuggestions() && (
+						<NotificationBadge
+							count={getUnreadCount()}
+							className="grammar-badge"
+						/>
+					)}
 				</button>
-				
+
 				<button
 					type="button"
 					className={`grammar-mode-toggle-button ${grammarCorrectionMode !== "off" ? "active" : ""} mode-${grammarCorrectionMode}`}
@@ -160,13 +185,14 @@ const ChatInput: FC<ChatInputProps> = ({
 					{getGrammarModeText()}
 				</button>
 			</div>
-			
+
 			{/* Queue Status Indicator */}
 			{isProcessingQueue && isGroupChat && (
 				<div className="queue-status-indicator">
 					{typingCharacterName && (
 						<div className="typing-indicator">
-							<span className="typing-character">{typingCharacterName}</span> is typing...
+							<span className="typing-character">{typingCharacterName}</span> is
+							typing...
 						</div>
 					)}
 					{queueCharacterNames.length > 1 && (
@@ -176,14 +202,18 @@ const ChatInput: FC<ChatInputProps> = ({
 					)}
 				</div>
 			)}
-			
+
 			<div className="chat-input">
 				<textarea
 					ref={textareaRef}
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
 					onKeyDown={handleKeyDown}
-					placeholder={isProcessingQueue ? "Waiting for responses..." : "Type your message..."}
+					placeholder={
+						isProcessingQueue
+							? "Waiting for responses..."
+							: "Type your message..."
+					}
 					disabled={isProcessing || isProcessingQueue}
 					rows={1}
 				/>

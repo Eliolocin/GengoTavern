@@ -726,3 +726,57 @@
 .user-message .tutor-popup {
 	position: absolute;
 }
+
+/* Notification Badge Styles */
+.notification-badge {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	background: #ef4444;
+	color: white;
+	font-size: 0.75rem;
+	font-weight: 600;
+	min-width: 18px;
+	height: 18px;
+	border-radius: 9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 4px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	z-index: 1000;
+	animation: badgeAppear 0.3s ease-out;
+}
+
+@keyframes badgeAppear {
+	from {
+		opacity: 0;
+		transform: scale(0.5);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* Mode toggle container needs relative positioning for badge */
+.mode-toggles-container {
+	position: relative;
+}
+
+.vn-mode-toggle-button {
+	position: relative; /* Allow badge positioning */
+}
+
+/* Badge color variations */
+.notification-badge.grammar-badge {
+	background: #8b5cf6; /* Purple for grammar suggestions */
+}
+
+.notification-badge.error-badge {
+	background: #ef4444; /* Red for errors */
+}
+
+.notification-badge.success-badge {
+	background: #22c55e; /* Green for success */
+}

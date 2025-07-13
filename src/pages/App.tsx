@@ -30,6 +30,7 @@ import ImageToTextModal from "../components/shared/ImageToTextModal";
 import type { GeneratedCharacterData } from "../components/shared/ImageToTextModal";
 import GroupChatCreationModal from "../components/shared/GroupChatCreationModal";
 import StorageIndicator from "../components/shared/StorageIndicator";
+import TutorNotificationToast from "../components/shared/TutorNotificationToast";
 import { storageManager } from "../utils/storageManager";
 
 // Main App Component wrapper with Providers
@@ -81,6 +82,7 @@ const AppContent: React.FC = () => {
 	const {
 		huggingFaceApiKey,
 		visualNovelMode,
+		setVisualNovelMode,
 		grammarCorrectionMode,
 	} = useUserSettings();
 	const {
@@ -89,6 +91,8 @@ const AppContent: React.FC = () => {
 		getMessageTutorData,
 		setMessageTutorData,
 		dismissTutorPopup,
+		getUnreadCount,
+		hasUnreadSuggestions,
 	} = useGrammarCorrection();
 
 	const [isLeftCollapsed] = useState(false);
@@ -103,6 +107,10 @@ const AppContent: React.FC = () => {
 	const [showGroupChatCreationModal, setShowGroupChatCreationModal] = useState<boolean>(false);
 	const [isMobile, setIsMobile] = useState<boolean>(false);
 	const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+	
+	// Tutor notification toast state
+	const [showTutorToast, setShowTutorToast] = useState<boolean>(false);
+	const [lastToastTime, setLastToastTime] = useState<number>(0);
 	
 	// Group chat response queue state
 	const [responseQueue, setResponseQueue] = useState<number[]>([]);
@@ -734,6 +742,37 @@ const AppContent: React.FC = () => {
 	};
 
 	/**
+	 * Show tutor notification toast (with debouncing)
+	 */
+	const showTutorNotificationToast = () => {
+		const now = Date.now();
+		const TOAST_DEBOUNCE_MS = 10000; // 10 seconds between toasts
+		
+		// Only show toast if we're in VN mode and enough time has passed
+		if (visualNovelMode && (now - lastToastTime) > TOAST_DEBOUNCE_MS) {
+			console.log("🍞 Showing tutor notification toast in VN mode");
+			setShowTutorToast(true);
+			setLastToastTime(now);
+		}
+	};
+
+	/**
+	 * Handle toast dismissal
+	 */
+	const handleTutorToastDismiss = () => {
+		setShowTutorToast(false);
+	};
+
+	/**
+	 * Handle switching to chat mode from toast
+	 */
+	const handleSwitchToChatMode = () => {
+		console.log("🔄 Switching to Chat Mode from tutor toast");
+		setVisualNovelMode(false);
+		setShowTutorToast(false);
+	};
+
+	/**
 	 * Process grammar correction feedback asynchronously (non-blocking)
 	 */
 	const processTutorFeedback = async (userMessage: string, messageId: number, messagesContext: Message[]) => {
@@ -764,6 +803,7 @@ const AppContent: React.FC = () => {
 					response: tutorResponse.response, // Full response with all fields
 					dismissed: false,
 					timestamp: Date.now(),
+					hasBeenSeen: false, // New tutor suggestions start as unread
 				};
 				
 				console.log(`📋 Complete tutor data being saved:`, {
@@ -813,6 +853,11 @@ const AppContent: React.FC = () => {
 				// Only show popup if confidence meets threshold
 				if (confidence >= grammarSettings.showConfidenceThreshold) {
 					console.log(`✏️ Grammar correction feedback for message ${messageId}:`, tutorResponse.response.system_message);
+					
+					// Show toast notification if in Visual Novel mode
+					if (visualNovelMode) {
+						showTutorNotificationToast();
+					}
 				} else {
 					console.log(`✏️ Grammar correction confidence too low (${confidence}) - not showing popup`);
 				}
@@ -844,6 +889,7 @@ const AppContent: React.FC = () => {
 						tutorData: {
 							...msg.tutorData,
 							dismissed: true,
+							hasBeenSeen: true, // Mark as seen when dismissed
 						}
 					};
 					console.log(`🗑️ Marked tutor popup as dismissed for message ${messageId}`);
@@ -879,7 +925,8 @@ const AppContent: React.FC = () => {
 					tutor_mode: msg.tutorData?.mode,
 					tutor_dismissed: msg.tutorData?.dismissed,
 					tutor_has_mistake: msg.tutorData?.response.has_mistake,
-					tutor_confidence: msg.tutorData?.response.confidence_score
+					tutor_confidence: msg.tutorData?.response.confidence_score,
+					tutor_hasBeenSeen: msg.tutorData?.hasBeenSeen
 				}))
 			);
 		} else {
@@ -888,8 +935,14 @@ const AppContent: React.FC = () => {
 		
 		for (const message of messages) {
 			if (message.tutorData && message.sender === 'user') {
-				setMessageTutorData(message.id, message.tutorData);
-				console.log(`🔄 Restored tutor data for message ${message.id} from storage`);
+				// Ensure hasBeenSeen field exists (for backward compatibility)
+				const tutorDataWithSeen = {
+					...message.tutorData,
+					hasBeenSeen: message.tutorData.hasBeenSeen ?? true, // Default to seen for existing data
+				};
+				
+				setMessageTutorData(message.id, tutorDataWithSeen);
+				console.log(`🔄 Restored tutor data for message ${message.id} from storage (hasBeenSeen: ${tutorDataWithSeen.hasBeenSeen})`);
 			}
 		}
 	};
@@ -1915,6 +1968,14 @@ const AppContent: React.FC = () => {
 					availableCharacters={characters}
 				/>
 			)}
+			
+			{/* Tutor Notification Toast for VN Mode */}
+			<TutorNotificationToast
+				isVisible={showTutorToast}
+				unreadCount={getUnreadCount()}
+				onDismiss={handleTutorToastDismiss}
+				onSwitchToChat={handleSwitchToChatMode}
+			/>
 		</div>
 	);
 };
