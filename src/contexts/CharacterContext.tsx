@@ -4,6 +4,7 @@ import {
 	useEffect,
 	useContext,
 	useCallback,
+	useRef,
 } from "react";
 import type React from "react";
 import type { ReactNode } from "react";
@@ -57,7 +58,9 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 	);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
-	const [savingInProgress, setSavingInProgress] = useState(false);
+	// Enhanced save management: per-character queues and locks
+	const saveQueues = useRef<Map<number, Promise<void>>>(new Map());
+	const saveLocks = useRef<Set<number>>(new Set());
 
 	// Load characters on mount
 	useEffect(() => {
@@ -89,7 +92,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 					loadedCharacters = [defaultCharacter];
 
 					// Save default character
-					await saveCharacterInternal(defaultCharacter);
+					await saveCharacterSafely(defaultCharacter);
 				}
 
 				setCharacters(loadedCharacters);
@@ -105,26 +108,56 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 		loadCharacters();
 	}, []);
 
-	// Save a character to storage
-	const saveCharacterInternal = useCallback(
-		async (character: Character) => {
-			if (savingInProgress) {
-				console.log("Save already in progress, waiting...");
-				return;
-			}
+	/**
+	 * Thread-safe character saving with per-character queuing
+	 * Prevents race conditions by serializing saves for each character
+	 */
+	const saveCharacterSafely = useCallback(
+		async (character: Character): Promise<void> => {
+			const characterId = character.id;
+			
+			// Create a new save operation for this character
+			const saveOperation = async (): Promise<void> => {
+				// Wait for any existing save operation for this character
+				const existingQueue = saveQueues.current.get(characterId);
+				if (existingQueue) {
+					try {
+						await existingQueue;
+					} catch (err) {
+						// Log but don't propagate errors from previous saves
+						console.warn(`Previous save for character ${characterId} failed:`, err);
+					}
+				}
 
-			setSavingInProgress(true);
-			try {
-				await storageManager.saveCharacter(character);
-				return true;
-			} catch (err) {
-				console.error("Error saving character:", err);
-				throw new Error(`Failed to save character: ${err}`);
-			} finally {
-				setSavingInProgress(false);
-			}
+				// Check if character is currently locked
+				if (saveLocks.current.has(characterId)) {
+					console.log(`Character ${characterId} is locked, queuing save...`);
+				}
+
+				// Set lock for this character
+				saveLocks.current.add(characterId);
+				
+				try {
+					console.log(`🔄 Saving character ${characterId} (${character.name})`);
+					await storageManager.saveCharacter(character);
+					console.log(`✅ Successfully saved character ${characterId}`);
+				} catch (err) {
+					console.error(`❌ Failed to save character ${characterId}:`, err);
+					throw new Error(`Failed to save character ${character.name}: ${err}`);
+				} finally {
+					// Always release lock
+					saveLocks.current.delete(characterId);
+				}
+			};
+
+			// Add this operation to the character's queue
+			const queuedOperation = saveQueues.current.get(characterId)?.then(saveOperation).catch(saveOperation) || saveOperation();
+			saveQueues.current.set(characterId, queuedOperation);
+
+			// Return the queued operation so callers can await it
+			return queuedOperation;
 		},
-		[savingInProgress],
+		[],
 	);
 
 	// Create a new character
@@ -144,7 +177,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 			setSelectedCharacter(newCharacter);
 
 			// Then save to storage (this might take a moment)
-			await saveCharacterInternal(newCharacter);
+			await saveCharacterSafely(newCharacter);
 
 			return newCharacter;
 		} catch (err) {
@@ -152,7 +185,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 			// Don't throw, we already updated UI
 			return newCharacter; // Still return the character even if saving fails
 		}
-	}, [characters, saveCharacterInternal]);
+	}, [characters, saveCharacterSafely]);
 
 	// Select a character by ID
 	const selectCharacter = useCallback(
@@ -220,17 +253,19 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 					}
 				}
 
-				// Then save to storage in the background
-				saveCharacterInternal(updatedCharacter).catch((err) => {
+				// Save to storage and properly await completion
+				try {
+					await saveCharacterSafely(updatedCharacter);
+				} catch (err) {
 					console.error("Error saving character:", err);
-					// Don't show errors during background saves to avoid flooding
-					// the user with error messages for every keypress
-				});
+					// Log error but don't block UI updates
+					setError(`Save failed for ${updatedCharacter.name}: ${err}`);
+				}
 			} catch (err) {
 				console.error("Error updating character:", err);
 			}
 		},
-		[characters, selectedCharacter, saveCharacterInternal],
+		[characters, selectedCharacter, saveCharacterSafely, setError],
 	);
 
 	// Delete a character
@@ -268,20 +303,18 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 		async (character: Character) => {
 			try {
 				setError(null);
-				const result = await saveCharacterInternal(character);
+				await saveCharacterSafely(character);
 
-				if (result) {
-					// Update the character in our array
-					const index = characters.findIndex((c) => c.id === character.id);
-					if (index !== -1) {
-						const newCharacters = [...characters];
-						newCharacters[index] = character;
-						setCharacters(newCharacters);
+				// Update the character in our array after successful save
+				const index = characters.findIndex((c) => c.id === character.id);
+				if (index !== -1) {
+					const newCharacters = [...characters];
+					newCharacters[index] = character;
+					setCharacters(newCharacters);
 
-						// Update selected character if needed
-						if (selectedCharacter?.id === character.id) {
-							setSelectedCharacter(character);
-						}
+					// Update selected character if needed
+					if (selectedCharacter?.id === character.id) {
+						setSelectedCharacter(character);
 					}
 				}
 			} catch (err) {
@@ -289,7 +322,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 				setError(`Failed to save character: ${err}`);
 			}
 		},
-		[characters, selectedCharacter, saveCharacterInternal],
+		[characters, selectedCharacter, saveCharacterSafely, setError],
 	);
 
 	// Explicit function for "Save as PNG" button
@@ -365,7 +398,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 						setSelectedCharacter(character);
 
 						// Explicitly save the imported character to storage
-						await saveCharacterInternal(character);
+						await saveCharacterSafely(character);
 
 						resolve(character);
 					} catch (err) {
@@ -381,7 +414,7 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 			setError(`Failed to import character: ${err}`);
 			return null;
 		}
-	}, [characters, saveCharacterInternal]);
+	}, [characters, saveCharacterSafely]);
 
 	// Add a generated character (follows importCharacter pattern but for generated characters)
 	const addGeneratedCharacter = useCallback(async (character: Character) => {
@@ -404,13 +437,13 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 			setSelectedCharacter(character);
 
 			// Save the generated character to storage
-			await saveCharacterInternal(character);
+			await saveCharacterSafely(character);
 
 		} catch (err) {
 			console.error("Error adding generated character:", err);
 			setError(`Failed to add generated character: ${err}`);
 		}
-	}, [characters, saveCharacterInternal]);
+	}, [characters, saveCharacterSafely]);
 
 	const value = {
 		characters,
