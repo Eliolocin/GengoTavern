@@ -1403,8 +1403,8 @@
 }
 
 .group-chat-creation-modal .character-thumbnail {
-	width: 50px;
-	height: 50px;
+	width: 32px;
+	height: 32px;
 	border-radius: 50%;
 	object-fit: cover;
 	border: 2px solid rgba(255, 255, 255, 0.2);
@@ -1618,4 +1618,115 @@
 		width: 95%;
 		min-width: unset;
 	}
+}
+
+/* Edit Message Modal - Make it wider and more visible */
+.edit-message-modal {
+	max-width: 800px; /* Much wider than default */
+	width: 90%;
+	padding: 30px;
+}
+
+.edit-message-modal h3 {
+	margin-top: 0;
+	margin-bottom: 25px;
+	font-size: 1.3rem;
+	color: #fff;
+	text-align: center;
+}
+
+.edit-message-modal textarea {
+	width: 100%;
+	min-height: 200px; /* Taller textarea for better visibility */
+	max-height: 400px; /* Allow for larger content */
+	padding: 15px 20px;
+	background-color: rgba(40, 40, 40, 0.9);
+	border: 2px solid #555;
+	border-radius: 8px;
+	color: #fff;
+	font-size: 1rem;
+	line-height: 1.5;
+	font-family: inherit;
+	resize: vertical;
+	box-sizing: border-box;
+	transition: border-color 0.2s ease;
+}
+
+.edit-message-modal textarea:focus {
+	border-color: #646cff;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.edit-message-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.edit-message-modal .modal-actions {
+	display: flex;
+	gap: 15px;
+	justify-content: flex-end;
+	margin-top: 25px;
+}
+
+.edit-message-modal .modal-actions button {
+	padding: 12px 24px;
+	border-radius: 6px;
+	border: none;
+	font-size: 1rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.edit-message-modal .cancel-button {
+	background-color: rgba(80, 80, 80, 0.8);
+	color: #fff;
+}
+
+.edit-message-modal .cancel-button:hover {
+	background-color: rgba(100, 100, 100, 0.9);
+}
+
+.edit-message-modal .save-button {
+	background-color: #646cff;
+	color: white;
+}
+
+.edit-message-modal .save-button:hover {
+	background-color: #5a5fd8;
+}
+
+/* Responsive adjustments for edit message modal */
+@media (max-width: 768px) {
+	.edit-message-modal {
+		width: 95%;
+		padding: 20px;
+		max-width: none;
+	}
+	
+	.edit-message-modal textarea {
+		min-height: 150px;
+		padding: 12px 15px;
+		font-size: 0.95rem;
+	}
+	
+	.edit-message-modal .modal-actions {
+		flex-direction: column;
+		gap: 10px;
+	}
+	
+	.edit-message-modal .modal-actions button {
+		width: 100%;
+		padding: 14px 20px;
+	}
+}
+
+/* New Chat Modal - Ensure it appears above chat input */
+.new-chat-modal-overlay {
+	z-index: 200000 !important; /* Much higher than chat input to ensure it's on top */
+}
+
+.new-chat-modal {
+	z-index: 200001 !important; /* Even higher than the overlay */
 }

@@ -107,7 +107,7 @@
 		gap: 8px;
 		flex-direction: column;
 	}
-	
+
 	.vn-mode-toggle-button,
 	.grammar-mode-toggle-button {
 		min-width: 120px;
@@ -343,10 +343,12 @@
 	filter: brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
 }
 
-/* Visual Novel Dialogue Box - Positioned at bottom */
+/* Visual Novel Dialogue Box - Positioned at bottom with scroll functionality */
 .visual-novel-dialogue-box {
 	width: 90%;
 	max-width: 1200px;
+	max-height: 10vh; /* Limit height to 40% of viewport to keep sprites visible */
+	min-height: 120px; /* Minimum height for short messages */
 	background-color: rgba(0, 0, 0, 0.7);
 	border-radius: 10px;
 	padding: 20px;
@@ -357,6 +359,30 @@
 	z-index: 2; /* Higher z-index than the sprite but lower than chat-input */
 	position: relative;
 	pointer-events: auto; /* Enable interactions with the dialogue box */
+	overflow-y: auto; /* Enable vertical scrolling for long content */
+	/* Custom scrollbar styling */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling for better cross-browser support */
+.visual-novel-dialogue-box::-webkit-scrollbar {
+	width: 8px;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	transition: background 0.2s ease;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.5);
 }
 
 /* Visual Novel Speaker Name */
@@ -537,6 +563,8 @@
 		width: 95%;
 		padding: 15px;
 		margin-bottom: 90px;
+		max-height: 35vh; /* Slightly smaller on mobile to leave more room for sprites */
+		min-height: 100px; /* Smaller minimum height on mobile */
 	}
 
 	.visual-novel-speaker {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import type { Character } from "../../types/interfaces";
 import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
@@ -122,9 +123,9 @@ const NewChatModal: React.FC<NewChatModalProps> = ({
 		}
 	};
 
-	return (
+	const modalContent = (
 		<div
-			className="modal-overlay"
+			className="modal-overlay new-chat-modal-overlay"
 			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			role="dialog"
@@ -247,6 +248,9 @@ const NewChatModal: React.FC<NewChatModalProps> = ({
 			</div>
 		</div>
 	);
+
+	// Use React Portal to render directly to document.body, bypassing all stacking contexts
+	return createPortal(modalContent, document.body);
 };
 
 export default NewChatModal;
