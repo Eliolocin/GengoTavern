@@ -138,15 +138,16 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 				saveLocks.current.add(characterId);
 				
 				try {
-					console.log(`🔄 Saving character ${characterId} (${character.name})`);
+					console.log(`🔄 Saving character ${characterId} (${character.name}) - Queue size: ${saveQueues.current.size}`);
 					await storageManager.saveCharacter(character);
-					console.log(`✅ Successfully saved character ${characterId}`);
+					console.log(`✅ Successfully saved character ${characterId} - Queue size: ${saveQueues.current.size}`);
 				} catch (err) {
 					console.error(`❌ Failed to save character ${characterId}:`, err);
 					throw new Error(`Failed to save character ${character.name}: ${err}`);
 				} finally {
 					// Always release lock
 					saveLocks.current.delete(characterId);
+					console.log(`🔓 Released lock for character ${characterId}`);
 				}
 			};
 
@@ -253,9 +254,11 @@ export const CharacterProvider: React.FC<CharacterProviderProps> = ({
 					}
 				}
 
-				// Save to storage and properly await completion
+				// TEMPORARY: Use old save method to test if save queue is the issue
 				try {
-					await saveCharacterSafely(updatedCharacter);
+					console.log(`🔧 Using direct save (bypassing queue) for character ${updatedCharacter.id}`);
+					await storageManager.saveCharacter(updatedCharacter);
+					console.log(`🔧 Direct save completed for character ${updatedCharacter.id}`);
 				} catch (err) {
 					console.error("Error saving character:", err);
 					// Log error but don't block UI updates

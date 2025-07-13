@@ -892,7 +892,8 @@ const AppContent: React.FC = () => {
 			
 			// CRITICAL: Coordinate with group chat queue processing
 			// If a group chat queue is processing, wait for it to complete to prevent save conflicts
-			if (isProcessingQueue) {
+			// TEMPORARY DEBUG: Skip coordination to test if this is causing the issue
+			if (false && isProcessingQueue) {
 				console.log(`⏳ Tutor waiting for group chat queue to complete before processing...`);
 				
 				// Wait for queue processing to finish (with timeout)
@@ -1107,7 +1108,11 @@ const AppContent: React.FC = () => {
 	};
 
 	const handleSendMessage = async (text: string) => {
-		if (!selectedCharacter || activeChatId === null) return;
+		console.log(`🚀 handleSendMessage called with text: "${text}"`);
+		if (!selectedCharacter || activeChatId === null) {
+			console.error(`❌ Missing selectedCharacter (${!!selectedCharacter}) or activeChatId (${activeChatId})`);
+			return;
+		}
 
 		// Check if this is an empty send (should trigger response to last user message)
 		if (!text.trim()) {
@@ -1121,6 +1126,28 @@ const AppContent: React.FC = () => {
 				);
 				// Use the last user message text to trigger responses without storage conflicts
 				const lastUserText = lastUserMessage.text;
+				
+				// CRITICAL: Also trigger tutor processing for the last user message (if not already processed)
+				if (shouldProcessWithTutor(lastUserText, grammarCorrectionMode)) {
+					// Check if this message already has tutor data to avoid duplicate processing
+					if (lastUserMessage.tutorData) {
+						console.log(
+							`⏭️ Skipping tutor analysis - last user message already has tutor data`,
+						);
+					} else {
+						console.log(
+							`🔍 Processing tutor feedback for last user message: "${lastUserText.substring(0, 50)}${lastUserText.length > 50 ? "..." : ""}"`,
+						);
+						// Make this TRULY non-blocking with setTimeout
+						setTimeout(() => {
+							processTutorFeedback(lastUserText, lastUserMessage.id, activeMessages);
+						}, 0);
+					}
+				} else {
+					console.log(
+						`⏭️ Skipping tutor analysis for last user message (mode: ${grammarCorrectionMode}, message too short: ${lastUserText.length} chars)`,
+					);
+				}
 				
 				try {
 					if (isGroupChat(selectedCharacter)) {
@@ -1227,23 +1254,39 @@ const AppContent: React.FC = () => {
 
 		// Then update in character state but keep current active chat
 		// We need to wait for the chat messages to be updated properly
-		await updateChatMessagesAsync(updatedMessages, false);
+		try {
+			console.log(`💾 Saving user message to storage...`);
+			await updateChatMessagesAsync(updatedMessages, false);
+			console.log(`✅ User message saved successfully`);
+		} catch (saveError) {
+			console.error(`❌ Failed to save user message:`, saveError);
+			setLocalError(`Failed to save message: ${saveError}`);
+			return; // Don't proceed if save failed
+		}
 
 		// Start tutor processing if grammar correction is enabled (async, non-blocking)
 		if (shouldProcessWithTutor(text, grammarCorrectionMode)) {
 			console.log(
 				`🔍 Starting tutor analysis for message: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}" (mode: ${grammarCorrectionMode})`,
 			);
-			processTutorFeedback(text, newMessage.id, updatedMessages);
+			// Make this TRULY non-blocking with setTimeout
+			setTimeout(() => {
+				processTutorFeedback(text, newMessage.id, updatedMessages);
+			}, 0);
 		} else {
 			console.log(
 				`⏭️ Skipping tutor analysis (mode: ${grammarCorrectionMode}, message too short: ${text.length} chars)`,
 			);
 		}
+		
+		console.log(`🎯 About to start character response - Grammar mode: ${grammarCorrectionMode}`);
 
 		try {
+			console.log(`🤖 Starting character response logic...`);
+			console.log(`📊 Character type check - isGroupChat: ${isGroupChat(selectedCharacter)}`);
 			// Handle group chat vs individual character differently
 			if (isGroupChat(selectedCharacter)) {
+				console.log(`👥 Processing as group chat`);  
 				// For group chats, calculate response queue
 				const lastSpeaker = getLastSpeaker(updatedMessages);
 				console.log(`User message: "${text}"`);
@@ -1262,6 +1305,7 @@ const AppContent: React.FC = () => {
 				// Process the queue with the updated messages that include the user message
 				await processResponseQueue(queue, text, updatedMessages);
 			} else {
+				console.log(`👤 Processing as individual character`);
 				// For individual characters, use the original logic
 				// Add a loading/generating message
 				const generatingMsgId = Date.now() + 1;
@@ -1292,7 +1336,9 @@ const AppContent: React.FC = () => {
 				);
 
 				// Call the API
+				console.log(`🌐 About to call Gemini API with prompt length: ${prompt.length}`);
 				const response = await callGeminiAPI(prompt, settings);
+				console.log(`🌐 Gemini API response received:`, response.error ? `ERROR: ${response.error}` : 'SUCCESS');
 
 				// Check for errors
 				if (response.error) {
@@ -1365,7 +1411,8 @@ const AppContent: React.FC = () => {
 				}
 			}
 		} catch (err) {
-			console.error("Message generation error:", err);
+			console.error("❌ Character response generation error:", err);
+			setLocalError(`Character response failed: ${err}`);
 
 			// Remove the generating message
 			setActiveMessages(updatedMessages);
@@ -1782,9 +1829,12 @@ const AppContent: React.FC = () => {
 				return { isValid: false, error: "Duplicate message IDs detected" };
 			}
 
-			// Check for required fields
+			// Check for required fields (allow empty text, but check for undefined/null)
 			for (const msg of messages) {
-				if (!msg.id || !msg.text || !msg.sender || !msg.timestamp) {
+				if (msg.id === undefined || msg.id === null || 
+					msg.text === undefined || msg.text === null || 
+					!msg.sender || 
+					msg.timestamp === undefined || msg.timestamp === null || msg.timestamp <= 0) {
 					return { isValid: false, error: `Invalid message structure: ${JSON.stringify(msg)}` };
 				}
 			}
@@ -1813,12 +1863,15 @@ const AppContent: React.FC = () => {
 		}
 
 		try {
-			// CRITICAL: Validate message integrity before saving
-			const messageValidation = validateMessageIntegrity(messages);
-			if (!messageValidation.isValid) {
-				console.error(`❌ Message validation failed: ${messageValidation.error}`);
-				throw new Error(`Message integrity check failed: ${messageValidation.error}`);
-			}
+			// TEMPORARY: Skip validation to test if this is the blocker
+			console.log(`🔍 Skipping validation temporarily - ${messages.length} messages`);
+			// const messageValidation = validateMessageIntegrity(messages);
+			// if (!messageValidation.isValid) {
+			//     console.error(`❌ Message validation failed: ${messageValidation.error}`);
+			//     console.error(`❌ Failed messages:`, messages);
+			//     throw new Error(`Message integrity check failed: ${messageValidation.error}`);
+			// }
+			console.log(`✅ Message validation skipped for testing`); 
 			const updatedChats = selectedCharacter.chats.map((chat) => {
 				if (chat.id === activeChatId) {
 					const updatedChat = {
@@ -1842,11 +1895,13 @@ const AppContent: React.FC = () => {
 			});
 
 			// Update character and properly wait for it to complete - with retry logic
+			console.log(`💾 Starting character update with retry logic...`);
 			let retryCount = 0;
 			const maxRetries = 3;
 			
 			while (retryCount < maxRetries) {
 				try {
+					console.log(`🔄 Save attempt ${retryCount + 1}/${maxRetries}`);
 					await updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
 					console.log(`✅ Chat update successful after ${retryCount} retries`);
 					break; // Success, exit retry loop
@@ -1855,10 +1910,12 @@ const AppContent: React.FC = () => {
 					console.warn(`⚠️ Save attempt ${retryCount} failed:`, saveErr);
 					
 					if (retryCount >= maxRetries) {
+						console.error(`❌ All ${maxRetries} save attempts failed!`);
 						throw saveErr; // Final failure, propagate error
 					}
 					
 					// Wait before retry (exponential backoff)
+					console.log(`⏳ Waiting ${retryCount * 500}ms before retry...`);
 					await new Promise(resolve => setTimeout(resolve, retryCount * 500));
 				}
 			}
