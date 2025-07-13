@@ -85,7 +85,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 	const getPopupTitle = () => {
 		switch (tutorData.mode) {
 			case "implicit":
-				return "Language Helper";
+				return "Implicit Feedback";
 			case "narrative":
 				return "Roleplay Suggestion";
 			default:
@@ -136,14 +136,27 @@ const TutorPopup: FC<TutorPopupProps> = ({
 					<details>
 						<summary>Debug Info</summary>
 						<div className="tutor-popup-debug-content">
-							<p><strong>Language:</strong> {tutorData.response.text_language}</p>
-							<p><strong>Confidence:</strong> {tutorData.response.confidence_score?.toFixed(2) || "N/A"}</p>
-							{tutorData.response.grammar_mistakes && tutorData.response.grammar_mistakes.length > 0 && (
-								<p><strong>Grammar Issues:</strong> {tutorData.response.grammar_mistakes.join(", ")}</p>
-							)}
-							{tutorData.response.roleplay_mistakes && tutorData.response.roleplay_mistakes.length > 0 && (
-								<p><strong>Roleplay Issues:</strong> {tutorData.response.roleplay_mistakes.join(", ")}</p>
-							)}
+							<p>
+								<strong>Language:</strong> {tutorData.response.text_language}
+							</p>
+							<p>
+								<strong>Confidence:</strong>{" "}
+								{tutorData.response.confidence_score?.toFixed(2) || "N/A"}
+							</p>
+							{tutorData.response.grammar_mistakes &&
+								tutorData.response.grammar_mistakes.length > 0 && (
+									<p>
+										<strong>Grammar Issues:</strong>{" "}
+										{tutorData.response.grammar_mistakes.join(", ")}
+									</p>
+								)}
+							{tutorData.response.roleplay_mistakes &&
+								tutorData.response.roleplay_mistakes.length > 0 && (
+									<p>
+										<strong>Roleplay Issues:</strong>{" "}
+										{tutorData.response.roleplay_mistakes.join(", ")}
+									</p>
+								)}
 						</div>
 					</details>
 				</div>

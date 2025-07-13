@@ -589,6 +589,10 @@ const AppContent: React.FC = () => {
 
 		// Keep track of the most current messages as we process the queue
 		let workingMessages = currentMessages || activeMessages;
+		
+		// Track processed characters to prevent duplicates in this queue
+		const processedCharacters = new Set<number>();
+		console.log(`🛡️ Starting queue with ${processQueue.length} characters:`, processQueue);
 
 		try {
 			for (let i = 0; i < processQueue.length; i++) {
@@ -601,8 +605,21 @@ const AppContent: React.FC = () => {
 				}
 
 				const speakerId = processQueue[i];
+				
+				// DUPLICATE PREVENTION: Check if this character has already been processed
+				if (processedCharacters.has(speakerId)) {
+					console.warn(`⚠️ Duplicate character detected - skipping ${speakerId} (already processed)`);
+					continue;
+				}
+				
 				const speakerCharacter = characters.find((c) => c.id === speakerId);
-				if (!speakerCharacter) continue;
+				if (!speakerCharacter) {
+					console.warn(`⚠️ Character ${speakerId} not found - skipping`);
+					continue;
+				}
+				
+				// Mark this character as processed
+				processedCharacters.add(speakerId);
 
 				console.log(
 					`Processing character ${speakerCharacter.name} (${speakerId}) - ${i + 1}/${processQueue.length}`,
@@ -613,99 +630,98 @@ const AppContent: React.FC = () => {
 
 				// Generate response for this character with current message state
 				// Let this complete fully without interruption
-				const newMessage = await generateCharacterResponse(
+				const responseResult = await generateCharacterResponse(
 					speakerId,
 					speakerCharacter.name,
 					_userMessage,
 					workingMessages,
 				);
+				const { message: newMessage, updatedMessages } = responseResult;
 
 				// Check again after response generation in case user clicked stop during generation
 				if (stopQueueRef.current) {
 					console.log(
 						`Queue stopped by user after ${speakerCharacter.name}'s response generation`,
 					);
-					// Still add the completed message to working messages
-					if (newMessage) {
-						workingMessages = [...workingMessages, newMessage];
-					}
+					// Use the updated messages from the response (already saved to storage)
+					workingMessages = updatedMessages;
+					console.log(`📎 Queue stopped - using updated messages: ${workingMessages.length}`);
 					break;
 				}
 
-				// Update working messages to include the new response for the next character
-				// CRITICAL: Ensure workingMessages stays synchronized with actual persisted state
-				if (newMessage) {
-					// Get the current persisted messages to ensure synchronization
-					setActiveMessages((currentMessages) => {
-						workingMessages = currentMessages; // Update working messages with actual persisted state
-						console.log(`🔄 Synchronized workingMessages with ${currentMessages.length} persisted messages`);
-						return currentMessages; // No state change, just sync
-					});
+				// Update working messages with the response result (already saved to storage)
+				workingMessages = updatedMessages;
+				console.log(`📝 Updated workingMessages from response - now ${workingMessages.length} messages`);
 
-					// Check if this character's response triggers additional characters
-					// But only if queue hasn't been stopped
-					if (
-						selectedCharacter &&
-						isGroupChat(selectedCharacter) &&
-						!stopQueueRef.current
-					) {
-						console.log(
-							`Checking if ${speakerCharacter.name}'s response triggers additional characters`,
-						);
-						console.log(
-							`Message from ${speakerCharacter.name}: "${newMessage.text}"`,
-						);
-						console.log(
-							`Last speaker ID being passed: ${newMessage.speakerId}`,
-						);
+				// Check if this character's response triggers additional characters
+				// But only if we got a valid message and queue hasn't been stopped
+				if (
+					newMessage &&
+					selectedCharacter &&
+					isGroupChat(selectedCharacter) &&
+					!stopQueueRef.current
+				) {
+					console.log(
+						`Checking if ${speakerCharacter.name}'s response triggers additional characters`,
+					);
+					console.log(
+						`Message from ${speakerCharacter.name}: "${newMessage.text}"`,
+					);
+					console.log(
+						`Last speaker ID being passed: ${newMessage.speakerId}`,
+					);
 
-						const lastSpeaker = {
-							speakerId: newMessage.speakerId,
-							isUser: false,
-						};
-						const additionalQueue = calculateResponseQueue(
-							selectedCharacter,
-							newMessage.text,
-							false, // isUserMessage = false (this is a character message)
-							lastSpeaker.speakerId,
-							characters,
-						);
+					const lastSpeaker = {
+						speakerId: newMessage.speakerId,
+						isUser: false,
+					};
+					const additionalQueue = calculateResponseQueue(
+						selectedCharacter,
+						newMessage.text,
+						false, // isUserMessage = false (this is a character message)
+						lastSpeaker.speakerId,
+						characters,
+					);
 
-						// Add any newly triggered characters to our processing queue
-						if (additionalQueue.length > 0) {
-							console.log(
-								`${speakerCharacter.name} triggered additional characters: [${additionalQueue.join(", ")}]`,
-							);
-							// Add to the end of our processing queue (will be processed in this same loop)
-							processQueue.push(...additionalQueue);
-							// Update the displayed queue state
-							setResponseQueue([...processQueue]);
-						} else {
-							console.log(
-								`${speakerCharacter.name}'s response did not trigger any additional characters`,
-							);
-						}
-					} else if (stopQueueRef.current) {
+					// Add any newly triggered characters to our processing queue
+					if (additionalQueue.length > 0) {
 						console.log(
-							`Skipping additional character triggers - queue stop requested`,
+							`${speakerCharacter.name} triggered additional characters: [${additionalQueue.join(", ")}]`,
+						);
+						// Add to the end of our processing queue (will be processed in this same loop)
+						processQueue.push(...additionalQueue);
+						// Update the displayed queue state
+						setResponseQueue([...processQueue]);
+					} else {
+						console.log(
+							`${speakerCharacter.name}'s response did not trigger any additional characters`,
 						);
 					}
+				} else if (stopQueueRef.current) {
+					console.log(
+						`Skipping additional character triggers - queue stop requested`,
+					);
+				} else if (!newMessage) {
+					console.log(
+						`No message generated by ${speakerCharacter.name} - continuing queue`,
+					);
 				}
 
 				// CRITICAL: Wait for save operations to complete before next character
 				// This prevents race conditions between characters in the queue
 				await new Promise((resolve) => setTimeout(resolve, 250)); // Increased delay for save completion
 				
-				// Validate that the message was actually persisted
-				const finalMessageCount = activeMessages.length;
-				console.log(`🔍 Validation: Expected at least ${workingMessages.length} messages, found ${finalMessageCount}`);
-				
-				if (finalMessageCount < workingMessages.length) {
-					console.warn(`⚠️ Message persistence validation failed! Expected ${workingMessages.length}, got ${finalMessageCount}`);
-				}
+				// Log current state for debugging
+				console.log(`🔍 Queue step completed - workingMessages: ${workingMessages.length}, processing next character...`);
 			}
 		} finally {
-			console.log("Queue processing finished - cleaning up state");
+			console.log(`🏁 Queue processing finished - final message count: ${workingMessages.length}`);
+			
+			// CRITICAL: Update React state with final accumulated messages
+			// This ensures UI reflects all messages processed during the queue
+			setActiveMessages(workingMessages);
+			console.log(`🔄 Updated React state with ${workingMessages.length} final messages`);
+			
 			// Clean up queue state
 			setIsProcessingQueue(false);
 			setCurrentlyTypingCharacter(null);
@@ -717,18 +733,20 @@ const AppContent: React.FC = () => {
 
 	/**
 	 * Generate a response for a specific character in a group chat
+	 * Returns: { message: Message | null, updatedMessages: Message[] }
 	 */
 	const generateCharacterResponse = async (
 		speakerId: number,
 		speakerName: string,
 		_userMessage: string,
-		currentMessages?: Message[],
-	): Promise<Message | null> => {
-		if (!selectedCharacter || activeChatId === null) return null;
+		currentMessages: Message[], // Required - use accumulated messages from queue
+	): Promise<{ message: Message | null; updatedMessages: Message[] }> => {
+		if (!selectedCharacter || activeChatId === null) return { message: null, updatedMessages: currentMessages };
 
 		try {
-			// Use the provided current messages or fall back to activeMessages
-			const messagesToUse = currentMessages || activeMessages;
+			// Use the provided current messages (no fallback - always use queue state)
+			const messagesToUse = currentMessages;
+			console.log(`🎭 Generating response for ${speakerName} with ${messagesToUse.length} messages in context`);
 
 			// Get the most current chat state with up-to-date messages
 			// This ensures characters see responses from previous characters in the queue
@@ -803,27 +821,22 @@ const AppContent: React.FC = () => {
 				emotion: detectedEmotion || undefined,
 			};
 
-			// Update messages and save to character state
-			// Use a callback to ensure we get the latest state and save immediately
-			let updatedMessages: Message[] = [];
-			setActiveMessages((currentMessages) => {
-				updatedMessages = [...currentMessages, responseMessage];
-				return updatedMessages;
-			});
+			// Create updated messages array using passed currentMessages (not React state)
+			const updatedMessages = [...currentMessages, responseMessage];
+			console.log(`📝 ${speakerName} response added - message count: ${currentMessages.length} → ${updatedMessages.length}`);
 
-			// Wait for the message to be fully saved before returning
-			// Use the updatedMessages from the state callback, not stale activeMessages
+			// Save the updated messages to storage
 			await updateChatMessagesAsync(updatedMessages, false);
 
-			// Return the new message so the queue can use it for subsequent characters
-			return responseMessage;
+			// Return both the new message and updated message array
+			return { message: responseMessage, updatedMessages };
 		} catch (err) {
 			console.error(
 				`Character response generation error (${speakerName}):`,
 				err,
 			);
 
-			// Add error message
+			// Add error message using passed currentMessages (not React state)
 			const errorMsg =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			const errorMessage: Message = {
@@ -834,17 +847,15 @@ const AppContent: React.FC = () => {
 				isError: true,
 			};
 
-			let messagesWithError: Message[] = [];
-			setActiveMessages((currentMessages) => {
-				messagesWithError = [...currentMessages, errorMessage];
-				return messagesWithError;
-			});
+			// Create updated messages with error using passed currentMessages
+			const messagesWithError = [...currentMessages, errorMessage];
+			console.log(`❌ Error message added for ${speakerName} - message count: ${currentMessages.length} → ${messagesWithError.length}`);
 
-			// Wait for the error message to be fully saved before returning
+			// Save error message to storage
 			await updateChatMessagesAsync(messagesWithError, false);
 
-			// Return null on error so queue processing continues
-			return null;
+			// Return null message but updated messages array
+			return { message: null, updatedMessages: messagesWithError };
 		}
 	};
 
@@ -890,25 +901,7 @@ const AppContent: React.FC = () => {
 		try {
 			setIsProcessingTutor(true);
 			
-			// CRITICAL: Coordinate with group chat queue processing
-			// If a group chat queue is processing, wait for it to complete to prevent save conflicts
-			// TEMPORARY DEBUG: Skip coordination to test if this is causing the issue
-			if (false && isProcessingQueue) {
-				console.log(`⏳ Tutor waiting for group chat queue to complete before processing...`);
-				
-				// Wait for queue processing to finish (with timeout)
-				let waitCount = 0;
-				while (isProcessingQueue && waitCount < 50) { // Max 5 seconds wait
-					await new Promise((resolve) => setTimeout(resolve, 100));
-					waitCount++;
-				}
-				
-				if (isProcessingQueue) {
-					console.warn(`⚠️ Timeout waiting for group chat queue, proceeding with tutor processing...`);
-				} else {
-					console.log(`✅ Group chat queue completed, proceeding with tutor processing`);
-				}
-			}
+			// Note: Group chat queue coordination was temporarily disabled to prevent conflicts
 
 			// Extract chat history for context
 			const chatHistory = extractChatHistoryForTutor(

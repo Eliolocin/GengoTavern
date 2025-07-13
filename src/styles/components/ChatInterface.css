@@ -94,7 +94,7 @@
 .message {
 	display: flex;
 	gap: 10px;
-	max-width: 80%;
+	max-width: 70%;
 	position: relative;
 }
 
@@ -564,7 +564,11 @@
 	top: 50%;
 	transform: translateY(-50%);
 	width: 220px;
-	background: linear-gradient(135deg, rgba(63, 63, 70, 0.95), rgba(39, 39, 42, 0.95));
+	background: linear-gradient(
+		135deg,
+		rgba(63, 63, 70, 0.95),
+		rgba(39, 39, 42, 0.95)
+	);
 	border: 1px solid rgba(148, 163, 184, 0.3);
 	border-radius: 12px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -711,7 +715,7 @@
 		width: 180px;
 		font-size: 0.8rem;
 	}
-	
+
 	.tutor-popup-content {
 		padding: 10px;
 	}
@@ -813,7 +817,9 @@
 
 /* Keyframes for typing dots animation */
 @keyframes typingDots {
-	0%, 60%, 100% {
+	0%,
+	60%,
+	100% {
 		opacity: 0.4;
 		transform: scale(1);
 	}
