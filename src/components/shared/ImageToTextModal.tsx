@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import type React from 'react';
-import type { DialoguePair } from '../../types/interfaces';
-import { generateCharacterFromImage, type GeneratedCharacter } from '../../utils/geminiAPI';
-import ImageCropper from './ImageCropper';
+import { useState } from "react";
+import type React from "react";
+import type { DialoguePair } from "../../types/interfaces";
+import {
+	generateCharacterFromImage,
+	type GeneratedCharacter,
+} from "../../utils/geminiAPI";
+import ImageCropper from "./ImageCropper";
 
 interface ImageToTextModalProps {
 	isOpen: boolean;
@@ -19,7 +22,7 @@ export interface GeneratedCharacterData {
 	image: string; // The cropped image as data URL for character display
 }
 
-type ModalState = 'input' | 'generating' | 'preview' | 'error';
+type ModalState = "input" | "generating" | "preview" | "error";
 
 /**
  * Modal for creating characters from uploaded images using AI
@@ -33,15 +36,17 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 	onAccept,
 }) => {
 	// 1. Component state
-	const [modalState, setModalState] = useState<ModalState>('input');
+	const [modalState, setModalState] = useState<ModalState>("input");
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null); // Original image for generation
 	const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null); // Cropped image for character display
 	const [showImageCropper, setShowImageCropper] = useState<boolean>(false);
-	const [characterName, setCharacterName] = useState<string>('');
-	const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
-	const [generatedCharacter, setGeneratedCharacter] = useState<GeneratedCharacter | null>(null);
-	const [errorMessage, setErrorMessage] = useState<string>('');
+	const [characterName, setCharacterName] = useState<string>("");
+	const [additionalInstructions, setAdditionalInstructions] =
+		useState<string>("");
+	const [generatedCharacter, setGeneratedCharacter] =
+		useState<GeneratedCharacter | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
 	if (!isOpen) return null;
@@ -54,14 +59,14 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 		const file = e.target.files?.[0];
 		if (file) {
 			// 1. Validate file type
-			if (!file.type.startsWith('image/')) {
-				alert('Please select a valid image file.');
+			if (!file.type.startsWith("image/")) {
+				alert("Please select a valid image file.");
 				return;
 			}
 
 			// 2. Validate file size (max 10MB)
 			if (file.size > 10 * 1024 * 1024) {
-				alert('Image file size must be less than 10MB.');
+				alert("Image file size must be less than 10MB.");
 				return;
 			}
 
@@ -106,43 +111,43 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 	const handleGenerate = async () => {
 		// 1. Validate inputs
 		if (!selectedImage || !croppedImageUrl) {
-			alert('Please select and crop an image first.');
+			alert("Please select and crop an image first.");
 			return;
 		}
 
 		if (!characterName.trim()) {
-			alert('Please enter a character name.');
+			alert("Please enter a character name.");
 			return;
 		}
 
 		// 2. Set loading state
-		setModalState('generating');
+		setModalState("generating");
 		setIsGenerating(true);
-		setErrorMessage('');
+		setErrorMessage("");
 
 		try {
 			// 3. Call the generation API
 			const result = await generateCharacterFromImage(
 				selectedImage,
 				characterName.trim(),
-				additionalInstructions.trim() || undefined
+				additionalInstructions.trim() || undefined,
 			);
 
 			// 4. Handle the response
 			if (result.error) {
 				setErrorMessage(result.error);
-				setModalState('error');
+				setModalState("error");
 			} else if (result.character) {
 				setGeneratedCharacter(result.character);
-				setModalState('preview');
+				setModalState("preview");
 			} else {
-				setErrorMessage('Unknown error occurred during generation.');
-				setModalState('error');
+				setErrorMessage("Unknown error occurred during generation.");
+				setModalState("error");
 			}
 		} catch (error) {
-			console.error('Character generation error:', error);
-			setErrorMessage('Failed to generate character. Please try again.');
-			setModalState('error');
+			console.error("Character generation error:", error);
+			setErrorMessage("Failed to generate character. Please try again.");
+			setModalState("error");
 		} finally {
 			setIsGenerating(false);
 		}
@@ -176,24 +181,24 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 	 * 5. Handle rejecting the generated character
 	 */
 	const handleReject = () => {
-		setModalState('input');
+		setModalState("input");
 		setGeneratedCharacter(null);
-		setErrorMessage('');
+		setErrorMessage("");
 	};
 
 	/**
 	 * 7. Reset modal to initial state
 	 */
 	const resetModal = () => {
-		setModalState('input');
+		setModalState("input");
 		setSelectedImage(null);
 		setOriginalImageUrl(null);
 		setCroppedImageUrl(null);
 		setShowImageCropper(false);
-		setCharacterName('');
-		setAdditionalInstructions('');
+		setCharacterName("");
+		setAdditionalInstructions("");
 		setGeneratedCharacter(null);
-		setErrorMessage('');
+		setErrorMessage("");
 		setIsGenerating(false);
 	};
 
@@ -220,14 +225,14 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 	 * @param e - Keyboard event
 	 */
 	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Escape') {
+		if (e.key === "Escape") {
 			handleClose();
 		}
 	};
 
 	return (
-		<div 
-			className="modal-overlay" 
+		<div
+			className="modal-overlay"
 			onClick={handleBackdropClick}
 			onKeyDown={handleKeyDown}
 			tabIndex={-1}
@@ -235,14 +240,14 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 			<div className="modal-content image-to-text-modal">
 				<div className="modal-header">
 					<h2>
-						{modalState === 'input' && 'Create Character from Image'}
-						{modalState === 'generating' && 'Generating Character...'}
-						{modalState === 'preview' && 'Character Preview'}
-						{modalState === 'error' && 'Generation Error'}
+						{modalState === "input" && "Create Character from Image"}
+						{modalState === "generating" && "Generating Character..."}
+						{modalState === "preview" && "Character Preview"}
+						{modalState === "error" && "Generation Error"}
 					</h2>
-					<button 
-						type="button" 
-						className="modal-close" 
+					<button
+						type="button"
+						className="modal-close"
 						onClick={handleClose}
 						disabled={isGenerating}
 						aria-label="Close modal"
@@ -250,13 +255,15 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 						×
 					</button>
 				</div>
-				
+
 				<div className="modal-body">
 					{/* Input State - Upload image and provide details */}
-					{modalState === 'input' && (
+					{modalState === "input" && (
 						<div className="input-section">
-							<p>Upload an image and let AI create a unique character for you!</p>
-							
+							<p>
+								Upload an image and let AI create a unique character for you!
+							</p>
+
 							{/* Image Upload */}
 							<div className="form-group">
 								<label htmlFor="character-image">Character Image</label>
@@ -270,7 +277,7 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 								{croppedImageUrl && (
 									<div className="image-preview">
 										<img src={croppedImageUrl} alt="Character preview" />
-										<button 
+										<button
 											type="button"
 											onClick={() => setShowImageCropper(true)}
 											className="edit-crop-button"
@@ -297,25 +304,28 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 
 							{/* Additional Instructions */}
 							<div className="form-group">
-								<label htmlFor="additional-instructions">Additional Instructions (Optional)</label>
+								<label htmlFor="additional-instructions">
+									Additional Instructions (Optional)
+								</label>
 								<textarea
 									id="additional-instructions"
 									value={additionalInstructions}
 									onChange={(e) => setAdditionalInstructions(e.target.value)}
-									placeholder="e.g., 'Make them speak in Japanese', 'Focus on their mysterious personality', 'Set in a fantasy world'..."
+									placeholder="e.g., 'Generate everything in Japanese', 'The character is a kleptomaniac', 'Set in a fantasy world'..."
 									maxLength={500}
 									className="textarea-input"
 									rows={3}
 								/>
 								<small className="input-hint">
-									Specify language, personality traits, setting, or any other preferences
+									Specify language, personality traits, setting, or any other
+									preferences
 								</small>
 							</div>
 						</div>
 					)}
 
 					{/* Generating State - Show loading */}
-					{modalState === 'generating' && (
+					{modalState === "generating" && (
 						<div className="generating-section">
 							<div className="loading-container">
 								<div className="loading-spinner"></div>
@@ -326,10 +336,13 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 					)}
 
 					{/* Preview State - Show generated character */}
-					{modalState === 'preview' && generatedCharacter && (
+					{modalState === "preview" && generatedCharacter && (
 						<div className="preview-section">
-							<p>Here's your generated character! Review the details and accept or try again.</p>
-							
+							<p>
+								Here's your generated character! Review the details and accept
+								or try again.
+							</p>
+
 							<div className="character-preview">
 								{/* Character Image */}
 								{croppedImageUrl && (
@@ -341,7 +354,7 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 								{/* Character Details */}
 								<div className="character-details">
 									<h3>{characterName}</h3>
-									
+
 									<div className="detail-section">
 										<h4>Description</h4>
 										<p>{generatedCharacter.description}</p>
@@ -360,16 +373,22 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 									<div className="detail-section">
 										<h4>Sample Dialogues</h4>
 										<div className="sample-dialogues">
-											{generatedCharacter.sampleDialogues.map((dialogue, index) => (
-												<div key={`dialogue-${index}-${dialogue.user.substring(0, 10)}`} className="dialogue-pair">
-													<div className="user-line">
-														<strong>You:</strong> {dialogue.user}
+											{generatedCharacter.sampleDialogues.map(
+												(dialogue, index) => (
+													<div
+														key={`dialogue-${index}-${dialogue.user.substring(0, 10)}`}
+														className="dialogue-pair"
+													>
+														<div className="user-line">
+															<strong>You:</strong> {dialogue.user}
+														</div>
+														<div className="character-line">
+															<strong>{characterName}:</strong>{" "}
+															{dialogue.character}
+														</div>
 													</div>
-													<div className="character-line">
-														<strong>{characterName}:</strong> {dialogue.character}
-													</div>
-												</div>
-											))}
+												),
+											)}
 										</div>
 									</div>
 								</div>
@@ -378,7 +397,7 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 					)}
 
 					{/* Error State - Show error message */}
-					{modalState === 'error' && (
+					{modalState === "error" && (
 						<div className="error-section">
 							<div className="error-message">
 								<h3>Generation Failed</h3>
@@ -389,14 +408,18 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 				</div>
 
 				<div className="modal-footer">
-					{modalState === 'input' && (
+					{modalState === "input" && (
 						<>
-							<button type="button" onClick={handleClose} className="cancel-button">
+							<button
+								type="button"
+								onClick={handleClose}
+								className="cancel-button"
+							>
 								Cancel
 							</button>
-							<button 
-								type="button" 
-								onClick={handleGenerate} 
+							<button
+								type="button"
+								onClick={handleGenerate}
 								className="generate-button"
 								disabled={!croppedImageUrl || !characterName.trim()}
 							>
@@ -405,30 +428,51 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 						</>
 					)}
 
-					{modalState === 'preview' && (
+					{modalState === "preview" && (
 						<>
-							<button type="button" onClick={handleReject} className="reject-button">
+							<button
+								type="button"
+								onClick={handleReject}
+								className="reject-button"
+							>
 								Try Again
 							</button>
-							<button type="button" onClick={handleAccept} className="accept-button">
+							<button
+								type="button"
+								onClick={handleAccept}
+								className="accept-button"
+							>
 								Accept Character
 							</button>
 						</>
 					)}
 
-					{modalState === 'error' && (
+					{modalState === "error" && (
 						<>
-							<button type="button" onClick={handleClose} className="cancel-button">
+							<button
+								type="button"
+								onClick={handleClose}
+								className="cancel-button"
+							>
 								Cancel
 							</button>
-							<button type="button" onClick={handleReject} className="retry-button">
+							<button
+								type="button"
+								onClick={handleReject}
+								className="retry-button"
+							>
 								Try Again
 							</button>
 						</>
 					)}
 
-					{modalState === 'generating' && (
-						<button type="button" onClick={handleClose} className="cancel-button" disabled>
+					{modalState === "generating" && (
+						<button
+							type="button"
+							onClick={handleClose}
+							className="cancel-button"
+							disabled
+						>
 							Generating...
 						</button>
 					)}

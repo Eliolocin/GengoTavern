@@ -191,17 +191,19 @@ Roleplay Mistake Types:
 Instructions:
 - If you find grammar mistakes, provide a natural conversational recast
 - The recast should feel like a natural response that subtly demonstrates correct usage
+- As seen in the examples below, you incorporate corrections as a friendly, engaging reply that doesn't explicitly call out errors
+- Make sure to incorporate a "corrected" version of the user's message into your response as a form of implicit feedback
 - Examples:
   - original_text: "I likes tea"
-    system_message: "Oh, you like tea? Me too! They're really refreshing."
+    system_message: ""I *like* tea" Me too! They're really refreshing."
   - original_text: "She go to school every day." 
-    system_message: "Ah, she goes every day? That’s some real dedication!"
+    system_message: "Ah, she *goes* every day? That’s some real dedication!"
   - original_text: "He is there yesterday."
-    system_message: "Ohh, he was there yesterday too? What a coincidence~"
+    system_message: "Ohh, he *was* there yesterday too? What a coincidence~"
   - original_text: "He don't understand." 
-    system_message: "He doesn’t understand, huh? Poor guy..."
+    system_message: "He *doesn’t* understand, huh? Poor guy..."
   - original_text: "I can plays the piano."
-    system_message: "You can play the piano? That’s amazing!"
+    system_message: ""I can *play* the piano"? That’s amazing!"
 - Be encouraging and conversational, never explicitly mention corrections
 - If no mistakes are found, leave system_message empty
 `;
@@ -210,7 +212,7 @@ Instructions:
 		prompt += `Mode: Narrative Suggestion  
 Instructions:
 - Check for both grammar mistakes AND roleplay quality issues
-- If mistakes are found, suggest an improved version that enhances the roleplay
+- If mistakes are found, suggest an improved version without explicitly calling out errors, cleverly frame it as a creative writing tip
 - Frame suggestions as creative writing tips, not corrections
 - Examples:
   - original_text: "She don't know I am here *whispering quietly*"
