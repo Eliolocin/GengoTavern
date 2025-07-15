@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import type { FC } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { MessageTutorData } from "../../types/grammarCorrection";
+import MarkdownRenderer from "../shared/MarkdownRenderer";
 
 interface TutorPopupProps {
 	tutorData: MessageTutorData;
@@ -127,7 +128,10 @@ const TutorPopup: FC<TutorPopupProps> = ({
 				id={`tutor-popup-content-${messageId}`}
 				className="tutor-popup-content"
 			>
-				{tutorData.response.system_message}
+				<MarkdownRenderer 
+					content={tutorData.response.system_message} 
+					processParentheses={false}
+				/>
 			</div>
 
 			{/* Debug info (only in development) */}

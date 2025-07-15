@@ -219,6 +219,7 @@
 .markdown-content {
 	line-height: 1.6;
 	color: #ccc;
+	text-align: justify;
 }
 
 .markdown-content h1,
@@ -236,7 +237,16 @@
 }
 
 .markdown-content p {
-	margin-bottom: 15px;
+	margin-bottom: 5px;
+}
+
+.markdown-content p:not(:last-child) {
+	margin-bottom: 8px;
+}
+
+/* Reduce spacing for single line breaks */
+.markdown-content p + p {
+	margin-top: 0;
 }
 
 .markdown-content ul,
@@ -295,7 +305,7 @@
 
 /* Change italics style for actions - more subtle faded white instead of blue */
 .markdown-content em {
-	color: rgba(255, 255, 255, 0.7);
+	color: rgba(255, 255, 255, 0.384);
 	font-style: italic;
 }
 
@@ -495,7 +505,11 @@
 	position: fixed;
 	top: 20px;
 	right: 20px;
-	background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(99, 102, 241, 0.95));
+	background: linear-gradient(
+		135deg,
+		rgba(139, 92, 246, 0.95),
+		rgba(99, 102, 241, 0.95)
+	);
 	border: 1px solid rgba(139, 92, 246, 0.3);
 	border-radius: 12px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -515,7 +529,11 @@
 }
 
 .tutor-notification-toast:hover {
-	background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(99, 102, 241, 1));
+	background: linear-gradient(
+		135deg,
+		rgba(139, 92, 246, 1),
+		rgba(99, 102, 241, 1)
+	);
 	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 	transform: translateY(-2px);
 }
@@ -583,20 +601,20 @@
 		left: 10px;
 		max-width: none;
 	}
-	
+
 	.tutor-toast-content {
 		padding: 12px;
 		gap: 10px;
 	}
-	
+
 	.tutor-toast-icon {
 		font-size: 1.25rem;
 	}
-	
+
 	.tutor-toast-title {
 		font-size: 0.85rem;
 	}
-	
+
 	.tutor-toast-subtitle {
 		font-size: 0.75rem;
 	}
