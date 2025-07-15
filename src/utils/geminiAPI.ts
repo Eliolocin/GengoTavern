@@ -295,6 +295,9 @@ export function sanitizeResponse(response: string): string {
 		}
 	}
 
+	/* 👇 NEW: collapse consecutive blank lines */
+	cleaned = cleaned.replace(/\n{2,}/g, "\n"); // turns \n\n\n → \n
+
 	// Debug the sanitized output
 	console.log(
 		"%c=== SANITIZED RESPONSE ===",

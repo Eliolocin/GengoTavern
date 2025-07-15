@@ -87,7 +87,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 			case "implicit":
 				return "Implicit Feedback";
 			case "narrative":
-				return "Roleplay Suggestion";
+				return "Narrative Suggestion";
 			default:
 				return "Grammar Tutor";
 		}
@@ -134,7 +134,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 			{process.env.NODE_ENV === "development" && (
 				<div className="tutor-popup-debug">
 					<details>
-						<summary>Debug Info</summary>
+						<summary>More Info</summary>
 						<div className="tutor-popup-debug-content">
 							<p>
 								<strong>Language:</strong> {tutorData.response.text_language}
