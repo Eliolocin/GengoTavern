@@ -47,8 +47,8 @@ bun run build
 
 ## Previews
 
-![GengoTavern Interface](img/gtscreenshot.png)
+![GengoTavern Interface](img/gt_screenshot.png)
 
-![GengoTavern Mobile](img/gtmobile.png)
+![GengoTavern VN Mode](img/gt_vn.png)
 
 
