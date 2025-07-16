@@ -471,9 +471,12 @@ Instructions:
 - Create a rich, detailed character based on the image
 - The character should be interesting and engaging for conversation
 - Include personality traits, background, physical appearance, and distinctive quirks/characteristics
-- Make the dialogue examples natural and reflect the character's personality
+- Make the sample dialogues natural and reflect the character's personality
+- Use the character's actual name "${characterName}" in dialogues, not placeholders like {{char}}
+- Do NOT prepend the sample dialogues with the character's names such as "${characterName}: " or "User: " because the chat application will already handle that for you
 - The scenario should be appropriate for the character
-- Use the character's actual name "${characterName}" in dialogues, not placeholders like {{char}}`;
+- Character's first message/greeting should match the scenario and their way of speaking based on the sample dialogues
+`;
 
 		// 11. Add additional instructions if provided
 		if (additionalInstructions && additionalInstructions.trim()) {

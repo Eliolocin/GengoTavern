@@ -311,7 +311,7 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 									id="additional-instructions"
 									value={additionalInstructions}
 									onChange={(e) => setAdditionalInstructions(e.target.value)}
-									placeholder="e.g., 'Generate everything in Japanese', 'The character is a kleptomaniac', 'Set in a fantasy world'..."
+									placeholder="e.g., 'Generate the Scenario, Greeting, and Sample Dialogues in full Japanese', 'Make the character a chronically online boy failure', 'Use simple vocabulary only as I am still learning Spanish'..."
 									maxLength={500}
 									className="textarea-input"
 									rows={3}
