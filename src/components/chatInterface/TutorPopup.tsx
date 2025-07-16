@@ -30,19 +30,24 @@ const TutorPopup: FC<TutorPopupProps> = ({
 
 	// Wait for parent layout to be ready before showing popup
 	useEffect(() => {
-		const layoutTimer = setTimeout(() => {
-			setIsReady(true);
-			// Start animation after a brief delay to ensure positioning is stable
-			const animationTimer = setTimeout(() => {
-				setIsAnimating(true);
-				const animationEndTimer = setTimeout(() => setIsAnimating(false), 300);
-				return () => clearTimeout(animationEndTimer);
-			}, 50);
+		// Use requestAnimationFrame to ensure DOM is rendered and positioned
+		const frameId = requestAnimationFrame(() => {
+			const layoutTimer = setTimeout(() => {
+				setIsReady(true);
+				// Start animation after ensuring positioning is stable
+				const animationTimer = setTimeout(() => {
+					setIsAnimating(true);
+					const animationEndTimer = setTimeout(() => setIsAnimating(false), 300);
+					return () => clearTimeout(animationEndTimer);
+				}, 50);
+				
+				return () => clearTimeout(animationTimer);
+			}, 100);
 			
-			return () => clearTimeout(animationTimer);
-		}, 150); // Wait for parent layout to be completely stable
+			return () => clearTimeout(layoutTimer);
+		});
 		
-		return () => clearTimeout(layoutTimer);
+		return () => cancelAnimationFrame(frameId);
 	}, []);
 
 	// Skip rendering if dismissed or no system message
