@@ -7,6 +7,35 @@ import MarkdownRenderer from "../shared/MarkdownRenderer";
 import { isGroupChat, getOrderedGroupMembers } from "../../utils/groupChatUtils";
 import { ArrowPathIcon, ForwardIcon, PencilIcon, XMarkIcon } from "@heroicons/react/20/solid";
 
+/**
+ * Returns prioritized emotion fallback order for smart sprite loading
+ * @param emotion - The target emotion detected from the message
+ * @returns Array of emotions to try in fallback order
+ */
+const getEmotionFallbackOrder = (emotion: string): string[] => {
+	switch (emotion) {
+		case "very_negative":
+		case "negative":
+			return ["very_negative", "negative", "neutral"];
+		case "very_positive":
+		case "positive":
+			return ["very_positive", "positive", "neutral"];
+		case "neutral":
+		default:
+			return ["neutral", "positive"];
+	}
+};
+
+/**
+ * Finds a sprite by emotion from the sprites array
+ * @param sprites - Array of character sprites
+ * @param emotion - Target emotion to find
+ * @returns Sprite object if found, undefined otherwise
+ */
+const findSpriteByEmotion = (sprites: Array<{ emotion: string; filename: string }>, emotion: string) => {
+	return sprites.find((sprite) => sprite.emotion === emotion);
+};
+
 interface VisualNovelModeProps {
 	character: Character;
 	message: Message | null;
@@ -138,31 +167,24 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 		// Use the updated sprites array
 		const sprites = updatedSprites.length > 0 ? updatedSprites : character.sprites || [];
 
-		// If we have a message with emotion, try to find matching sprite
-		if (message?.emotion) {
-			const emotionSprite = sprites.find((s) => s.emotion === message.emotion);
-			if (emotionSprite) {
+		// Use smart fallback based on detected emotion
+		const targetEmotion = message?.emotion || "neutral";
+		const fallbackOrder = getEmotionFallbackOrder(targetEmotion);
+
+		// Try each emotion in fallback order
+		for (const emotion of fallbackOrder) {
+			const sprite = findSpriteByEmotion(sprites, emotion);
+			if (sprite) {
 				const url = await storageManager.loadSpriteAsUrl(
 					character.id,
-					emotionSprite.filename,
+					sprite.filename,
 				);
 				setSpriteUrl(url);
 				return;
 			}
 		}
 
-		// If no emotion-specific sprite found, try to find a neutral sprite as default
-		const neutralSprite = sprites.find((s) => s.emotion === "neutral");
-		if (neutralSprite) {
-			const url = await storageManager.loadSpriteAsUrl(
-				character.id,
-				neutralSprite.filename,
-			);
-			setSpriteUrl(url);
-			return;
-		}
-
-		// If no neutral sprite, try to find any sprite
+		// If no fallback emotions found, try to find any available sprite
 		if (sprites.length > 0) {
 			const url = await storageManager.loadSpriteAsUrl(
 				character.id,
@@ -226,27 +248,21 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 			// Use the updated sprites array
 			const sprites = updatedSprites.length > 0 ? updatedSprites : memberCharacter.sprites || [];
 
-			// Try to find sprite with target emotion
-			const emotionSprite = sprites.find((s) => s.emotion === targetEmotion);
-			if (emotionSprite) {
-				return await storageManager.loadSpriteAsUrl(
-					memberCharacter.id,
-					emotionSprite.filename,
-				);
-			}
+			// Use smart fallback based on target emotion
+			const fallbackOrder = getEmotionFallbackOrder(targetEmotion);
 
-			// Fallback to neutral if not already trying neutral
-			if (targetEmotion !== "neutral") {
-				const neutralSprite = sprites.find((s) => s.emotion === "neutral");
-				if (neutralSprite) {
+			// Try each emotion in fallback order
+			for (const emotion of fallbackOrder) {
+				const sprite = findSpriteByEmotion(sprites, emotion);
+				if (sprite) {
 					return await storageManager.loadSpriteAsUrl(
 						memberCharacter.id,
-						neutralSprite.filename,
+						sprite.filename,
 					);
 				}
 			}
 
-			// If no sprites available, use the character image
+			// If no fallback emotions found, try to find any available sprite
 			if (sprites.length > 0) {
 				return await storageManager.loadSpriteAsUrl(
 					memberCharacter.id,
@@ -300,22 +316,6 @@ const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 
 	// If no message is provided, show a placeholder
 	if (!message) {
-		// Render group chat sprites using placeholder data
-		const placeholderSprites = getOrderedGroupMembers(character)
-			.map((member) => {
-				const memberCharacter = allCharacters.find((c) => c.id === member.characterId);
-				if (!memberCharacter) return null;
-				
-				return {
-					characterId: member.characterId,
-					characterName: memberCharacter.name,
-					spriteUrl: memberCharacter.image,
-					displayUrl: memberCharacter.image,
-					fadeState: "visible" as const,
-					displayOrder: member.displayOrder,
-				};
-			})
-			.filter((sprite): sprite is NonNullable<typeof sprite> => sprite !== null);
 
 		return (
 			<>
