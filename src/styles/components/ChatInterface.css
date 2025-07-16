@@ -577,7 +577,12 @@
 	font-size: 0.85rem;
 	max-height: 300px;
 	overflow-y: auto;
-	animation: fadeIn 0.3s ease-out;
+	opacity: 0;
+	animation: fadeIn 0.3s ease-out forwards;
+}
+
+.tutor-popup.ready {
+	opacity: 1;
 }
 
 .tutor-popup-enter {

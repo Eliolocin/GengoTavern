@@ -32,10 +32,15 @@ const TutorPopup: FC<TutorPopupProps> = ({
 	useEffect(() => {
 		const layoutTimer = setTimeout(() => {
 			setIsReady(true);
-			setIsAnimating(true);
-			const animationTimer = setTimeout(() => setIsAnimating(false), 300);
+			// Start animation after a brief delay to ensure positioning is stable
+			const animationTimer = setTimeout(() => {
+				setIsAnimating(true);
+				const animationEndTimer = setTimeout(() => setIsAnimating(false), 300);
+				return () => clearTimeout(animationEndTimer);
+			}, 50);
+			
 			return () => clearTimeout(animationTimer);
-		}, 50); // Small delay to ensure parent layout is calculated
+		}, 150); // Wait for parent layout to be completely stable
 		
 		return () => clearTimeout(layoutTimer);
 	}, []);
@@ -50,10 +55,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 		return null;
 	}
 
-	// Skip rendering if not ready (waiting for parent layout)
-	if (!isReady) {
-		return null;
-	}
+	// Note: We no longer conditionally render, instead use CSS to control visibility
 
 	/**
 	 * Handle dismiss button click
@@ -107,7 +109,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 
 	return (
 		<div
-			className={`tutor-popup ${getModeClass()} ${isAnimating ? "tutor-popup-enter" : ""}`}
+			className={`tutor-popup ${getModeClass()} ${isAnimating ? "tutor-popup-enter" : ""} ${isReady ? "ready" : ""}`}
 			role="dialog"
 			aria-labelledby={`tutor-popup-title-${messageId}`}
 			aria-describedby={`tutor-popup-content-${messageId}`}
