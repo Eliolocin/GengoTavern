@@ -26,12 +26,18 @@ const TutorPopup: FC<TutorPopupProps> = ({
 	isVisible = true,
 }) => {
 	const [isAnimating, setIsAnimating] = useState(false);
+	const [isReady, setIsReady] = useState(false);
 
-	// Animation effect when popup appears
+	// Wait for parent layout to be ready before showing popup
 	useEffect(() => {
-		setIsAnimating(true);
-		const timer = setTimeout(() => setIsAnimating(false), 300);
-		return () => clearTimeout(timer);
+		const layoutTimer = setTimeout(() => {
+			setIsReady(true);
+			setIsAnimating(true);
+			const animationTimer = setTimeout(() => setIsAnimating(false), 300);
+			return () => clearTimeout(animationTimer);
+		}, 50); // Small delay to ensure parent layout is calculated
+		
+		return () => clearTimeout(layoutTimer);
 	}, []);
 
 	// Skip rendering if dismissed or no system message
@@ -41,6 +47,11 @@ const TutorPopup: FC<TutorPopupProps> = ({
 
 	// Skip rendering if no mistakes detected
 	if (!tutorData.response.has_mistake) {
+		return null;
+	}
+
+	// Skip rendering if not ready (waiting for parent layout)
+	if (!isReady) {
 		return null;
 	}
 
