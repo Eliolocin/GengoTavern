@@ -129,6 +129,7 @@ function buildTutorPrompt(
 	character?: Character,
 	chatHistory?: string,
 	userName: string = "User",
+	userPersona?: { name: string; description: string },
 ): string {
 	const grammarMistakeDescriptions = `
 Grammar Mistake Types:
@@ -216,18 +217,27 @@ Instructions:
 - Frame suggestions as creative writing tips, not corrections
 - Examples:
   - original_text: "She don't know I am here *whispering quietly*"
-  system_message: "How about: 'She doesn’t know I’m here... *I whisper quietly, glancing over my shoulder.*' That would let ${character?.name || "the character"} respond with more tension!"
+    system_message: "How about: 'She doesn’t know I’m here... *I whisper quietly, glancing over my shoulder.*' That would let ${character?.name || "the character"} respond with more tension!"
   - original_text: "*smile* I am happy because she give me flower"
-  system_message: "Maybe try: '*I smile softly.* I’m happy because she gave me a flower.' That way, your mood comes across clearly—and gives ${character?.name || "the character"} room to react warmly."
+    system_message: "Maybe try: '*I smile softly.* I’m happy because she gave me a flower.' That way, your mood comes across clearly—and gives ${character?.name || "the character"} room to react warmly."
   - original_text: "They was walking into cave. *eyes open wide*"
-  system_message: "What if you wrote: 'They were walking into the cave. *My eyes open wide as I follow behind.*' This adds suspense and gives ${character?.name || "the character"} something eerie to build on."
+    system_message: "What if you wrote: 'They were walking into the cave. *My eyes open wide as I follow behind.*' This adds suspense and gives ${character?.name || "the character"} something eerie to build on."
   - original_text: "*glares furiously* I'm so happy right now!"
-  system_message: "That might confuse ${character?.name || "the character"}! What about: '*She glares furiously.* You ruined everything... I trusted you.' This keeps your emotion and builds drama."
+    system_message: "That might confuse ${character?.name || "the character"}! What about: '*She glares furiously.* You ruined everything... I trusted you.' This keeps your emotion and builds drama."
   - original_text: "We fight the demon then I say hi to princess"
-  system_message: "How about: 'After slaying the demon, I bow before the princess with a grin. “Hello again.”' That might help ${character?.name || "the character"} stay in the scene’s rhythm!"
+    system_message: "How about: 'After slaying the demon, I bow before the princess with a grin. “Hello again.”' That might help ${character?.name || "the character"} stay in the scene’s rhythm!"
+  - original_text: "You is ugly!"
+    system_message: "If your character is supposed to be shy, maybe they'd say something more timid like 'Y-you're... um... not very nice...' Or maybe ${userPersona?.name || userName || "the user"} would be too shy to say anything at all?"
+  - original_text: "I want books now please give me it"
+    system_message: "How about: 'U-um... d-do you have any books about legends? I-I'd really like to read one...' That could sound more like someone shy like ${userPersona?.name || userName || "the user"}!"
+  - original_text: "*grabs sword* Let's kill them all!!"
+    system_message: "If you're playing a calm or pacifist character, maybe try: '*She hesitates, hand brushing over the hilt.* There's got to be another way...' That fits the tone better and gives ${character?.name || "the character"} a meaningful choice."
+
 - Focus on making the interaction more engaging and character-appropriate
 - If no mistakes are found, leave system_message empty
+- Always consider ${userPersona?.name || userName || "the user"}'s defined persona ${userPersona?.description ? ` (${userPersona.description})` : " (e.g., shy, formal, flirty)"} and suggest corrections for their actions if it is out of their character.
 `;
+
 		prompt += roleplayMistakeDescriptions;
 	}
 
@@ -332,12 +342,14 @@ export async function callTutorLLM(
 
 		// Build the tutor prompt
 		const userName = userSettings?.userPersona?.name || "User";
+		const userPersona = userSettings?.userPersona;
 		const prompt = buildTutorPrompt(
 			userMessage,
 			mode,
 			character,
 			chatHistory,
 			userName,
+			userPersona,
 		);
 
 		console.log(
