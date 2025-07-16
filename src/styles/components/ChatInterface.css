@@ -577,13 +577,11 @@
 	font-size: 0.85rem;
 	max-height: 300px;
 	overflow-y: auto;
-	visibility: hidden;
 	opacity: 0;
-	animation: fadeIn 0.3s ease-out;
+	transition: opacity 0.2s ease-out;
 }
 
 .tutor-popup.ready {
-	visibility: visible;
 	opacity: 1;
 }
 

@@ -25,29 +25,23 @@ const TutorPopup: FC<TutorPopupProps> = ({
 	onDismiss,
 	isVisible = true,
 }) => {
-	const [isAnimating, setIsAnimating] = useState(false);
 	const [isReady, setIsReady] = useState(false);
 
 	// Wait for parent layout to be ready before showing popup
 	useEffect(() => {
-		// Use requestAnimationFrame to ensure DOM is rendered and positioned
-		const frameId = requestAnimationFrame(() => {
-			const layoutTimer = setTimeout(() => {
-				setIsReady(true);
-				// Start animation after ensuring positioning is stable
-				const animationTimer = setTimeout(() => {
-					setIsAnimating(true);
-					const animationEndTimer = setTimeout(() => setIsAnimating(false), 300);
-					return () => clearTimeout(animationEndTimer);
-				}, 50);
-				
-				return () => clearTimeout(animationTimer);
-			}, 100);
-			
-			return () => clearTimeout(layoutTimer);
+		// Use multiple requestAnimationFrame calls to ensure layout is fully stable
+		const frameId1 = requestAnimationFrame(() => {
+			const frameId2 = requestAnimationFrame(() => {
+				const frameId3 = requestAnimationFrame(() => {
+					// Now we're confident the layout is stable
+					setIsReady(true);
+				});
+				return () => cancelAnimationFrame(frameId3);
+			});
+			return () => cancelAnimationFrame(frameId2);
 		});
 		
-		return () => cancelAnimationFrame(frameId);
+		return () => cancelAnimationFrame(frameId1);
 	}, []);
 
 	// Skip rendering if dismissed or no system message
@@ -114,7 +108,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 
 	return (
 		<div
-			className={`tutor-popup ${getModeClass()} ${isAnimating ? "tutor-popup-enter" : ""} ${isReady ? "ready" : ""}`}
+			className={`tutor-popup ${getModeClass()} ${isReady ? "ready" : ""}`}
 			role="dialog"
 			aria-labelledby={`tutor-popup-title-${messageId}`}
 			aria-describedby={`tutor-popup-content-${messageId}`}
