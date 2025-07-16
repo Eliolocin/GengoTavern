@@ -401,7 +401,7 @@ export async function generateCharacterFromImage(
 							character: {
 								type: SchemaType.STRING as const,
 								description:
-									"How the character responds and/or acts (use the character's name, not {{char}})",
+									"How the character speaks and/or acts in response to the user",
 							},
 						},
 						required: ["user", "character"],
@@ -472,7 +472,6 @@ Instructions:
 - The character should be interesting and engaging for conversation
 - Include personality traits, background, physical appearance, and distinctive quirks/characteristics
 - Make the sample dialogues natural and reflect the character's personality
-- Use the character's actual name "${characterName}" in dialogues, not placeholders like {{char}}
 - Do NOT prepend the sample dialogues with the character's names such as "${characterName}: " or "User: " because the chat application will already handle that for you
 - The scenario should be appropriate for the character
 - Character's first message/greeting should match the scenario and their way of speaking based on the sample dialogues
