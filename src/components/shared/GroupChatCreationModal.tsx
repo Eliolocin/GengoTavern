@@ -1,6 +1,5 @@
 import type React from 'react';
 import { useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import type { Character, GroupMember } from '../../types/interfaces';
 import { isIndividualCharacter } from '../../utils/groupChatUtils';
 

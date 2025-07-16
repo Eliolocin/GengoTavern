@@ -57,8 +57,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 		setSelectedModel,
 		temperature,
 		setTemperature,
-		visualNovelMode,
-		setVisualNovelMode,
 	} = useUserSettings();
 
 	const [showApiKeyModal, setShowApiKeyModal] = useState(false);

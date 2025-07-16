@@ -7,7 +7,7 @@ import {
 } from "react";
 import type React from "react";
 import type { ReactNode } from "react";
-import { storageManager, type StorageStrategy } from "../utils/storageManager";
+import { type StorageStrategy } from "../utils/storageManager";
 
 interface AppContextType {
 	isSetupModalOpen: boolean;

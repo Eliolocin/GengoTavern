@@ -1810,41 +1810,6 @@ const AppContent: React.FC = () => {
 		}
 	};
 
-	/**
-	 * Validate message integrity to detect corruption
-	 */
-	const validateMessageIntegrity = (messages: Message[]): { isValid: boolean; error?: string } => {
-		try {
-			// Check for duplicate IDs
-			const ids = messages.map(m => m.id);
-			const uniqueIds = new Set(ids);
-			if (ids.length !== uniqueIds.size) {
-				return { isValid: false, error: "Duplicate message IDs detected" };
-			}
-
-			// Check for required fields (allow empty text, but check for undefined/null)
-			for (const msg of messages) {
-				if (msg.id === undefined || msg.id === null || 
-					msg.text === undefined || msg.text === null || 
-					!msg.sender || 
-					msg.timestamp === undefined || msg.timestamp === null || msg.timestamp <= 0) {
-					return { isValid: false, error: `Invalid message structure: ${JSON.stringify(msg)}` };
-				}
-			}
-
-			// Check timestamp ordering (messages should be in chronological order)
-			for (let i = 1; i < messages.length; i++) {
-				if (messages[i].timestamp < messages[i-1].timestamp) {
-					console.warn(`⚠️ Message timestamp ordering issue at index ${i}`);
-					// Don't fail for timestamp issues, just warn
-				}
-			}
-
-			return { isValid: true };
-		} catch (err) {
-			return { isValid: false, error: `Validation error: ${err}` };
-		}
-	};
 
 	// Add this new function for asynchronous chat message updating
 	const updateChatMessagesAsync = async (

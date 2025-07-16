@@ -27,7 +27,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   
   // Smart bold processing: Convert *word* to **word** within double quotes for spoken emphasis
   // This handles dialogue like "I *hate* you" → "I **hate** you"
-  processedContent = processedContent.replace(/"([^"]*)"/g, (match, quotedContent) => {
+  processedContent = processedContent.replace(/"([^"]*)"/g, (_, quotedContent) => {
     // Within quotes, convert *word* to **word** for bold emphasis in speech
     const boldified = quotedContent.replace(/\*([^*\n]+)\*/g, '**$1**');
     return `"${boldified}"`;
