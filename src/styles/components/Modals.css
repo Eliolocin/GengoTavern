@@ -918,7 +918,7 @@
 /* File System Setup Modal */
 .file-system-setup-modal,
 .setup-modal {
-	max-width: 500px;
+	max-width: 600px;
 	width: 90%;
 }
 
@@ -1704,18 +1704,18 @@
 		padding: 20px;
 		max-width: none;
 	}
-	
+
 	.edit-message-modal textarea {
 		min-height: 150px;
 		padding: 12px 15px;
 		font-size: 0.95rem;
 	}
-	
+
 	.edit-message-modal .modal-actions {
 		flex-direction: column;
 		gap: 10px;
 	}
-	
+
 	.edit-message-modal .modal-actions button {
 		width: 100%;
 		padding: 14px 20px;

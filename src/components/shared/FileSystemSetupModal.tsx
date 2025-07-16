@@ -44,103 +44,78 @@ const FileSystemSetupModal: React.FC<FileSystemSetupModalProps> = ({
 				className="modal-content setup-modal"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="modal-header">
-					<h3>🚀 Unlock Unlimited Storage</h3>
-					<button className="close-button" onClick={onClose} type="button">
+				{/* Header */}
+				<header className="modal-header">
+					<h3>Enable Extended Local Storage</h3>
+					<button type="button" className="close-button" onClick={onClose}>
 						×
 					</button>
-				</div>
+				</header>
 
-				<div className="modal-body">
-					<div className="setup-content">
-						<div className="feature-highlight">
-							<h4>✨ Break Free from Browser Limits!</h4>
-							<p>
-								Your browser normally limits storage to 5-10MB, but GengoTavern
-								can do better!
-							</p>
-						</div>
+				{/* Body */}
+				<section className="modal-body">
+					<p>
+						Browsers typically limit local storage to about 5–10 MB. Granting
+						folder access lets GengoTavern save data directly to your device,
+						removing that cap.
+					</p>
 
-						<div className="benefits-list">
-							<div className="benefit-item">
-								<span className="benefit-icon">💾</span>
-								<div>
-									<strong>Unlimited Storage</strong>
-									<p>
-										Store thousands of characters, long chat histories, and
-										large sprite images
-									</p>
-								</div>
-							</div>
+					<ul className="benefits-list">
+						<li>
+							<strong>Large Capacity —</strong> Keep long chat histories,
+							images, and other assets.
+						</li>
+						<li>
+							<strong>Local-only —</strong> All files remain on your computer;
+							nothing is uploaded.
+						</li>
+						<li>
+							<strong>Scalable —</strong> Ready for upcoming features that need
+							additional space.
+						</li>
+					</ul>
 
-							<div className="benefit-item">
-								<span className="benefit-icon">🔒</span>
-								<div>
-									<strong>Your Data, Your Control</strong>
-									<p>
-										Files are saved directly to your computer - no cloud, no
-										limits
-									</p>
-								</div>
-							</div>
+					<p>
+						<strong>To enable:</strong>
+					</p>
+					<ol>
+						<li>
+							Click <em>Choose Folder</em>.
+						</li>
+						<li>
+							Select or create a directory (e.g.,{" "}
+							<code>Documents/GengoTavern</code>).
+						</li>
+						<li>Approve the permission prompt.</li>
+					</ol>
 
-							<div className="benefit-item">
-								<span className="benefit-icon">⚡</span>
-								<div>
-									<strong>Future-Ready</strong>
-									<p>
-										Ready for Visual Novel sprites, Group Chats, and more
-										exciting features
-									</p>
-								</div>
-							</div>
-						</div>
+					<p className="browser-note">
+						<small>
+							Supported in Chrome, Edge, and other Chromium-based browsers.
+							Firefox will continue using standard browser storage.
+						</small>
+					</p>
+				</section>
 
-						<div className="setup-instructions">
-							<p>
-								<strong>How it works:</strong>
-							</p>
-							<ol>
-								<li>Click "Choose Folder" below</li>
-								<li>
-									Select or create a folder for GengoTavern (e.g.,
-									"Documents/GengoTavern")
-								</li>
-								<li>Grant permission when prompted</li>
-								<li>Enjoy unlimited storage! 🎉</li>
-							</ol>
-						</div>
-
-						<div className="browser-note">
-							<p>
-								<small>
-									<strong>Note:</strong> This feature requires Chrome, Edge, or
-									another Chromium-based browser. Firefox users will continue to
-									use browser storage (limited but functional).
-								</small>
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div className="modal-footer">
+				{/* Footer */}
+				<footer className="modal-footer">
 					<button
+						type="button"
 						className="secondary-button"
 						onClick={onSkip}
-						type="button"
 						disabled={isSelecting}
 					>
-						Maybe Later
+						Later
 					</button>
 					<button
+						type="button"
 						className="primary-button"
 						onClick={handleSelectDirectory}
 						disabled={isSelecting}
-						type="button"
 					>
-						{isSelecting ? "Selecting..." : "📁 Choose Folder"}
+						{isSelecting ? "Selecting…" : "Choose Folder"}
 					</button>
-				</div>
+				</footer>
 			</div>
 		</div>
 	);
