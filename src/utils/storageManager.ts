@@ -462,7 +462,7 @@ export class StorageManager {
 						const cleanedCharacter = this.cleanOrphanedSprites(character);
 						allCharacters.push(cleanedCharacter);
 					} catch (error) {
-						console.warn(`Error loading character ${name}:`, error.message || error);
+						console.warn(`Error loading character ${name}:`, error instanceof Error ? error.message : String(error));
 						// Continue with other characters
 					}
 				}
@@ -500,7 +500,7 @@ export class StorageManager {
 						
 						allCharacters.push(groupChat);
 					} catch (error) {
-						console.warn(`Error loading group chat ${name}:`, error.message || error);
+						console.warn(`Error loading group chat ${name}:`, error instanceof Error ? error.message : String(error));
 						// Continue with other group chats
 					}
 				}

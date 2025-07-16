@@ -2,6 +2,7 @@ import {
 	GoogleGenerativeAI,
 	HarmCategory,
 	HarmBlockThreshold,
+	SchemaType,
 } from "@google/generative-ai";
 import { PromptSettings } from "./promptBuilder";
 
@@ -378,27 +379,27 @@ export async function generateCharacterFromImage(
 
 		// 6. Define the JSON schema for structured output
 		const responseSchema = {
-			type: "object",
+			type: SchemaType.OBJECT as const,
 			properties: {
 				description: {
-					type: "string",
+					type: SchemaType.STRING as const,
 					description:
 						"Detailed character description including personality, appearance, and backstory (2-3 paragraphs)",
 				},
 				sampleDialogues: {
-					type: "array",
+					type: SchemaType.ARRAY as const,
 					description:
 						"Array of 3 sample dialogue exchanges between user and character, use dialogue showcasing the character's quirks and characteristics. Enclose actions in asterisks.",
 					items: {
-						type: "object",
+						type: SchemaType.OBJECT as const,
 						properties: {
 							user: {
-								type: "string",
+								type: SchemaType.STRING as const,
 								description:
 									"What the user says/does in this dialogue exchange",
 							},
 							character: {
-								type: "string",
+								type: SchemaType.STRING as const,
 								description:
 									"How the character responds and/or acts (use the character's name, not {{char}})",
 							},
@@ -407,12 +408,12 @@ export async function generateCharacterFromImage(
 					},
 				},
 				defaultScenario: {
-					type: "string",
+					type: SchemaType.STRING as const,
 					description:
 						"Default scenario/setting for chats (1-2 sentences describing the situation)",
 				},
 				defaultGreeting: {
-					type: "string",
+					type: SchemaType.STRING as const,
 					description:
 						"Character's default first message when starting a new chat (should match the scenario)",
 				},

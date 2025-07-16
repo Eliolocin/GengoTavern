@@ -8,11 +8,13 @@ import { TrashIcon } from "@heroicons/react/20/solid";
 interface BackgroundManagerModalProps {
 	onClose: () => void;
 	onSelect: (filename: string) => void;
+	selectedBackground?: string;
 }
 
 const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 	onClose,
 	onSelect,
+	selectedBackground: _,
 }) => {
 	const [backgrounds, setBackgrounds] = useState<string[]>([]);
 	const [backgroundUrls, setBackgroundUrls] = useState<Record<string, string>>(

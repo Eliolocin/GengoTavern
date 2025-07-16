@@ -40,7 +40,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 	);
 
 	// Hugging Face API key validation state
-	const [isTestingHfKey, setIsTestingHfKey] = useState(false);
+	const [, setIsTestingHfKey] = useState(false);
 	const [hfKeyValidation, setHfKeyValidation] = useState<{
 		status: "none" | "testing" | "valid" | "invalid";
 		message: string;
