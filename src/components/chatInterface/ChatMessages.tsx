@@ -10,7 +10,12 @@ import { useUserSettings } from "../../contexts/UserSettingsContext";
 import { replaceNamePlaceholders } from "../../utils/promptBuilder";
 import VisualNovelMode from "./VisualNovelMode";
 import { useApp } from "../../contexts/AppContext";
-import { XMarkIcon, ArrowPathIcon, ForwardIcon, PencilIcon } from "@heroicons/react/20/solid";
+import {
+	XMarkIcon,
+	ArrowPathIcon,
+	ForwardIcon,
+	PencilIcon,
+} from "@heroicons/react/20/solid";
 
 interface ChatMessagesProps {
 	messages: Message[];
@@ -53,20 +58,26 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 
 	// Helper function to get character info for group chat messages
 	const getCharacterInfo = (message: Message) => {
-		if (message.sender === 'character' && message.speakerId && allCharacters.length > 0) {
+		if (
+			message.sender === "character" &&
+			message.speakerId &&
+			allCharacters.length > 0
+		) {
 			// This is a group chat message, find the specific character
-			const messageCharacter = allCharacters.find(char => char.id === message.speakerId);
+			const messageCharacter = allCharacters.find(
+				(char) => char.id === message.speakerId,
+			);
 			if (messageCharacter) {
 				return {
 					name: messageCharacter.name,
-					image: messageCharacter.image
+					image: messageCharacter.image,
 				};
 			}
 		}
 		// Fall back to the main character (individual chat or group chat fallback)
 		return {
 			name: characterName,
-			image: characterImage
+			image: characterImage,
 		};
 	};
 
@@ -331,9 +342,6 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 								<div className="message-timestamp">
 									{formatTimestamp(message.timestamp)}
 								</div>
-								{message.editHistory && message.editHistory.length > 0 && (
-									<div className="edit-indicator">(edited)</div>
-								)}
 							</div>
 							<div className="message-actions visible">
 								{message.sender === "character" &&
@@ -379,12 +387,17 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 									<XMarkIcon className="w-4 h-4" />
 								</button>
 							</div>
-							
+
 							{/* Tutor Popup for user messages */}
-							{message.sender === "user" && onDismissTutorPopup && (
+							{message.sender === "user" &&
+								onDismissTutorPopup &&
 								(() => {
 									// Prefer tutor data from message object (persistent), fallback to context
-									const tutorData = message.tutorData || (getMessageTutorData ? getMessageTutorData(message.id) : null);
+									const tutorData =
+										message.tutorData ||
+										(getMessageTutorData
+											? getMessageTutorData(message.id)
+											: null);
 									return tutorData ? (
 										<TutorPopup
 											tutorData={tutorData}
@@ -393,8 +406,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 											isVisible={!tutorData.dismissed}
 										/>
 									) : null;
-								})()
-							)}
+								})()}
 						</div>
 					);
 				})
