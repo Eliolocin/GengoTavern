@@ -69,14 +69,18 @@ const EditChatModal: React.FC<EditChatModalProps> = ({
 				URL.revokeObjectURL(backgroundPreview);
 			}
 		};
-	}, [background, backgroundPreview]);
+	}, [background]);
 
 	const handleSelectBackground = (filename: string) => {
 		setBackground(filename);
+		// Auto-save the background change immediately
+		onSave(chatName || `Chat ${chat.id}`, scenario, filename);
 	};
 
 	const handleRemoveBackground = () => {
 		setBackground("");
+		// Auto-save the background removal immediately
+		onSave(chatName || `Chat ${chat.id}`, scenario, "");
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {

@@ -111,7 +111,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
 				URL.revokeObjectURL(backgroundPreviewUrl);
 			}
 		};
-	}, [character.defaultBackground, backgroundPreviewUrl]);
+	}, [character.defaultBackground]);
 
 	// Load sprite images when component mounts or sprites change
 	useEffect(() => {
