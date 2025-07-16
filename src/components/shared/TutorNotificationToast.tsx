@@ -67,7 +67,7 @@ const TutorNotificationToast: FC<TutorNotificationToastProps> = ({
 		setTimeout(onDismiss, 300);
 	};
 
-	const suggestionText = unreadCount === 1 ? "suggestion" : "suggestions";
+	const suggestionText = unreadCount === 1 ? "Suggestion" : "Suggestions";
 
 	return (
 		<div
