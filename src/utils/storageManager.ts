@@ -21,6 +21,17 @@ const DIRECTORIES = {
 	groupchats: "groupchats",
 } as const;
 
+// localStorage keys for background storage
+const BACKGROUND_LIST_KEY = "gengoTavern_file_backgrounds_list_json";
+
+// Interface for localStorage background entries
+interface BackgroundEntry {
+	id: string;
+	originalName: string;
+	dataUrl: string;
+	uploadDate: number;
+}
+
 /**
  * IndexedDB helper for storing FileSystemDirectoryHandle
  */
@@ -935,10 +946,34 @@ export class StorageManager {
 	 */
 	async saveBackground(file: File): Promise<string> {
 		if (this.strategy !== "filesystem" || !this.rootHandle) {
-			// Fallback for localStorage: convert to base64 and return the data URL
+			// localStorage strategy: convert to base64 and store with metadata
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
-				reader.onload = () => resolve(reader.result as string);
+				reader.onload = () => {
+					const dataUrl = reader.result as string;
+					const backgroundId = `bg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+					
+					// Create background entry
+					const backgroundEntry: BackgroundEntry = {
+						id: backgroundId,
+						originalName: file.name,
+						dataUrl: dataUrl,
+						uploadDate: Date.now()
+					};
+					
+					// Store the background data
+					const backgroundKey = `gengoTavern_file_backgrounds_${backgroundId}_json`;
+					localStorage.setItem(backgroundKey, JSON.stringify(backgroundEntry));
+					
+					// Update the background list
+					const existingList = localStorage.getItem(BACKGROUND_LIST_KEY);
+					const backgroundList = existingList ? JSON.parse(existingList) : [];
+					backgroundList.push(backgroundId);
+					localStorage.setItem(BACKGROUND_LIST_KEY, JSON.stringify(backgroundList));
+					
+					console.log(`✅ Background saved to localStorage: ${backgroundId}`);
+					resolve(backgroundId);
+				};
 				reader.onerror = reject;
 				reader.readAsDataURL(file);
 			});
@@ -967,14 +1002,21 @@ export class StorageManager {
 	 */
 	async loadBackgroundAsUrl(filename: string): Promise<string> {
 		if (this.strategy !== "filesystem" || !this.rootHandle) {
-			// If the filename is a base64 data URL, just return it
+			// If the filename is a base64 data URL, just return it (backwards compatibility)
 			if (filename.startsWith("data:image")) {
 				return filename;
 			}
-			// This case should ideally not be hit if the save logic is correct
-			throw new Error(
-				"Cannot load background from localStorage with a filename.",
-			);
+			
+			// Load from localStorage using background ID
+			const backgroundKey = `gengoTavern_file_backgrounds_${filename}_json`;
+			const backgroundData = localStorage.getItem(backgroundKey);
+			
+			if (!backgroundData) {
+				throw new Error(`Background not found in localStorage: ${filename}`);
+			}
+			
+			const backgroundEntry: BackgroundEntry = JSON.parse(backgroundData);
+			return backgroundEntry.dataUrl;
 		}
 
 		try {
@@ -996,9 +1038,26 @@ export class StorageManager {
 	 */
 	async listBackgrounds(): Promise<string[]> {
 		if (this.strategy !== "filesystem" || !this.rootHandle) {
-			// localStorage doesn't have a concept of a background directory,
-			// so we can't list them. This feature will be available only for FS users.
-			return [];
+			// localStorage strategy: return list of background IDs
+			const backgroundListData = localStorage.getItem(BACKGROUND_LIST_KEY);
+			if (!backgroundListData) {
+				return [];
+			}
+			
+			const backgroundList = JSON.parse(backgroundListData);
+			
+			// Filter out any backgrounds that no longer exist in localStorage
+			const validBackgrounds = backgroundList.filter((id: string) => {
+				const backgroundKey = `gengoTavern_file_backgrounds_${id}_json`;
+				return localStorage.getItem(backgroundKey) !== null;
+			});
+			
+			// Update the list if any backgrounds were removed
+			if (validBackgrounds.length !== backgroundList.length) {
+				localStorage.setItem(BACKGROUND_LIST_KEY, JSON.stringify(validBackgrounds));
+			}
+			
+			return validBackgrounds;
 		}
 
 		try {
@@ -1025,7 +1084,21 @@ export class StorageManager {
 	 */
 	async deleteBackground(filename: string): Promise<void> {
 		if (this.strategy !== "filesystem" || !this.rootHandle) {
-			// Deleting is not applicable for the localStorage base64 strategy
+			// localStorage strategy: remove background from storage and list
+			const backgroundKey = `gengoTavern_file_backgrounds_${filename}_json`;
+			
+			// Remove the background data
+			localStorage.removeItem(backgroundKey);
+			
+			// Update the background list
+			const backgroundListData = localStorage.getItem(BACKGROUND_LIST_KEY);
+			if (backgroundListData) {
+				const backgroundList = JSON.parse(backgroundListData);
+				const updatedList = backgroundList.filter((id: string) => id !== filename);
+				localStorage.setItem(BACKGROUND_LIST_KEY, JSON.stringify(updatedList));
+			}
+			
+			console.log(`✅ Background deleted from localStorage: ${filename}`);
 			return;
 		}
 
