@@ -4,11 +4,10 @@
  */
 
 import {
-	GoogleGenerativeAI,
-	HarmCategory,
-	HarmBlockThreshold,
-	SchemaType,
-} from "@google/generative-ai";
+	GoogleGenAI,
+	type Content,
+	type GenerateContentConfig,
+} from "@google/genai";
 import type {
 	GrammarCorrectionMode,
 	TutorResponse,
@@ -41,26 +40,26 @@ export interface TutorAPIResponse {
  */
 function buildTutorResponseSchema(mode: GrammarCorrectionMode) {
 	const baseSchema = {
-		type: SchemaType.OBJECT,
+		type: "object",
 		properties: {
 			original_text: {
-				type: SchemaType.STRING,
+				type: "string",
 				description: "The user's original message text",
 			},
 			text_language: {
-				type: SchemaType.STRING,
+				type: "string",
 				description:
 					"Detected language of the text (e.g., English, Japanese, Spanish)",
 			},
 			has_mistake: {
-				type: SchemaType.BOOLEAN,
+				type: "boolean",
 				description: "Whether any mistakes were found in the original text",
 			},
 			grammar_mistakes: {
-				type: SchemaType.ARRAY,
+				type: "array",
 				description: "Array of grammar mistake types found",
 				items: {
-					type: SchemaType.STRING,
+					type: "string",
 					enum: [
 						"spelling",
 						"grammar",
@@ -74,11 +73,11 @@ function buildTutorResponseSchema(mode: GrammarCorrectionMode) {
 				},
 			},
 			system_message: {
-				type: SchemaType.STRING,
+				type: "string",
 				description: "Message to show the user (empty if no mistakes found)",
 			},
 			confidence_score: {
-				type: SchemaType.NUMBER,
+				type: "number",
 				description: "Confidence level in the correction (0.0 to 1.0)",
 				minimum: 0,
 				maximum: 1,
@@ -90,11 +89,11 @@ function buildTutorResponseSchema(mode: GrammarCorrectionMode) {
 	// Add roleplay_mistakes only for narrative mode
 	if (mode === "narrative") {
 		(baseSchema.properties as any).roleplay_mistakes = {
-			type: SchemaType.ARRAY,
+			type: "array",
 			description:
 				"Array of roleplay mistake types found (narrative mode only)",
 			items: {
-				type: SchemaType.STRING,
+				type: "string",
 				enum: [
 					"out_of_character",
 					"ignored_context",
@@ -299,46 +298,19 @@ export async function callTutorLLM(
 		const apiKey = userSettings.apiKey;
 
 		// Initialize the Google Generative AI client
-		const genAI = new GoogleGenerativeAI(apiKey);
+		const genAI = new GoogleGenAI({ apiKey });
 
 		// Build the response schema
 		const responseSchema = buildTutorResponseSchema(mode);
 
 		// Configure generation parameters
-		const generationConfig = {
+		const generationConfig: GenerateContentConfig = {
 			temperature: 1.0, // Lower temperature for more consistent corrections
 			topP: 0.9,
 			maxOutputTokens: 8192, // Smaller limit for structured responses
 			responseMimeType: "application/json",
 			responseSchema: responseSchema as any, // TypeScript workaround for complex schemas
 		};
-
-		// Safety settings - allow educational content
-		const safetySettings = [
-			{
-				category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-		];
-
-		// Get the model with configuration
-		const model = genAI.getGenerativeModel({
-			model: MODEL_NAME,
-			generationConfig,
-			safetySettings,
-		});
 
 		// Build the tutor prompt
 		const userName = userSettings?.userPersona?.name || "User";
@@ -351,6 +323,12 @@ export async function callTutorLLM(
 			userName,
 			userPersona,
 		);
+
+		// Prepare the user prompt content
+		const userPromptContent: Content = {
+			role: "user",
+			parts: [{ text: prompt }],
+		};
 
 		console.log(
 			`%c=== TUTOR PROMPT (${mode.toUpperCase()}) ===`,
@@ -369,27 +347,29 @@ export async function callTutorLLM(
 
 			// Make the API call
 			const result = await Promise.race([
-				model.generateContent(prompt),
+				genAI.models.generateContent({
+					model: MODEL_NAME,
+					contents: [userPromptContent],
+					config: generationConfig,
+				}),
 				timeoutPromise,
 			]);
-
-			const response = result.response;
 
 			console.log(
 				`%c=== TUTOR RESPONSE ===`,
 				"color: orange; font-weight: bold",
 			);
-			console.log(response);
+			console.log(result);
 
 			// Check for blocked content
-			if (response.promptFeedback && response.promptFeedback.blockReason) {
+			if (result.promptFeedback?.blockReason) {
 				return {
-					error: `Tutor content was blocked: ${response.promptFeedback.blockReason}`,
+					error: `Tutor content was blocked: ${result.promptFeedback.blockReason}`,
 					errorType: "BLOCKED_CONTENT",
 				};
 			}
 
-			const responseText = response.text();
+			const responseText = result.text;
 
 			// Check if response is empty
 			if (!responseText || responseText.trim() === "") {

@@ -1,9 +1,8 @@
 import {
-	GoogleGenerativeAI,
-	HarmCategory,
-	HarmBlockThreshold,
-	SchemaType,
-} from "@google/generative-ai";
+	GoogleGenAI,
+	type Content,
+	type GenerateContentConfig,
+} from "@google/genai";
 import { PromptSettings } from "./promptBuilder";
 
 export interface GeminiResponse {
@@ -52,7 +51,7 @@ export interface GeneratedCharacter {
 }
 
 /**
- * Send a prompt to Gemini API and get a response using the official library
+ * Send a prompt to Gemini API and get a response using the new library
  */
 export async function callGeminiAPI(
 	prompt: string,
@@ -92,42 +91,21 @@ export async function callGeminiAPI(
 		console.log("%c=== END OF PROMPT ===", "color: blue; font-weight: bold");
 
 		// Initialize the Google Generative AI client
-		const genAI = new GoogleGenerativeAI(apiKey);
+		const genAI = new GoogleGenAI({ apiKey });
 
-		// Define safety settings - all set to BLOCK_NONE as requested
-		const safetySettings = [
-			{
-				category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-		];
+		// Prepare the user prompt content
+		const userPromptContent: Content = {
+			role: "user",
+			parts: [{ text: prompt }],
+		};
 
 		// Configure generation parameters from settings
-		const generationConfig = {
+		const generationConfig: GenerateContentConfig = {
 			temperature: temperature, // Use the temperature from user settings
 			topP: settings.topP,
 			topK: settings.topK,
 			maxOutputTokens: settings.maxTokens,
 		};
-
-		// Get the model with configuration
-		const model = genAI.getGenerativeModel({
-			model: MODEL_NAME,
-			generationConfig,
-			safetySettings,
-		});
 
 		try {
 			// Create a timeout promise that rejects after 60 seconds
@@ -140,33 +118,35 @@ export async function callGeminiAPI(
 
 			// Race between the API call and timeout
 			const result = await Promise.race([
-				model.generateContent(prompt),
+				genAI.models.generateContent({
+					model: MODEL_NAME,
+					contents: [userPromptContent],
+					config: generationConfig,
+				}),
 				timeoutPromise,
 			]);
-
-			const response = result.response;
 
 			// Debug print the raw response before sanitization
 			console.log(
 				"%c=== RAW GEMINI RESPONSE ===",
 				"color: green; font-weight: bold",
 			);
-			console.log(response);
+			console.log(result);
 			console.log(
 				"%c=== END OF RAW RESPONSE ===",
 				"color: green; font-weight: bold",
 			);
 
 			// Check if there are any blocked prompts
-			if (response.promptFeedback && response.promptFeedback.blockReason) {
+			if (result.promptFeedback?.blockReason) {
 				return {
 					text: "",
-					error: `Content was blocked by Gemini API safety filters: ${response.promptFeedback.blockReason}`,
+					error: `Content was blocked by Gemini API safety filters: ${result.promptFeedback.blockReason}`,
 					errorType: "BLOCKED_CONTENT",
 				};
 			}
 
-			const text = response.text();
+			const text = result.text;
 
 			// Check if response text is empty
 			if (!text || text.trim() === "") {
@@ -343,7 +323,7 @@ export async function mockGeminiCall(prompt: string): Promise<GeminiResponse> {
 }
 
 /**
- * Generate character data from an image using Gemini Vision API with structured output
+ * Generate character data from an image using Gemini Vision API with structured output and Google Search grounding
  * @param imageFile - The image file to analyze
  * @param characterName - The desired name for the character
  * @param additionalInstructions - Optional additional instructions for generation
@@ -372,34 +352,34 @@ export async function generateCharacterFromImage(
 		const mimeType = imageFile.type;
 
 		// 4. Initialize the Google Generative AI client
-		const genAI = new GoogleGenerativeAI(userSettings.apiKey);
+		const genAI = new GoogleGenAI({ apiKey: userSettings.apiKey });
 
 		// 5. Use Gemini 2.5 Pro for best quality
 		const MODEL_NAME = "gemini-2.5-pro";
 
 		// 6. Define the JSON schema for structured output
 		const responseSchema = {
-			type: SchemaType.OBJECT as const,
+			type: "object",
 			properties: {
 				description: {
-					type: SchemaType.STRING as const,
+					type: "string",
 					description:
 						"Detailed character description including personality, appearance, and backstory (2-3 paragraphs)",
 				},
 				sampleDialogues: {
-					type: SchemaType.ARRAY as const,
+					type: "array",
 					description:
 						"Array of 3 sample dialogue exchanges between user and character, use dialogue showcasing the character's quirks and characteristics. Enclose actions in asterisks.",
 					items: {
-						type: SchemaType.OBJECT as const,
+						type: "object",
 						properties: {
 							user: {
-								type: SchemaType.STRING as const,
+								type: "string",
 								description:
 									"What the user says/does in this dialogue exchange",
 							},
 							character: {
-								type: SchemaType.STRING as const,
+								type: "string",
 								description:
 									"How the character speaks and/or acts in response to the user",
 							},
@@ -408,12 +388,12 @@ export async function generateCharacterFromImage(
 					},
 				},
 				defaultScenario: {
-					type: SchemaType.STRING as const,
+					type: "string",
 					description:
 						"Default scenario/setting for chats (1-2 sentences describing the situation)",
 				},
 				defaultGreeting: {
-					type: SchemaType.STRING as const,
+					type: "string",
 					description:
 						"Character's default first message when starting a new chat (should match the scenario)",
 				},
@@ -427,48 +407,24 @@ export async function generateCharacterFromImage(
 		};
 
 		// 7. Create generation config with structured output
-		const generationConfig = {
+		const generationConfig: GenerateContentConfig = {
 			temperature: 1.5, // Creative but controlled
 			topP: 0.9,
 			maxOutputTokens: 8192, // Increased for longer character descriptions
 			responseMimeType: "application/json",
 			responseSchema: responseSchema,
+			// Add Google Search tool for character grounding
+			tools: [{ googleSearch: {} }],
 		};
 
-		// 8. Safety settings - allow creative content
-		const safetySettings = [
-			{
-				category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-		];
-
-		// 9. Get the model with configuration
-		const model = genAI.getGenerativeModel({
-			model: MODEL_NAME,
-			generationConfig,
-			safetySettings,
-		});
-
-		// 10. Build the prompt
+		// 8. Build the prompt with Google Search instructions
 		let prompt = `You are an expert character creator for a chat application. Analyze this image and create a detailed character profile.
 
 Character Name: ${characterName}
 
 Instructions:
 - Create a rich, detailed character based on the image
+- If the character appears to be a known character (from anime, games, movies, etc.), use Google Search to find accurate information about them
 - The character should be interesting and engaging for conversation
 - Include personality traits, background, physical appearance, and distinctive quirks/characteristics
 - Make the sample dialogues natural and reflect the character's personality
@@ -477,15 +433,15 @@ Instructions:
 - Character's first message/greeting should match the scenario and their way of speaking based on the sample dialogues
 `;
 
-		// 11. Add additional instructions if provided
+		// 9. Add additional instructions if provided
 		if (additionalInstructions && additionalInstructions.trim()) {
 			prompt += `\n\nAdditional Instructions: ${additionalInstructions.trim()}`;
 		}
 
 		prompt +=
-			"\n\nIMPORTANT: Respond with COMPLETE valid JSON only. Keep dialogue examples concise (1-2 sentences each) to ensure the response fits within token limits. Follow the exact schema provided.";
+			"\n\nIMPORTANT: If this appears to be a known character, use Google Search to gather accurate information about their personality, background, and speaking style. Respond with COMPLETE valid JSON only. Keep dialogue examples concise (1-2 sentences each) to ensure the response fits within token limits. Follow the exact schema provided.";
 
-		// 12. Prepare the image data
+		// 10. Prepare the image data
 		const imagePart = {
 			inlineData: {
 				data: imageBase64,
@@ -493,8 +449,14 @@ Instructions:
 			},
 		};
 
+		// 11. Prepare the user prompt content
+		const userPromptContent: Content = {
+			role: "user",
+			parts: [{ text: prompt }, imagePart],
+		};
+
 		console.log(
-			`%c=== GENERATING CHARACTER FROM IMAGE ===`,
+			`%c=== GENERATING CHARACTER FROM IMAGE (WITH SEARCH) ===`,
 			"color: blue; font-weight: bold",
 		);
 		console.log(`Character Name: ${characterName}`);
@@ -502,39 +464,41 @@ Instructions:
 		console.log(`Model: ${MODEL_NAME}`);
 
 		try {
-			// 13. Create a timeout promise
+			// 12. Create a timeout promise
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				setTimeout(
 					() => reject(new Error("Request timed out after 60 seconds")),
-					60000, // Longer timeout for vision + structured output
+					60000, // Longer timeout for vision + structured output + search
 				);
 			});
 
-			// 14. Make the API call with both text and image
+			// 13. Make the API call with both text and image
 			const result = await Promise.race([
-				model.generateContent([prompt, imagePart]),
+				genAI.models.generateContent({
+					model: MODEL_NAME,
+					contents: [userPromptContent],
+					config: generationConfig,
+				}),
 				timeoutPromise,
 			]);
-
-			const response = result.response;
 
 			console.log(
 				`%c=== RAW CHARACTER GENERATION RESPONSE ===`,
 				"color: green; font-weight: bold",
 			);
-			console.log(response);
+			console.log(result);
 
-			// 15. Check for blocked content
-			if (response.promptFeedback && response.promptFeedback.blockReason) {
+			// 14. Check for blocked content
+			if (result.promptFeedback?.blockReason) {
 				return {
-					error: `Content was blocked by Gemini API safety filters: ${response.promptFeedback.blockReason}`,
+					error: `Content was blocked by Gemini API safety filters: ${result.promptFeedback.blockReason}`,
 					errorType: "BLOCKED_CONTENT",
 				};
 			}
 
-			const responseText = response.text();
+			const responseText = result.text;
 
-			// 16. Check if response is empty
+			// 15. Check if response is empty
 			if (!responseText || responseText.trim() === "") {
 				return {
 					error:
@@ -549,11 +513,11 @@ Instructions:
 			);
 			console.log(responseText);
 
-			// 17. Parse the JSON response
+			// 16. Parse the JSON response
 			try {
 				const parsedCharacter = JSON.parse(responseText) as GeneratedCharacter;
 
-				// 18. Validate the response structure
+				// 17. Validate the response structure
 				if (
 					!parsedCharacter.description ||
 					!parsedCharacter.sampleDialogues ||
@@ -567,7 +531,7 @@ Instructions:
 					};
 				}
 
-				// 19. Validate sample dialogues structure
+				// 18. Validate sample dialogues structure
 				if (
 					!Array.isArray(parsedCharacter.sampleDialogues) ||
 					parsedCharacter.sampleDialogues.length === 0
@@ -594,7 +558,7 @@ Instructions:
 		} catch (apiError: any) {
 			const errorMessage = apiError.message || "Unknown API error";
 
-			// 20. Handle specific API errors (similar to main callGeminiAPI function)
+			// 19. Handle specific API errors (similar to main callGeminiAPI function)
 			if (errorMessage.includes("timed out")) {
 				return {
 					error:
