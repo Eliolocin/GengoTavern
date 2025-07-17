@@ -25,6 +25,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   // Process the content with all formatting rules
   let processedContent = content;
   
+  // Smart bold processing: Convert *word* to **word** within double quotes for spoken emphasis
+  // This handles dialogue like "I *hate* you" → "I **hate** you"
+  processedContent = processedContent.replace(/"([^"]*)"/g, (_, quotedContent) => {
+    // Within quotes, convert *word* to **word** for bold emphasis in speech
+    const boldified = quotedContent.replace(/\*([^*\n]+)\*/g, '**$1**');
+    return `"${boldified}"`;
+  });
+  
   // Apply parentheses formatting if enabled
   if (processParentheses) {
     processedContent = processedContent
@@ -43,11 +51,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       });
   }
   
-  // Handle single English words in asterisks - convert *word* to ***word***
-  // Only matches single words with just letters (no spaces, numbers, or punctuation)
-  // Uses negative lookbehind/lookahead to avoid matching ** or *** patterns
-  processedContent = processedContent
-    .replace(/(?<!\*)\*([a-zA-Z]+)\*(?!\*)/g, '***$1***');
+  // Convert single newlines to paragraph breaks with controlled spacing
+  // This creates subtle spacing between lines
+  processedContent = processedContent.replace(/\n/g, '\n\n');
 
   return (
     <div className={`markdown-content ${className || ''}`}>

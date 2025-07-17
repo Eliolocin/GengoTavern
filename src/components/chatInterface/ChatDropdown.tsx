@@ -1,17 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Character } from '../../types/interfaces';
+import type { Character, GroupGreeting } from '../../types/interfaces';
 import EditChatModal from './EditChatModal';
 import NewChatModal from './NewChatModal';
+import GroupChatNewChatModal from './GroupChatNewChatModal';
 import DeleteConfirmationModal from '../shared/DeleteConfirmationModal';
 import { saveChatAsJson } from '../../utils/chatExport';
+import { isGroupChat } from '../../utils/groupChatUtils';
+import { XMarkIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, PencilIcon, ArrowUpTrayIcon } from "@heroicons/react/20/solid";
 
 interface ChatDropdownProps {
   selectedCharacter: Character | null;
   activeChatId: number | null;
   onSelectChat: (chatId: number) => void;
   onNewChat: (chatName: string, scenario: string, greeting: string, background: string) => void;
+  onNewGroupChat?: (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => void;
   onEditChat: (chatId: number, chatName: string, scenario: string, background: string) => void;
   onDeleteChat: (chatId: number) => void;
+  allCharacters?: Character[];
 }
 
 const ChatDropdown: React.FC<ChatDropdownProps> = ({
@@ -19,8 +24,10 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   activeChatId,
   onSelectChat,
   onNewChat,
+  onNewGroupChat,
   onEditChat,
-  onDeleteChat
+  onDeleteChat,
+  allCharacters = []
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -102,6 +109,13 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
     setShowNewModal(false);
   };
 
+  const handleNewGroupSubmit = (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => {
+    if (onNewGroupChat) {
+      onNewGroupChat(chatName, scenario, greetings, background);
+    }
+    setShowNewModal(false);
+  };
+
   const handleDeleteConfirm = () => {
     if (activeChatId !== null) {
       onDeleteChat(activeChatId);
@@ -131,7 +145,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             onClick={handleNewClick}
             title="New chat"
           >
-            +
+            <PlusIcon className="w-4 h-4" />
           </button>
           <button 
             type="button" 
@@ -140,7 +154,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Edit chat"
             disabled={!activeChatId || hasNoChats}
           >
-            ✎
+            <PencilIcon className="w-4 h-4" />
           </button>
           <button 
             type="button" 
@@ -149,7 +163,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Export chat as JSON"
             disabled={!activeChatId || hasNoChats}
           >
-            ⏏
+            <ArrowUpTrayIcon className="w-4 h-4" />
           </button>
           
           
@@ -160,9 +174,9 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             title="Delete chat"
             disabled={!activeChatId || hasNoChats}
           >
-            ×
+            <XMarkIcon className="w-4 h-4" />
           </button>
-          {!hasNoChats && <span className="chat-dropdown-arrow">{isOpen ? '▲' : '▼'}</span>}
+          {!hasNoChats && <span className="chat-dropdown-arrow">{isOpen ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}</span>}
         </div>
       </div>
 
@@ -188,12 +202,21 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
         />
       )}
 
-      {showNewModal && (
-        <NewChatModal
-          character={selectedCharacter}
-          onSave={handleNewSubmit}
-          onCancel={() => setShowNewModal(false)}
-        />
+      {showNewModal && selectedCharacter && (
+        isGroupChat(selectedCharacter) ? (
+          <GroupChatNewChatModal
+            groupChat={selectedCharacter}
+            allCharacters={allCharacters}
+            onSave={handleNewGroupSubmit}
+            onCancel={() => setShowNewModal(false)}
+          />
+        ) : (
+          <NewChatModal
+            character={selectedCharacter}
+            onSave={handleNewSubmit}
+            onCancel={() => setShowNewModal(false)}
+          />
+        )
       )}
 
       {showDeleteModal && activeChat && (

@@ -108,7 +108,10 @@ export async function extractCharacterFromPng(pngFile: File): Promise<Character>
         }
       };
       
-      metadataReader.onerror = () => reject(new Error('Error reading file'));
+      metadataReader.onerror = (event) => {
+        console.error('PNG metadata read error for file:', pngFile.name, event);
+        reject(new Error(`Error reading PNG metadata from file: ${pngFile.name}`));
+      };
       metadataReader.readAsArrayBuffer(pngFile);
     };
     

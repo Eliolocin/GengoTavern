@@ -37,7 +37,6 @@ export async function saveChatAsJson(character: Character, chat: Chat): Promise<
     const exportData = {
       characterName: character.name,
       characterId: character.id,
-      characterImage: character.image,
       characterDescription: character.description || '',
       characterSampleDialogues: character.sampleDialogues || [],
       chatName: chat.name || 'Unnamed Chat',
