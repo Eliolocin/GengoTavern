@@ -383,7 +383,7 @@ export async function retrieveExistingCharacterInfo(
 Search Instructions:
 - Use Google Search to find comprehensive information about this character and their franchise
 - Look for personality traits, background story, appearance, relationships, and speaking style
-- Include sample dialogue lines from actual scenes if available
+- Include sample dialogue lines from actual scenes if available, incorporating their speech quirks and catchphrases if applicable
 - If you find the character, provide a detailed biography with sample dialogue examples from actual scenes of the character
 - If this character doesn't exist or you can't find reliable information, respond with exactly "None found, this is an original character from the user"
 
