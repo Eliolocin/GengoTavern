@@ -56,8 +56,11 @@ const ChatInput: FC<ChatInputProps> = ({
 		// Allow sending if:
 		// 1. Message has content, OR
 		// 2. Message is blank but latest message is from user (triggers response to last user message)
-		const canSend = (message.trim() || (latestMessage?.sender === "user")) && !isProcessing && !isProcessingQueue;
-		
+		const canSend =
+			(message.trim() || latestMessage?.sender === "user") &&
+			!isProcessing &&
+			!isProcessingQueue;
+
 		if (canSend) {
 			onSendMessage(message);
 			setMessage("");
@@ -102,7 +105,7 @@ const ChatInput: FC<ChatInputProps> = ({
 			case "off":
 				return "Suggestions: Off";
 			case "implicit":
-				return "Suggestions: Implicit";
+				return "Suggestions: Conversational";
 			case "narrative":
 				return "Suggestions: Narrative";
 			default:
@@ -116,7 +119,7 @@ const ChatInput: FC<ChatInputProps> = ({
 	const getGrammarModeTooltip = () => {
 		switch (grammarCorrectionMode) {
 			case "off":
-				return "Click to enable Implicit Feedback mode";
+				return "Click to enable Conversational Recast mode";
 			case "implicit":
 				return "Click to enable Narrative Suggestion mode";
 			case "narrative":
@@ -238,7 +241,11 @@ const ChatInput: FC<ChatInputProps> = ({
 					<button
 						type="button"
 						onClick={handleSendMessage}
-						disabled={!(message.trim() || (latestMessage?.sender === "user")) || isProcessing || isProcessingQueue}
+						disabled={
+							!(message.trim() || latestMessage?.sender === "user") ||
+							isProcessing ||
+							isProcessingQueue
+						}
 					>
 						Send
 					</button>
