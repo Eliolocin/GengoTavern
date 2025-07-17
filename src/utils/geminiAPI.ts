@@ -38,6 +38,23 @@ export interface CharacterGenerationResponse {
 }
 
 /**
+ * Interface for character retrieval response from Google Search
+ */
+export interface CharacterRetrievalResponse {
+	characterInfo?: string;
+	error?: string;
+	errorType?:
+		| "RATE_LIMIT"
+		| "BLOCKED_CONTENT"
+		| "API_KEY"
+		| "CONNECTION"
+		| "MODEL_ERROR"
+		| "TIMEOUT"
+		| "EMPTY_RESPONSE"
+		| "UNKNOWN";
+}
+
+/**
  * Structure of generated character data from Gemini
  */
 export interface GeneratedCharacter {
@@ -323,7 +340,205 @@ export async function mockGeminiCall(prompt: string): Promise<GeminiResponse> {
 }
 
 /**
- * Generate character data from an image using Gemini Vision API with structured output and Google Search grounding
+ * Retrieve existing character information using Google Search
+ * @param characterName - The name of the character to search for
+ * @param additionalInstructions - Optional additional context or instructions
+ * @returns Promise<CharacterRetrievalResponse> - Character information from search or "None" if not found
+ */
+export async function retrieveExistingCharacterInfo(
+	characterName: string,
+	additionalInstructions?: string,
+): Promise<CharacterRetrievalResponse> {
+	// Get user settings
+	const userSettings = (window as any).__gengoTavernUserSettings;
+
+	// Check if API key is set
+	if (!userSettings || !userSettings.apiKey) {
+		return {
+			error:
+				"API key is not set. Please enter your Google API key in settings.",
+			errorType: "API_KEY",
+		};
+	}
+
+	try {
+		// Initialize the Google Generative AI client
+		const genAI = new GoogleGenAI({ apiKey: userSettings.apiKey });
+
+		// Use Gemini 2.5 Flash for fast and cost-effective search
+		const MODEL_NAME = "gemini-2.5-flash";
+
+		// Configure generation parameters (no structured output, just text)
+		const generationConfig: GenerateContentConfig = {
+			temperature: 1.0,
+			topP: 0.9,
+			maxOutputTokens: 4096,
+			// Add Google Search tool for character information gathering
+			tools: [{ googleSearch: {} }],
+		};
+
+		// Build the search prompt
+		let prompt = `You are a character information researcher. Search for detailed information about the character "${characterName}".
+
+Search Instructions:
+- Use Google Search to find comprehensive information about this character and their franchise
+- Look for personality traits, background story, appearance, relationships, and speaking style
+- Include sample dialogue lines from actual scenes if available
+- If you find the character, provide a detailed biography with sample dialogue examples from actual scenes of the character
+- If this character doesn't exist or you can't find reliable information, respond with exactly "None found, this is an original character from the user"
+
+Character Name: ${characterName}`;
+
+		// Add additional instructions if provided
+		if (additionalInstructions && additionalInstructions.trim()) {
+			prompt += `\n\nAdditional Context: ${additionalInstructions.trim()}`;
+		}
+
+		prompt += `\n\nProvide either:
+1. A detailed character biography with sample dialogue lines (if character exists)
+2. "None found, this is an original character from the user" (if character doesn't exist)
+
+Focus on gathering authentic information that would help create an accurate character representation.`;
+
+		// Prepare the user prompt content
+		const userPromptContent: Content = {
+			role: "user",
+			parts: [{ text: prompt }],
+		};
+
+		console.log(
+			`%c=== CHARACTER SEARCH (${characterName}) ===`,
+			"color: cyan; font-weight: bold",
+		);
+		console.log(prompt);
+
+		try {
+			// Create a timeout promise
+			const timeoutPromise = new Promise<never>((_, reject) => {
+				setTimeout(
+					() =>
+						reject(new Error("Character search timed out after 45 seconds")),
+					45000, // Moderate timeout for search operations
+				);
+			});
+
+			// Make the API call
+			const result = await Promise.race([
+				genAI.models.generateContent({
+					model: MODEL_NAME,
+					contents: [userPromptContent],
+					config: generationConfig,
+				}),
+				timeoutPromise,
+			]);
+
+			console.log(
+				`%c=== CHARACTER SEARCH RESPONSE ===`,
+				"color: cyan; font-weight: bold",
+			);
+			console.log(result);
+
+			// Check for blocked content
+			if (result.promptFeedback?.blockReason) {
+				return {
+					error: `Character search was blocked: ${result.promptFeedback.blockReason}`,
+					errorType: "BLOCKED_CONTENT",
+				};
+			}
+
+			const responseText = result.text;
+
+			// Check if response is empty
+			if (!responseText || responseText.trim() === "") {
+				return {
+					error: "Character search returned an empty response",
+					errorType: "EMPTY_RESPONSE",
+				};
+			}
+
+			console.log(
+				`%c=== CHARACTER SEARCH SUCCESS ===`,
+				"color: green; font-weight: bold",
+			);
+			console.log(responseText);
+
+			return { characterInfo: responseText.trim() };
+		} catch (apiError: any) {
+			const errorMessage = apiError.message || "Unknown API error";
+
+			// Handle specific API errors
+			if (errorMessage.includes("timed out")) {
+				return {
+					error: "Character search timed out. Using fallback generation.",
+					errorType: "TIMEOUT",
+				};
+			}
+
+			if (
+				errorMessage.includes("RESOURCE_EXHAUSTED") ||
+				errorMessage.includes("rate limit")
+			) {
+				return {
+					error: "Rate limit exceeded for character search",
+					errorType: "RATE_LIMIT",
+				};
+			}
+
+			if (
+				errorMessage.includes("INVALID_ARGUMENT") ||
+				errorMessage.includes("blocked")
+			) {
+				return {
+					error: "Character search content was blocked",
+					errorType: "BLOCKED_CONTENT",
+				};
+			}
+
+			if (
+				errorMessage.includes("PERMISSION_DENIED") ||
+				errorMessage.includes("API key")
+			) {
+				return {
+					error: "Invalid API key for character search",
+					errorType: "API_KEY",
+				};
+			}
+
+			if (
+				errorMessage.includes("model not found") ||
+				errorMessage.includes("MODEL_NOT_FOUND")
+			) {
+				return {
+					error: `Character search model "${MODEL_NAME}" not available`,
+					errorType: "MODEL_ERROR",
+				};
+			}
+
+			// Re-throw for outer catch
+			throw apiError;
+		}
+	} catch (error) {
+		console.error("Character search error:", error);
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error occurred";
+
+		// Check for network errors
+		if (error instanceof TypeError && errorMessage.includes("network")) {
+			return {
+				error: "Network error during character search",
+				errorType: "CONNECTION",
+			};
+		}
+
+		return {
+			error: `Character search failed: ${errorMessage}`,
+			errorType: "UNKNOWN",
+		};
+	}
+}
+
+/**
+ * Generate character data from an image using two-stage approach: first search for existing character info, then generate structured output
  * @param imageFile - The image file to analyze
  * @param characterName - The desired name for the character
  * @param additionalInstructions - Optional additional instructions for generation
@@ -406,25 +621,34 @@ export async function generateCharacterFromImage(
 			],
 		};
 
-		// 7. Create generation config with structured output
+		// 7. First, attempt to retrieve existing character information
+		console.log(
+			`%c=== STAGE 1: CHARACTER SEARCH ===`,
+			"color: blue; font-weight: bold",
+		);
+
+		const characterSearch = await retrieveExistingCharacterInfo(
+			characterName,
+			additionalInstructions,
+		);
+
+		// 8. Create generation config with structured output (no Google Search tool)
 		const generationConfig: GenerateContentConfig = {
 			temperature: 1.5, // Creative but controlled
 			topP: 0.9,
 			maxOutputTokens: 8192, // Increased for longer character descriptions
 			responseMimeType: "application/json",
 			responseSchema: responseSchema,
-			// Add Google Search tool for character grounding
-			tools: [{ googleSearch: {} }],
+			// No Google Search tool here - handled separately
 		};
 
-		// 8. Build the prompt with Google Search instructions
+		// 9. Build the prompt with retrieved character information
 		let prompt = `You are an expert character creator for a chat application. Analyze this image and create a detailed character profile.
 
 Character Name: ${characterName}
 
 Instructions:
 - Create a rich, detailed character based on the image
-- If the character appears to be a known character (from anime, games, movies, etc.), use Google Search to find accurate information about them
 - The character should be interesting and engaging for conversation
 - Include personality traits, background, physical appearance, and distinctive quirks/characteristics
 - Make the sample dialogues natural and reflect the character's personality
@@ -433,15 +657,29 @@ Instructions:
 - Character's first message/greeting should match the scenario and their way of speaking based on the sample dialogues
 `;
 
-		// 9. Add additional instructions if provided
+		// 10. Add retrieved character information if available
+		if (characterSearch.characterInfo && !characterSearch.error) {
+			if (characterSearch.characterInfo.includes("None found")) {
+				prompt += `\n\nCharacter Search Result: This appears to be an original character. Create a unique profile based on the image.`;
+			} else {
+				prompt += `\n\nMatching Character from the Internet: ${characterSearch.characterInfo}
+
+Use this information to create an authentic character profile that matches the known character's personality, background, and speaking style.`;
+			}
+		} else if (characterSearch.error) {
+			console.warn("Character search failed:", characterSearch.error);
+			prompt += `\n\nNote: Character search was unavailable. Create a unique profile based on the image.`;
+		}
+
+		// 11. Add additional instructions if provided
 		if (additionalInstructions && additionalInstructions.trim()) {
 			prompt += `\n\nAdditional Instructions: ${additionalInstructions.trim()}`;
 		}
 
 		prompt +=
-			"\n\nIMPORTANT: If this appears to be a known character, use Google Search to gather accurate information about their personality, background, and speaking style. Respond with COMPLETE valid JSON only. Keep dialogue examples concise (1-2 sentences each) to ensure the response fits within token limits. Follow the exact schema provided.";
+			"\n\nIMPORTANT: Respond with COMPLETE valid JSON only. Keep dialogue examples concise (1-2 sentences each) to ensure the response fits within token limits. Follow the exact schema provided.";
 
-		// 10. Prepare the image data
+		// 12. Prepare the image data
 		const imagePart = {
 			inlineData: {
 				data: imageBase64,
@@ -449,30 +687,33 @@ Instructions:
 			},
 		};
 
-		// 11. Prepare the user prompt content
+		// 13. Prepare the user prompt content
 		const userPromptContent: Content = {
 			role: "user",
 			parts: [{ text: prompt }, imagePart],
 		};
 
 		console.log(
-			`%c=== GENERATING CHARACTER FROM IMAGE (WITH SEARCH) ===`,
+			`%c=== STAGE 2: CHARACTER GENERATION ===`,
 			"color: blue; font-weight: bold",
 		);
 		console.log(`Character Name: ${characterName}`);
 		console.log(`Additional Instructions: ${additionalInstructions || "None"}`);
 		console.log(`Model: ${MODEL_NAME}`);
+		console.log(
+			`Character Search Status: ${characterSearch.error ? "Failed" : "Success"}`,
+		);
 
 		try {
-			// 12. Create a timeout promise
+			// 14. Create a timeout promise
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				setTimeout(
 					() => reject(new Error("Request timed out after 60 seconds")),
-					60000, // Longer timeout for vision + structured output + search
+					60000, // Longer timeout for vision + structured output
 				);
 			});
 
-			// 13. Make the API call with both text and image
+			// 15. Make the API call with both text and image
 			const result = await Promise.race([
 				genAI.models.generateContent({
 					model: MODEL_NAME,
