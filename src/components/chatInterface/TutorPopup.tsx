@@ -40,7 +40,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 			});
 			return () => cancelAnimationFrame(frameId2);
 		});
-		
+
 		return () => cancelAnimationFrame(frameId1);
 	}, []);
 
@@ -98,7 +98,7 @@ const TutorPopup: FC<TutorPopupProps> = ({
 	const getPopupTitle = () => {
 		switch (tutorData.mode) {
 			case "implicit":
-				return "Implicit Feedback";
+				return "Conversational Recast";
 			case "narrative":
 				return "Narrative Suggestion";
 			default:
@@ -140,8 +140,8 @@ const TutorPopup: FC<TutorPopupProps> = ({
 				id={`tutor-popup-content-${messageId}`}
 				className="tutor-popup-content"
 			>
-				<MarkdownRenderer 
-					content={tutorData.response.system_message} 
+				<MarkdownRenderer
+					content={tutorData.response.system_message}
 					processParentheses={false}
 				/>
 			</div>
