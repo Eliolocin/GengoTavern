@@ -1,0 +1,592 @@
+/* Visual Novel Mode Toggle Button */
+.vn-mode-button {
+	background-color: #2c3e50;
+	color: white;
+}
+
+.vn-mode-button.active {
+	background-color: #e74c3c;
+	color: white;
+}
+
+/* Mode toggles container - holds both VN and Grammar toggles */
+.mode-toggles-container {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+/* VN Mode Toggle Button - Ensure it's always visible */
+.vn-mode-toggle-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(42, 42, 42, 0.8);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 12px 20px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 1.1rem;
+	font-weight: 600;
+	opacity: 0.95;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	min-width: 140px;
+}
+
+.vn-mode-toggle-button:hover {
+	background-color: rgba(60, 60, 60, 0.9);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.vn-mode-toggle-button.active {
+	background-color: rgba(100, 108, 255, 0.8);
+	color: white;
+}
+
+.vn-mode-toggle-button.active:hover {
+	background-color: rgba(100, 108, 255, 0.9);
+}
+
+/* Grammar Correction Toggle Button */
+.grammar-mode-toggle-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(42, 42, 42, 0.8);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 12px 20px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 1.1rem;
+	font-weight: 600;
+	opacity: 0.95;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	min-width: 160px;
+}
+
+.grammar-mode-toggle-button:hover {
+	background-color: rgba(60, 60, 60, 0.9);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Grammar mode specific colors */
+.grammar-mode-toggle-button.mode-off {
+	background-color: rgba(42, 42, 42, 0.8);
+	color: #ccc;
+}
+
+.grammar-mode-toggle-button.mode-implicit.active {
+	background-color: rgba(46, 204, 113, 0.8);
+	color: white;
+}
+
+.grammar-mode-toggle-button.mode-implicit.active:hover {
+	background-color: rgba(46, 204, 113, 0.9);
+}
+
+.grammar-mode-toggle-button.mode-narrative.active {
+	background-color: rgba(155, 89, 182, 0.8);
+	color: white;
+}
+
+.grammar-mode-toggle-button.mode-narrative.active:hover {
+	background-color: rgba(155, 89, 182, 0.9);
+}
+
+/* Mobile responsive adjustments for mode toggles */
+@media (max-width: 768px) {
+	.mode-toggles-container {
+		gap: 8px;
+		flex-direction: column;
+	}
+
+	.vn-mode-toggle-button,
+	.grammar-mode-toggle-button {
+		min-width: 120px;
+		font-size: 1rem;
+		padding: 10px 16px;
+	}
+}
+
+/* Visual Novel Mode Container */
+.visual-novel-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	position: relative;
+	background-color: transparent;
+}
+
+/* Transparent chat messages in VN mode */
+.chat-messages-transparent {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	opacity: 0;
+	pointer-events: none;
+	z-index: -1;
+	background-color: transparent; /* Ensure transparency */
+}
+
+/* Visual Novel Mode */
+.visual-novel-mode {
+	position: fixed; /* Changed from absolute to fixed */
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	z-index: 0; /* Lower z-index so it's behind chat-input and chat-header */
+	background-color: transparent;
+	padding-bottom: 100px; /* Increased space for chat input */
+	pointer-events: none; /* Allow clicks to pass through the container */
+}
+
+/* Visual Novel Character Container */
+.visual-novel-character-container {
+	position: fixed; /* Changed from absolute to fixed */
+	top: 130px; /* Start below the header instead of at the top */
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	justify-content: center;
+	align-items: flex-end; /* Align to bottom */
+	z-index: 0; /* Lower z-index so it's behind chat-input and chat-header */
+	background-color: transparent;
+	pointer-events: none; /* Allow clicks to pass through */
+}
+
+/* Visual Novel Character Sprite */
+.visual-novel-character-sprite {
+	width: 100%;
+	height: calc(100vh - 130px); /* Adjusted height to account for header */
+	object-fit: contain;
+	object-position: bottom center; /* Position at bottom center */
+	filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+	max-height: calc(100vh - 130px); /* Adjusted max-height to account for header */
+	/* Remove margin-top as we're already positioning the container below header */
+	transition: opacity 0.3s ease-in-out; /* Add transition for fade effect */
+}
+
+/* NEW: Isolated Group Chat Sprite Backdrop - Completely Independent Container */
+.group-chat-sprite-backdrop {
+	position: fixed;
+	top: 100px; /* 100px from top to avoid header overlap */
+	left: 40px; /* Horizontally smaller for centering */
+	right: 40px; /* Horizontally smaller for centering */
+	bottom: 0; /* Full height to bottom */
+	width: calc(100vw - 80px); /* Account for left/right margins */
+	height: calc(100vh - 100px); /* Account for top offset */
+	display: flex;
+	justify-content: center; /* Center sprites in the middle */
+	align-items: flex-end; /* Align sprites to bottom */
+	gap: 50px; /* Small gap between sprites instead of wide separation */
+	z-index: 0; /* Behind chat UI but above app backdrop */
+	pointer-events: none; /* Allow clicks through container */
+	padding: 0; /* No padding - clean edges */
+	box-sizing: border-box;
+}
+
+/* Group Chat Sprite Container within Backdrop - FORCE 2:3 ASPECT RATIO */
+.group-chat-sprite-container {
+	position: relative;
+	width: calc((100vh - 130px) * 2 / 3); /* FORCE container width to 2:3 ratio */
+	height: calc(100vh - 130px); /* FORCE container height to full height */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	transition: all 0.3s ease-in-out;
+	pointer-events: auto; /* Allow sprite interactions */
+	flex: 0 0 auto; /* Don't grow or shrink */
+}
+
+/* SIMPLIFIED: Container IS the sprite - no nested image needed */
+/* All sprite rendering handled by background-image on the container */
+
+/* Current Speaker Highlighting */
+.group-chat-sprite-container.current-speaker {
+	transform: scale(1.05);
+	z-index: 1;
+}
+
+.group-chat-sprite-container.current-speaker .visual-novel-character-sprite {
+	filter: brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+}
+
+/* Character Name Labels for Group Chat */
+.group-chat-sprite-container .character-name-label {
+	position: absolute;
+	bottom: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: #fff;
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	opacity: 0.8;
+	pointer-events: none;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+	.group-chat-sprite-backdrop {
+		gap: 20px; /* Smaller gap for mobile */
+		left: 20px;
+		right: 20px;
+		width: calc(100vw - 40px);
+	}
+
+	.group-chat-sprite-container {
+		width: calc((100vh - 130px) * 1.5 / 3); /* Narrower sprites for mobile */
+	}
+}
+
+/* Legacy: Keep old classes for backward compatibility */
+.group-sprite-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	height: 100%;
+	width: 100%;
+	transition: all 0.3s ease-in-out;
+}
+
+.group-sprite-container.current-speaker {
+	transform: scale(1.05);
+	z-index: 1;
+}
+
+.group-sprite-container.current-speaker .visual-novel-character-sprite {
+	filter: brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+}
+
+/* Current speaker highlighting */
+.group-sprite-container.current-speaker {
+	transform: scale(1.05);
+	z-index: 1;
+}
+
+/* Group sprite images - Now full height using entire viewport */
+.group-sprite-container .visual-novel-character-sprite {
+	width: 100%;
+	height: calc(100vh - 130px); /* Full height minus header */
+	object-fit: contain;
+	object-position: bottom center;
+	filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+	transition: opacity 0.3s ease-in-out;
+}
+
+/* Character name labels below sprites */
+.group-sprite-container .character-name-label {
+	position: absolute;
+	bottom: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: #fff;
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments for group sprites */
+@media (max-width: 768px) {
+	.group-sprite-container .character-name-label {
+		font-size: 10px;
+		bottom: -25px;
+		padding: 2px 6px;
+	}
+}
+
+/* Sprite fade states */
+.group-sprite-container.faded {
+	opacity: 0.4;
+}
+
+.group-sprite-container.active {
+	opacity: 1;
+}
+
+.group-sprite-container.current-speaker {
+	opacity: 1;
+	transform: scale(1.05);
+	z-index: 1;
+}
+
+.group-sprite-container.current-speaker .visual-novel-character-sprite {
+	filter: brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+}
+
+/* Visual Novel Dialogue Box - Positioned at bottom with scroll functionality */
+.visual-novel-dialogue-box {
+	width: 90%;
+	max-width: 1200px;
+	max-height: 10vh; /* Limit height to 40% of viewport to keep sprites visible */
+	min-height: 120px; /* Minimum height for short messages */
+	background-color: rgba(0, 0, 0, 0.7);
+	border-radius: 10px;
+	padding: 20px;
+	margin-bottom: 110px; /* Increased to position above chat input */
+	color: white;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+	border: 2px solid #3a506b;
+	z-index: 2; /* Higher z-index than the sprite but lower than chat-input */
+	position: relative;
+	pointer-events: auto; /* Enable interactions with the dialogue box */
+	overflow-y: auto; /* Enable vertical scrolling for long content */
+	/* Custom scrollbar styling */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling for better cross-browser support */
+.visual-novel-dialogue-box::-webkit-scrollbar {
+	width: 8px;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	transition: background 0.2s ease;
+}
+
+.visual-novel-dialogue-box::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.5);
+}
+
+/* Visual Novel Speaker Name */
+.visual-novel-speaker {
+	font-weight: bold;
+	font-size: 1.2rem;
+	margin-bottom: 10px;
+	color: #e74c3c;
+}
+
+/* Visual Novel Text */
+.visual-novel-text {
+	font-size: 1.1rem;
+	line-height: 1.5;
+}
+
+/* Visual Novel Message Actions - Now positioned in dialogue box */
+.vn-message-actions {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	display: flex;
+	gap: 10px;
+	z-index: 20;
+	pointer-events: auto; /* Ensure buttons are clickable */
+}
+
+/* Sprite Loading Placeholder */
+.sprite-loading-placeholder {
+	color: white;
+	font-size: 1.2rem;
+	text-align: center;
+	background-color: rgba(0, 0, 0, 0.5);
+	padding: 20px;
+	border-radius: 10px;
+}
+
+/* Sprite Manager Modal */
+.sprite-manager-modal {
+	width: 90%;
+	max-width: 800px;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+/* Sprite Selection Grid */
+.sprites-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	gap: 15px;
+	margin-top: 20px;
+}
+
+/* Sprite Item */
+.sprite-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	cursor: pointer;
+	padding: 10px;
+	border-radius: 5px;
+	background-color: #2c3e50;
+	transition: all 0.2s ease;
+}
+
+.sprite-item:hover {
+	background-color: #34495e;
+	transform: translateY(-2px);
+}
+
+.sprite-item.selected {
+	background-color: #3498db;
+}
+
+/* Sprite Thumbnail */
+.sprite-thumbnail {
+	width: 100px;
+	height: 150px;
+	background-color: #1a1a2e;
+	border-radius: 5px;
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 10px;
+	position: relative;
+}
+
+.sprite-thumbnail-image {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+.sprite-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 2rem;
+	color: #95a5a6;
+}
+
+/* Sprite Label */
+.sprite-label {
+	font-size: 0.9rem;
+	text-align: center;
+	color: white;
+	text-transform: capitalize;
+}
+
+/* Sprite Upload Section */
+.sprite-upload-section {
+	margin-top: 20px;
+	padding: 20px;
+	background-color: #2c3e50;
+	border-radius: 5px;
+}
+
+/* Sprite Preview */
+.sprite-preview {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.sprite-image {
+	max-width: 200px;
+	max-height: 300px;
+	object-fit: contain;
+	margin-bottom: 15px;
+}
+
+.sprite-actions {
+	display: flex;
+	gap: 10px;
+}
+
+/* Sprite Upload Placeholder */
+.sprite-upload {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 20px;
+	background-color: #34495e;
+	border-radius: 5px;
+}
+
+.upload-placeholder {
+	text-align: center;
+	color: #95a5a6;
+}
+
+/* Emotion Selection */
+.emotion-selection {
+	margin-bottom: 20px;
+}
+
+.emotion-selection select {
+	width: 100%;
+	padding: 10px;
+	border-radius: 5px;
+	background-color: #34495e;
+	color: white;
+	border: none;
+	font-size: 14px;
+}
+
+.emotion-selection select:focus {
+	outline: none;
+	border: 2px solid #3498db;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+	.visual-novel-dialogue-box {
+		width: 95%;
+		padding: 15px;
+		margin-bottom: 90px;
+		max-height: 35vh; /* Slightly smaller on mobile to leave more room for sprites */
+		min-height: 100px; /* Smaller minimum height on mobile */
+	}
+
+	.visual-novel-speaker {
+		font-size: 1.1rem;
+	}
+
+	.visual-novel-text {
+		font-size: 1rem;
+	}
+
+	.sprites-grid {
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		gap: 10px;
+	}
+
+	.sprite-thumbnail {
+		width: 80px;
+		height: 120px;
+	}
+
+	.sprite-manager-modal {
+		width: 95%;
+		max-height: 85vh;
+	}
+}

@@ -1,20 +1,21 @@
-import React, { useEffect } from 'react';
-import MarkdownRenderer from './MarkdownRenderer';
-import { setupModalBackButtonHandler } from '../../utils/modalBackButtonHandler';
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import MarkdownRenderer from "./MarkdownRenderer";
+import { setupModalBackButtonHandler } from "../../utils/modalBackButtonHandler";
 
 interface WritingTipsModalProps {
-  onClose: () => void;
+	onClose: () => void;
 }
 
 const WritingTipsModal: React.FC<WritingTipsModalProps> = ({ onClose }) => {
-    useEffect(() => {
-      // Set up back button handler
-      const cleanup = setupModalBackButtonHandler(onClose);
-      
-      // Cleanup when component unmounts
-      return cleanup;
-    }, [onClose]);
-  const writingTipsContent = `
+	useEffect(() => {
+		// Set up back button handler
+		const cleanup = setupModalBackButtonHandler(onClose);
+
+		// Cleanup when component unmounts
+		return cleanup;
+	}, [onClose]);
+	const writingTipsContent = `
 ### General Tips:
 ---
 - Use the '**Gemini 2.0 Flash Thinking**' model in the API settings for possibly better results, at the cost of slower responses.
@@ -63,24 +64,36 @@ in your desired Foreign Language in order for the AI to speak it.
 to communicate at a comprehensible level.
 `;
 
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content help-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="help-modal-title">
-            <h3>Writing Tips</h3>
-          </div>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-        <div className="modal-body help-content">
-          <MarkdownRenderer content={writingTipsContent} processParentheses={false} />
-        </div>
-        <div className="modal-footer">
-          <button className="confirm-button" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
-  );
+	const modalContent = (
+		<div className="modal-backdrop">
+			<div
+				className="modal-content writing-tips-modal"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="modal-header">
+					<div className="help-modal-title">
+						<h3>Writing Tips</h3>
+					</div>
+					<button className="close-button" onClick={onClose}>
+						×
+					</button>
+				</div>
+				<div className="modal-body help-content">
+					<MarkdownRenderer
+						content={writingTipsContent}
+						processParentheses={false}
+					/>
+				</div>
+				<div className="modal-footer">
+					<button className="confirm-button" onClick={onClose}>
+						Close
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+
+	return createPortal(modalContent, document.body);
 };
 
 export default WritingTipsModal;

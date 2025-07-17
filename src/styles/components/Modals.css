@@ -1,0 +1,1732 @@
+.primary-button {
+	background-color: rgba(100, 108, 255, 0.7);
+}
+/* Modal styles for better visibility on backgrounds */
+.modal-backdrop,
+.modal-overlay {
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: 0 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	backdrop-filter: blur(8px);
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: 99999 !important;
+	padding: 20px;
+	box-sizing: border-box;
+	margin: 0 !important;
+	transform: none !important;
+}
+
+.modal-content {
+	background-color: rgba(42, 42, 42, 0.95);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+	border-radius: 10px;
+	padding: 25px;
+	max-width: 90vw;
+	max-height: 90vh;
+	overflow-y: auto;
+	position: relative;
+	z-index: 100000 !important;
+	margin: 0 auto;
+	transform: none !important;
+}
+
+/* Modal shared styles */
+.modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2,
+.modal-header h3 {
+	margin: 0;
+	color: #fff;
+	font-size: 1.5rem;
+}
+
+.modal-close {
+	background: transparent;
+	border: none;
+	color: #999;
+	font-size: 24px;
+	cursor: pointer;
+	padding: 0;
+	width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+	color: #fff;
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	min-width: 80px;
+}
+
+.modal-button.primary {
+	background-color: #646cff;
+	color: white;
+}
+
+.modal-button.primary:hover {
+	background-color: #535bf2;
+}
+
+.modal-button.secondary {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.modal-button.secondary:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-button.danger {
+	background-color: #f44336;
+	color: white;
+}
+
+.modal-button.danger:hover {
+	background-color: #d32f2f;
+}
+
+.modal-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* New chat and edit chat modals */
+.edit-chat-modal,
+.new-chat-modal {
+	max-width: 550px;
+	width: 100%;
+	padding: 30px; /* Increase overall padding */
+}
+
+.edit-chat-modal h3,
+.new-chat-modal h3 {
+	margin-top: 0;
+	margin-bottom: 20px;
+	font-size: 24px;
+	color: #fff;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	padding-bottom: 15px;
+}
+
+.edit-chat-modal .form-group,
+.new-chat-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.edit-chat-modal label,
+.new-chat-modal label {
+	display: block;
+	margin-bottom: 10px;
+	font-weight: 500;
+	font-size: 16px;
+	color: #fff;
+}
+
+.edit-chat-modal input[type="text"],
+.new-chat-modal input[type="text"],
+.edit-chat-modal textarea,
+.new-chat-modal textarea {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.edit-chat-modal input[type="text"]:focus,
+.new-chat-modal input[type="text"]:focus,
+.edit-chat-modal textarea:focus,
+.new-chat-modal textarea:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.edit-chat-modal textarea,
+.new-chat-modal textarea {
+	resize: vertical;
+	min-height: 120px;
+	font-family: inherit;
+	line-height: 1.5;
+}
+
+.default-note {
+	margin-left: 8px;
+	font-size: 12px;
+	color: #888;
+	font-style: italic;
+}
+
+.input-hint {
+	font-size: 13px;
+	color: #94a3b8;
+	margin-top: 6px;
+	line-height: 1.4;
+	font-style: italic;
+}
+
+.validation-error {
+	color: #f44336;
+	margin: 10px 0;
+	padding: 8px;
+	background-color: rgba(244, 67, 54, 0.1);
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.background-preview {
+	width: 100%;
+	height: 120px;
+	object-fit: cover;
+	border-radius: 4px;
+	margin: 10px 0;
+}
+
+.default-preview {
+	opacity: 0.7;
+}
+
+/* Help modal */
+.help-modal {
+	max-width: 600px;
+	width: 90%;
+}
+
+.help-content {
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 10px 20px;
+	line-height: 1.6;
+	text-align: justify;
+}
+
+.help-content h2 {
+	margin-top: 0;
+	color: #fff;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	padding-bottom: 10px;
+}
+
+/* Help Modal Logo Styling */
+.logo-container {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 15px;
+	margin-top: 15px;
+}
+
+.help-modal-logo {
+	height: 64px;
+	width: 64px;
+	object-fit: contain;
+	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+	transition: transform 0.2s ease;
+}
+
+.help-modal-logo:hover {
+	transform: scale(1.05);
+}
+
+/* Center the main heading in help modal */
+.help-content h2:first-of-type {
+	text-align: center;
+}
+
+.centered-heading {
+	text-align: center;
+}
+
+/* API Key modal */
+.api-key-modal {
+	max-width: 500px;
+	width: 90%;
+}
+
+.api-key-input-container {
+	margin-bottom: 20px;
+}
+
+.api-key-input-container label,
+.model-selection-container label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.secure-input-wrapper {
+	position: relative;
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.secure-input {
+	width: 100%;
+	padding: 12px 40px 12px 12px; /* Extra padding on right for the toggle button */
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-family: monospace;
+	box-sizing: border-box;
+}
+
+.secure-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.toggle-visibility-button {
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: transparent;
+	border: none;
+	color: #999;
+	cursor: pointer;
+	padding: 5px;
+}
+
+.toggle-visibility-button:hover {
+	color: #fff;
+}
+
+/* Model selection styling */
+.model-selection-container {
+	margin-bottom: 20px;
+}
+
+.model-select {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	box-sizing: border-box;
+}
+
+.model-select:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+/* Temperature slider styling */
+.temperature-slider-container {
+	margin-bottom: 20px;
+}
+
+.temperature-slider-container label {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.temperature-slider {
+	width: 100%;
+	height: 8px;
+	border-radius: 4px;
+	background: linear-gradient(to right, #4caf50, #ff9800, #f44336);
+	outline: none;
+	-webkit-appearance: none;
+	margin: 10px 0;
+}
+
+.temperature-slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #fff;
+	border: 2px solid #646cff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	transition: transform 0.2s ease;
+}
+
+.temperature-slider::-webkit-slider-thumb:hover {
+	transform: scale(1.1);
+}
+
+.temperature-slider::-moz-range-thumb {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #fff;
+	border: 2px solid #646cff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+}
+
+.temperature-value {
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+	margin-top: 5px;
+	text-align: center;
+	padding: 5px 10px;
+	background-color: rgba(100, 108, 255, 0.2);
+	border-radius: 4px;
+	border: 1px solid rgba(100, 108, 255, 0.3);
+}
+
+.temperature-labels {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 8px;
+	font-size: 12px;
+	color: #999;
+}
+
+.temperature-labels span {
+	padding: 2px 6px;
+	border-radius: 3px;
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Emotion Classifier Section */
+.emotion-classifier-section {
+	margin-bottom: 25px;
+	padding: 20px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.emotion-classifier-section h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #fff;
+	font-size: 1.2rem;
+}
+
+.emotion-classifier-section p {
+	margin-bottom: 15px;
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.emotion-classifier-section .form-group {
+	margin-bottom: 15px;
+}
+
+.emotion-classifier-section label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.emotion-classifier-section select {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	box-sizing: border-box;
+}
+
+.emotion-classifier-section select:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+/* Persona modal */
+.persona-modal {
+	max-width: 650px;
+	width: 90%;
+	max-height: 85vh;
+	overflow-y: auto;
+}
+
+.persona-form {
+	display: flex;
+	flex-direction: column;
+	gap: 30px;
+	padding: 0;
+	margin: 0;
+}
+
+.persona-form .form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.persona-form label {
+	display: block;
+	margin-bottom: 0;
+	font-weight: 600;
+	color: #fff;
+	font-size: 16px;
+	letter-spacing: 0.3px;
+}
+
+.persona-form input[type="text"],
+.persona-form textarea {
+	width: 100%;
+	padding: 16px 18px;
+	background-color: rgba(20, 20, 20, 0.95);
+	border: 2px solid rgba(255, 255, 255, 0.12);
+	border-radius: 10px;
+	color: #fff;
+	font-size: 16px;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+	font-family: inherit;
+	resize: none;
+}
+
+.persona-form input[type="text"]:focus,
+.persona-form textarea:focus {
+	border-color: #646cff;
+	background-color: rgba(25, 25, 25, 0.95);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.15);
+	transform: translateY(-1px);
+}
+
+.persona-form textarea {
+	resize: vertical;
+	min-height: 150px;
+	line-height: 1.7;
+}
+
+/* Persona Form Description */
+.persona-form-description {
+	margin-bottom: 25px;
+	padding: 15px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: #ccc;
+	line-height: 1.5;
+	font-size: 14px;
+}
+
+.persona-form-description p {
+	margin: 0;
+}
+
+/* Persona Modal Danger Zone */
+.persona-modal .danger-zone {
+	margin-top: 30px;
+	padding: 20px;
+	background-color: rgba(244, 67, 54, 0.1);
+	border: 1px solid rgba(244, 67, 54, 0.3);
+	border-radius: 8px;
+}
+
+.persona-modal .danger-zone h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #f44336;
+	font-size: 1.2rem;
+}
+
+.persona-modal .danger-zone p {
+	margin-bottom: 20px;
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.persona-modal .danger-zone button {
+	background-color: #f44336;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	padding: 12px 24px;
+	cursor: pointer;
+	font-weight: 500;
+	transition: background-color 0.2s ease;
+}
+
+.persona-modal .danger-zone button:hover {
+	background-color: #d32f2f;
+}
+
+/* Data Management Zone */
+.data-management-section {
+	margin-bottom: 25px;
+	padding: 20px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-management-section h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #fff;
+	font-size: 1.2rem;
+}
+
+.data-management-section p {
+	margin-bottom: 15px;
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.data-management-section .form-group {
+	margin-bottom: 15px;
+}
+
+.data-management-section label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.data-management-section select {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	box-sizing: border-box;
+}
+
+.data-management-section select:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+/* Background Preview Container */
+.background-preview-container {
+	margin-bottom: 20px;
+	padding: 15px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.background-preview-container h4 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	color: #fff;
+	font-size: 1.1rem;
+}
+
+.background-preview-container .background-preview {
+	width: 100%;
+	height: 150px;
+	object-fit: cover;
+	border-radius: 6px;
+	margin-bottom: 10px;
+}
+
+/* Help Modal Startup Preference */
+.startup-preference-section {
+	margin-bottom: 20px;
+	padding: 15px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.startup-preference-section h4 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	color: #fff;
+	font-size: 1.1rem;
+}
+
+.startup-preference-section label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #ccc;
+	cursor: pointer;
+}
+
+.startup-preference-section input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: #646cff;
+}
+
+/* Save As Options Modal */
+.save-as-modal {
+	max-width: 350px;
+	width: 90%;
+	min-width: 300px;
+}
+
+.save-as-modal .modal-body {
+	padding: 15px;
+}
+
+/* Vertical layout for save options */
+.save-options {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+.save-option {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px;
+	background-color: rgba(42, 42, 42, 0.7);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.save-option:hover {
+	background-color: rgba(58, 58, 58, 0.8);
+	border-color: rgba(100, 108, 255, 0.3);
+}
+
+.save-option input[type="radio"] {
+	width: 20px;
+	height: 20px;
+	accent-color: #646cff;
+}
+
+.save-option-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.save-option-header h4 {
+	margin: 0;
+	font-weight: 600;
+	color: #fff;
+	font-size: 1rem;
+}
+
+.save-option-tag {
+	background-color: #646cff;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+
+.save-option p {
+	margin: 0 0 4px 0;
+	color: #ccc;
+	font-size: 0.85rem;
+	line-height: 1.3;
+}
+
+.save-option-note {
+	font-size: 0.8rem !important;
+	color: #999 !important;
+	font-style: italic;
+}
+
+/* Delete Confirmation Modal */
+.delete-confirmation-modal {
+	max-width: 450px;
+	width: 90%;
+}
+
+.delete-confirmation-modal .modal-body {
+	padding: 20px;
+	text-align: center;
+}
+
+.delete-confirmation-modal p {
+	margin-bottom: 20px;
+	color: #ccc;
+	font-size: 1.1rem;
+	line-height: 1.5;
+}
+
+.delete-confirmation-modal .item-name {
+	font-weight: bold;
+	color: #f44336;
+}
+
+/* Image Cropper Modal */
+.image-cropper-modal {
+	max-width: 900px;
+	width: 95%;
+	max-height: 90vh;
+	overflow-y: auto;
+}
+
+.image-cropper-modal .modal-body {
+	padding: 20px;
+}
+
+.crop-container {
+	margin-bottom: 20px;
+	display: flex;
+	justify-content: center;
+	max-height: 500px;
+	overflow: hidden;
+}
+
+.crop-preview {
+	margin-top: 20px;
+	text-align: center;
+}
+
+.crop-preview h4 {
+	margin-bottom: 10px;
+	color: #fff;
+}
+
+.crop-preview-image {
+	max-width: 200px;
+	max-height: 200px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+}
+
+/* Input field that can be edited via popup */
+.editable-field {
+	position: relative;
+	cursor: pointer;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+	padding: 0;
+}
+
+.editable-field:hover {
+	background-color: rgba(40, 40, 40, 0.8);
+}
+
+/* Ensure editable field hover state is visible without the icon */
+.editable-field:hover {
+	background-color: rgba(40, 40, 40, 0.8);
+}
+
+/* Edit Field Modal */
+.edit-field-modal {
+	max-width: 500px;
+	width: 90%;
+}
+
+.edit-field-modal .modal-body {
+	padding: 20px;
+}
+
+.edit-field-modal .form-group {
+	margin-bottom: 20px;
+}
+
+.edit-field-modal label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 500;
+	color: #fff;
+}
+
+.edit-field-modal input[type="text"],
+.edit-field-modal textarea {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 16px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.edit-field-modal input[type="text"]:focus,
+.edit-field-modal textarea:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.edit-field-modal textarea {
+	resize: vertical;
+	min-height: 120px;
+	font-family: inherit;
+	line-height: 1.5;
+}
+
+/* Improve modal scrolling on mobile */
+@media screen and (max-width: 768px) {
+	.modal-content {
+		max-height: 90vh;
+		overflow-y: auto;
+		margin: 5vh auto;
+	}
+
+	.modal-footer {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.modal-button {
+		width: 100%;
+	}
+}
+
+/* File System Setup Modal */
+.file-system-setup-modal,
+.setup-modal {
+	max-width: 600px;
+	width: 90%;
+}
+
+.file-system-setup-modal .modal-body {
+	padding: 20px;
+	text-align: center;
+}
+
+.file-system-setup-modal h3 {
+	margin-bottom: 20px;
+	color: #fff;
+	font-size: 1.5rem;
+}
+
+.file-system-setup-modal p {
+	margin-bottom: 20px;
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.file-system-setup-modal .setup-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+	margin-top: 20px;
+}
+
+.file-system-setup-modal .setup-button {
+	padding: 15px 20px;
+	background-color: #646cff;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: 500;
+	transition: background-color 0.2s ease;
+}
+
+.file-system-setup-modal .setup-button:hover {
+	background-color: #535bf2;
+}
+
+.file-system-setup-modal .setup-button.secondary {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.file-system-setup-modal .setup-button.secondary:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Writing Tips Modal */
+.writing-tips-modal {
+	max-width: 700px;
+	width: 90%;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.writing-tips-modal .modal-body {
+	padding: 20px;
+}
+
+.writing-tips-content {
+	line-height: 1.6;
+	color: #ccc;
+}
+
+.writing-tips-content h3 {
+	color: #fff;
+	margin-top: 25px;
+	margin-bottom: 15px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	padding-bottom: 8px;
+}
+
+.writing-tips-content h3:first-child {
+	margin-top: 0;
+}
+
+.writing-tips-content ul {
+	margin-left: 20px;
+	margin-bottom: 20px;
+}
+
+.writing-tips-content li {
+	margin-bottom: 8px;
+}
+
+.writing-tips-content code {
+	background-color: rgba(30, 30, 30, 0.8);
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-family: monospace;
+	color: #ff9800;
+}
+
+.writing-tips-content blockquote {
+	margin: 15px 0;
+	padding: 15px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-left: 4px solid #646cff;
+	border-radius: 0 6px 6px 0;
+}
+
+.writing-tips-content blockquote p {
+	margin: 0;
+	font-style: italic;
+}
+
+/* Image to Text Modal */
+.image-to-text-modal {
+	max-width: 700px;
+	width: 90%;
+	max-height: 85vh;
+}
+
+.image-to-text-modal .modal-body {
+	padding: 25px;
+}
+
+.image-to-text-modal .form-group {
+	margin-bottom: 20px;
+}
+
+.image-to-text-modal label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #fff;
+	font-size: 14px;
+}
+
+.image-to-text-modal .file-input,
+.image-to-text-modal .text-input,
+.image-to-text-modal .textarea-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 14px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.image-to-text-modal .file-input:focus,
+.image-to-text-modal .text-input:focus,
+.image-to-text-modal .textarea-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.image-to-text-modal .textarea-input {
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.image-to-text-modal .input-hint {
+	font-size: 12px;
+	color: #94a3b8;
+	margin-top: 6px;
+	line-height: 1.4;
+	font-style: italic;
+}
+
+.image-to-text-modal .image-preview {
+	margin-top: 15px;
+	text-align: center;
+}
+
+.image-to-text-modal .image-preview img {
+	max-width: 150px;
+	max-height: 150px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	object-fit: cover;
+}
+
+.image-to-text-modal .edit-crop-button {
+	margin-top: 10px;
+	padding: 6px 12px;
+	background-color: rgba(100, 108, 255, 0.8);
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	transition: background-color 0.2s ease;
+}
+
+.image-to-text-modal .edit-crop-button:hover {
+	background-color: #535bf2;
+}
+
+.image-to-text-modal .generating-section {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.image-to-text-modal .loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 15px;
+}
+
+.image-to-text-modal .loading-spinner {
+	width: 40px;
+	height: 40px;
+	border: 3px solid rgba(255, 255, 255, 0.1);
+	border-top: 3px solid #646cff;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.image-to-text-modal .preview-section {
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+.image-to-text-modal .character-preview {
+	display: flex;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.image-to-text-modal .preview-image {
+	flex-shrink: 0;
+}
+
+.image-to-text-modal .preview-image img {
+	width: 120px;
+	height: 120px;
+	border-radius: 8px;
+	object-fit: cover;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.image-to-text-modal .character-details {
+	flex: 1;
+	min-width: 0;
+}
+
+.image-to-text-modal .character-details h3 {
+	margin: 0 0 15px 0;
+	color: #fff;
+	font-size: 18px;
+}
+
+.image-to-text-modal .detail-section {
+	margin-bottom: 15px;
+}
+
+.image-to-text-modal .detail-section h4 {
+	margin: 0 0 8px 0;
+	color: #646cff;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.image-to-text-modal .detail-section p {
+	margin: 0;
+	color: #ccc;
+	line-height: 1.4;
+	font-size: 13px;
+}
+
+.image-to-text-modal .sample-dialogues {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.image-to-text-modal .dialogue-pair {
+	background-color: rgba(20, 20, 20, 0.5);
+	padding: 10px;
+	border-radius: 6px;
+	border-left: 3px solid #646cff;
+}
+
+.image-to-text-modal .user-line,
+.image-to-text-modal .character-line {
+	margin-bottom: 5px;
+	font-size: 13px;
+	line-height: 1.3;
+}
+
+.image-to-text-modal .user-line:last-child,
+.image-to-text-modal .character-line:last-child {
+	margin-bottom: 0;
+}
+
+.image-to-text-modal .user-line strong,
+.image-to-text-modal .character-line strong {
+	color: #fff;
+}
+
+.image-to-text-modal .error-section {
+	text-align: center;
+	padding: 30px 20px;
+}
+
+.image-to-text-modal .error-message h3 {
+	color: #f44336;
+	margin-bottom: 10px;
+}
+
+.image-to-text-modal .error-message p {
+	color: #ccc;
+	line-height: 1.5;
+}
+
+.image-to-text-modal .modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 25px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.image-to-text-modal .cancel-button,
+.image-to-text-modal .generate-button,
+.image-to-text-modal .accept-button,
+.image-to-text-modal .reject-button,
+.image-to-text-modal .retry-button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	min-width: 100px;
+}
+
+.image-to-text-modal .cancel-button,
+.image-to-text-modal .reject-button {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.image-to-text-modal .cancel-button:hover,
+.image-to-text-modal .reject-button:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.image-to-text-modal .generate-button,
+.image-to-text-modal .accept-button,
+.image-to-text-modal .retry-button {
+	background-color: #646cff;
+	color: white;
+}
+
+.image-to-text-modal .generate-button:hover,
+.image-to-text-modal .accept-button:hover,
+.image-to-text-modal .retry-button:hover {
+	background-color: #535bf2;
+}
+
+.image-to-text-modal .generate-button:disabled,
+.image-to-text-modal .cancel-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Responsive adjustments for Image to Text Modal */
+@media screen and (max-width: 768px) {
+	.image-to-text-modal .character-preview {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.image-to-text-modal .preview-image img {
+		width: 100px;
+		height: 100px;
+	}
+}
+
+/* Group Chat Creation Modal */
+.group-chat-creation-modal {
+	max-width: 600px;
+	width: 90%;
+	max-height: 80vh;
+}
+
+.group-chat-creation-modal .modal-body {
+	padding: 25px;
+}
+
+.group-chat-creation-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.group-chat-creation-modal label {
+	display: block;
+	margin-bottom: 10px;
+	font-weight: 600;
+	color: #fff;
+	font-size: 14px;
+}
+
+.group-chat-creation-modal .form-input {
+	width: 100%;
+	padding: 12px 15px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 14px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.group-chat-creation-modal .form-input:focus {
+	border-color: #646cff;
+	outline: none;
+}
+
+.group-chat-creation-modal .no-characters-message {
+	text-align: center;
+	color: #999;
+	font-style: italic;
+	padding: 20px;
+	background-color: rgba(30, 30, 30, 0.5);
+	border-radius: 6px;
+}
+
+.group-chat-creation-modal .character-selection-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	background-color: rgba(20, 20, 20, 0.3);
+}
+
+.group-chat-creation-modal .character-selection-item {
+	padding: 15px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+	transition: background-color 0.2s ease;
+}
+
+.group-chat-creation-modal .character-selection-item:last-child {
+	border-bottom: none;
+}
+
+.group-chat-creation-modal .character-selection-item:hover {
+	background-color: rgba(40, 40, 40, 0.5);
+}
+
+.group-chat-creation-modal .character-info {
+	margin-bottom: 15px;
+}
+
+.group-chat-creation-modal .character-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	color: #fff;
+	font-size: 14px;
+}
+
+.group-chat-creation-modal .character-checkbox input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: #646cff;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .character-thumbnail {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	transition: border-color 0.2s ease;
+}
+
+.group-chat-creation-modal .character-checkbox:hover .character-thumbnail {
+	border-color: #646cff;
+}
+
+.group-chat-creation-modal .character-name {
+	font-weight: 500;
+}
+
+.group-chat-creation-modal .probability-control {
+	margin-left: 30px;
+	background-color: rgba(30, 30, 30, 0.5);
+	padding: 15px;
+	border-radius: 6px;
+	border-left: 3px solid #646cff;
+}
+
+.group-chat-creation-modal .probability-control label {
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: #ccc;
+}
+
+.group-chat-creation-modal .probability-input-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.group-chat-creation-modal .probability-slider {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 3px;
+	outline: none;
+	transition: background 0.2s ease;
+}
+
+.group-chat-creation-modal .probability-slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .probability-slider::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	background: #646cff;
+	border-radius: 50%;
+	border: none;
+	cursor: pointer;
+}
+
+.group-chat-creation-modal .probability-number {
+	width: 60px;
+	padding: 6px 8px;
+	background-color: rgba(30, 30, 30, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 13px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.group-chat-creation-modal .probability-unit {
+	color: #ccc;
+	font-size: 13px;
+	min-width: 15px;
+}
+
+.group-chat-creation-modal .probability-help {
+	margin-top: 8px;
+	color: #94a3b8;
+	font-size: 12px;
+	line-height: 1.3;
+	font-style: italic;
+}
+
+.group-chat-creation-modal .modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 25px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-chat-creation-modal .button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	min-width: 120px;
+}
+
+.group-chat-creation-modal .button-secondary {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.group-chat-creation-modal .button-secondary:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.group-chat-creation-modal .button-primary {
+	background-color: #646cff;
+	color: white;
+}
+
+.group-chat-creation-modal .button-primary:hover:not(:disabled) {
+	background-color: #535bf2;
+}
+
+.group-chat-creation-modal .button-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Responsive adjustments for Group Chat Creation Modal */
+@media screen and (max-width: 768px) {
+	.group-chat-creation-modal .character-checkbox {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+
+	.group-chat-creation-modal .probability-control {
+		margin-left: 0;
+		margin-top: 10px;
+	}
+
+	.group-chat-creation-modal .probability-input-group {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.group-chat-creation-modal .probability-number {
+		width: 100%;
+	}
+}
+
+/* Image Cropper Modal Overlay - Higher z-index to appear above other modals */
+.image-cropper-overlay {
+	z-index: 100001 !important; /* Higher than regular modal overlays */
+}
+
+.image-cropper-modal {
+	max-width: 900px;
+	width: 95%;
+	max-height: 90vh;
+	z-index: 100002 !important; /* Higher than regular modal content */
+}
+
+.image-cropper-modal .modal-body {
+	padding: 20px;
+}
+
+.image-cropper-modal .crop-container {
+	margin-bottom: 20px;
+	display: flex;
+	justify-content: center;
+	max-height: 500px;
+	overflow: hidden;
+}
+
+.image-cropper-modal .crop-preview {
+	margin-top: 20px;
+	text-align: center;
+}
+
+.image-cropper-modal .crop-preview h4 {
+	margin-bottom: 10px;
+	color: #fff;
+}
+
+.image-cropper-modal .crop-preview-image {
+	max-width: 200px;
+	max-height: 200px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+}
+
+/* Background Manager Modal Overlay - Higher z-index to appear above other modals */
+.background-manager-overlay {
+	z-index: 100001 !important; /* Higher than regular modal overlays */
+}
+
+.background-manager-modal {
+	max-width: 600px;
+	width: 90%;
+	max-height: 80vh;
+	z-index: 100002 !important; /* Higher than regular modal content */
+}
+
+/* Responsive adjustments for Save As Modal */
+@media screen and (max-width: 768px) {
+	.save-as-modal {
+		width: 95%;
+		min-width: unset;
+	}
+}
+
+/* Edit Message Modal - Make it wider and more visible */
+.edit-message-modal {
+	max-width: 800px; /* Much wider than default */
+	width: 90%;
+	padding: 30px;
+}
+
+.edit-message-modal h3 {
+	margin-top: 0;
+	margin-bottom: 25px;
+	font-size: 1.3rem;
+	color: #fff;
+	text-align: center;
+}
+
+.edit-message-modal textarea {
+	width: 100%;
+	min-height: 200px; /* Taller textarea for better visibility */
+	max-height: 400px; /* Allow for larger content */
+	padding: 15px 20px;
+	background-color: rgba(40, 40, 40, 0.9);
+	border: 2px solid #555;
+	border-radius: 8px;
+	color: #fff;
+	font-size: 1rem;
+	line-height: 1.5;
+	font-family: inherit;
+	resize: vertical;
+	box-sizing: border-box;
+	transition: border-color 0.2s ease;
+}
+
+.edit-message-modal textarea:focus {
+	border-color: #646cff;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.edit-message-modal .form-group {
+	margin-bottom: 25px;
+}
+
+.edit-message-modal .modal-actions {
+	display: flex;
+	gap: 15px;
+	justify-content: flex-end;
+	margin-top: 25px;
+}
+
+.edit-message-modal .modal-actions button {
+	padding: 12px 24px;
+	border-radius: 6px;
+	border: none;
+	font-size: 1rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.edit-message-modal .cancel-button {
+	background-color: rgba(80, 80, 80, 0.8);
+	color: #fff;
+}
+
+.edit-message-modal .cancel-button:hover {
+	background-color: rgba(100, 100, 100, 0.9);
+}
+
+.edit-message-modal .save-button {
+	background-color: #646cff;
+	color: white;
+}
+
+.edit-message-modal .save-button:hover {
+	background-color: #5a5fd8;
+}
+
+/* Responsive adjustments for edit message modal */
+@media (max-width: 768px) {
+	.edit-message-modal {
+		width: 95%;
+		padding: 20px;
+		max-width: none;
+	}
+
+	.edit-message-modal textarea {
+		min-height: 150px;
+		padding: 12px 15px;
+		font-size: 0.95rem;
+	}
+
+	.edit-message-modal .modal-actions {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.edit-message-modal .modal-actions button {
+		width: 100%;
+		padding: 14px 20px;
+	}
+}
+
+/* New Chat Modal - Ensure it appears above chat input */
+.new-chat-modal-overlay {
+	z-index: 200000 !important; /* Much higher than chat input to ensure it's on top */
+}
+
+.new-chat-modal {
+	z-index: 200001 !important; /* Even higher than the overlay */
+}

@@ -1,124 +1,327 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import {
+	createContext,
+	useState,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useCallback,
+} from "react";
+import type React from "react";
+import type { ReactNode } from "react";
+import { storageManager } from "../utils/storageManager";
+import type { GrammarCorrectionMode } from "../types/grammarCorrection";
 
-interface UserPersona {
-  name: string;
-  description: string;
+export interface UserPersona {
+	name: string;
+	description: string;
 }
 
 // Available Gemini model options
 export const GEMINI_MODELS = {
-  FLASH_EXP: 'gemini-2.0-flash-exp',
-  FLASH_LITE: 'gemini-2.0-flash-lite',
-  FLASH_THINKING: 'gemini-2.0-flash-thinking-exp-01-21',
-  PRO_25_EXP: 'gemini-2.5-pro-exp-03-25',
+	FLASH_EXP: "gemini-2.5-flash",
+	FLASH_LITE: "gemini-2.0-flash-lite",
+	FLASH_THINKING: "gemini-2.0-flash-thinking-exp-01-21",
+	PRO_25_EXP: "gemini-2.5-pro-exp-03-25",
 };
 
 interface UserSettingsContextType {
-  apiKey: string;
-  setApiKey: (key: string) => void;
-  userPersona: UserPersona;
-  setUserPersona: (persona: UserPersona) => void;
-  isApiKeySet: boolean;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
-  temperature: number;
-  setTemperature: (temp: number) => void;
+	apiKey: string;
+	setApiKey: (key: string) => void;
+	huggingFaceApiKey: string;
+	setHuggingFaceApiKey: (key: string) => void;
+	userPersona: UserPersona;
+	setUserPersona: (persona: UserPersona) => void;
+	isApiKeySet: boolean;
+	selectedModel: string;
+	setSelectedModel: (model: string) => void;
+	temperature: number;
+	setTemperature: (temp: number) => void;
+	visualNovelMode: boolean;
+	setVisualNovelMode: (enabled: boolean) => void;
+	grammarCorrectionMode: GrammarCorrectionMode;
+	setGrammarCorrectionMode: (mode: GrammarCorrectionMode) => void;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
 
 export const useUserSettings = () => {
-  const context = useContext(UserSettingsContext);
-  if (!context) {
-    throw new Error('useUserSettings must be used within a UserSettingsProvider');
-  }
-  return context;
+	const context = useContext(UserSettingsContext);
+	if (!context) {
+		throw new Error(
+			"useUserSettings must be used within a UserSettingsProvider",
+		);
+	}
+	return context;
 };
 
 interface UserSettingsProviderProps {
-  children: ReactNode;
+	children: ReactNode;
 }
 
-export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ children }) => {
-  // Load stored API key and user persona from localStorage
-  const [apiKey, setApiKeyState] = useState<string>(() => {
-    const storedKey = localStorage.getItem('gengoTavern_apiKey');
-    return storedKey || '';
-  });
+export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({
+	children,
+}) => {
+	// State for settings - these will be loaded from storage
+	const [apiKey, setApiKeyState] = useState<string>("");
+	const [huggingFaceApiKey, setHuggingFaceApiKeyState] = useState<string>("");
+	const [userPersona, setUserPersonaState] = useState<UserPersona>({
+		name: "User",
+		description: "A friendly user chatting with characters.",
+	});
+	const [selectedModel, setSelectedModelState] = useState<string>(
+		GEMINI_MODELS.FLASH_EXP,
+	);
+	const [temperature, setTemperatureState] = useState<number>(1.5);
+	const [visualNovelMode, setVisualNovelModeState] = useState<boolean>(false);
+	const [grammarCorrectionMode, setGrammarCorrectionModeState] = useState<GrammarCorrectionMode>("off");
+	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  const [userPersona, setUserPersonaState] = useState<UserPersona>(() => {
-    const storedPersona = localStorage.getItem('gengoTavern_userPersona');
-    return storedPersona 
-      ? JSON.parse(storedPersona) 
-      : { name: 'User', description: 'A friendly user chatting with characters.' };
-  });
-  
-  // Load stored model choice from localStorage
-  const [selectedModel, setSelectedModelState] = useState<string>(() => {
-    const storedModel = localStorage.getItem('gengoTavern_selectedModel');
-    return storedModel || GEMINI_MODELS.FLASH_EXP; // Default to flash-thinking-exp model
-  });
-  
-  // Load stored temperature setting from localStorage
-  const [temperature, setTemperatureState] = useState<number>(() => {
-    const storedTemp = localStorage.getItem('gengoTavern_temperature');
-    return storedTemp ? parseFloat(storedTemp) : 1.5; // Default to 1.5 (creative)
-  });
+	// Use refs to always get current values without stale closures
+	const currentSettings = useRef({
+		apiKey: "",
+		huggingFaceApiKey: "",
+		userPersona: {
+			name: "User",
+			description: "A friendly user chatting with characters.",
+		},
+		selectedModel: GEMINI_MODELS.FLASH_EXP,
+		temperature: 1.5,
+		visualNovelMode: false,
+		grammarCorrectionMode: "off" as GrammarCorrectionMode,
+	});
 
-  // Update localStorage when apiKey changes
-  const setApiKey = (key: string) => {
-    setApiKeyState(key);
-    localStorage.setItem('gengoTavern_apiKey', key);
-  };
+	// Update refs whenever state changes
+	useEffect(() => {
+		currentSettings.current = {
+			apiKey,
+			huggingFaceApiKey,
+			userPersona,
+			selectedModel,
+			temperature,
+			visualNovelMode,
+			grammarCorrectionMode,
+		};
+	}, [
+		apiKey,
+		huggingFaceApiKey,
+		userPersona,
+		selectedModel,
+		temperature,
+		visualNovelMode,
+		grammarCorrectionMode,
+	]);
 
-  // Update localStorage when userPersona changes
-  const setUserPersona = (persona: UserPersona) => {
-    setUserPersonaState(persona);
-    localStorage.setItem('gengoTavern_userPersona', JSON.stringify(persona));
-  };
-  
-  // Update localStorage when selectedModel changes
-  const setSelectedModel = (model: string) => {
-    setSelectedModelState(model);
-    localStorage.setItem('gengoTavern_selectedModel', model);
-  };
-  
-  // Update localStorage when temperature changes
-  const setTemperature = (temp: number) => {
-    setTemperatureState(temp);
-    localStorage.setItem('gengoTavern_temperature', temp.toString());
-  };
+	// Unified save function that always uses current values
+	const saveCurrentSettings = useCallback(async () => {
+		try {
+			console.log("💾 Saving settings:", {
+				...currentSettings.current,
+				apiKey: "[HIDDEN]",
+				huggingFaceApiKey: currentSettings.current.huggingFaceApiKey
+					? "[HIDDEN]"
+					: "empty",
+			});
+			await storageManager.saveSettings(currentSettings.current);
+		} catch (error) {
+			console.error("❌ Error saving settings:", error);
+		}
+	}, []);
 
-  // Check if API key is set
-  const isApiKeySet = apiKey.length > 0;
+	// Load settings from storage on mount
+	useEffect(() => {
+		async function loadSettingsFromStorage() {
+			try {
+				// 1. Initialize storage manager
+				await storageManager.initialize();
 
-  const value = {
-    apiKey,
-    setApiKey,
-    userPersona,
-    setUserPersona,
-    isApiKeySet,
-    selectedModel,
-    setSelectedModel,
-    temperature,
-    setTemperature,
-  };
-  
-  // Make settings available globally for non-React components
-  useEffect(() => {
-    // Set global variable to access settings outside of React context
-    (window as any).__gengoTavernUserSettings = value;
-    
-    // Cleanup when unmounted
-    return () => {
-      delete (window as any).__gengoTavernUserSettings;
-    };
-  }, [apiKey, userPersona, isApiKeySet, selectedModel, temperature]);
+				// 2. Migrate any old localStorage data
+				await storageManager.migrateFromOldLocalStorage();
 
-  return (
-    <UserSettingsContext.Provider value={value}>
-      {children}
-    </UserSettingsContext.Provider>
-  );
+				// 3. Load settings from current storage
+				const settings = await storageManager.loadSettings();
+
+				// 4. Update state with loaded settings
+				setApiKeyState(settings.apiKey);
+				setHuggingFaceApiKeyState(settings.huggingFaceApiKey || "");
+				setUserPersonaState(settings.userPersona);
+				setSelectedModelState(settings.selectedModel);
+				setTemperatureState(settings.temperature);
+				setVisualNovelModeState(settings.visualNovelMode || false);
+				setGrammarCorrectionModeState(settings.grammarCorrectionMode || "off");
+
+				// 5. If new fields are missing from loaded settings, re-save to add them
+				if (
+					(!settings.huggingFaceApiKey ||
+						settings.visualNovelMode === undefined ||
+						settings.grammarCorrectionMode === undefined) &&
+					Object.keys(settings).length > 1
+				) {
+					console.log("🔄 Adding missing fields to existing settings");
+					const updatedSettings = {
+						...settings,
+						huggingFaceApiKey: settings.huggingFaceApiKey || "",
+						visualNovelMode: settings.visualNovelMode || false,
+						grammarCorrectionMode: settings.grammarCorrectionMode || ("off" as GrammarCorrectionMode),
+					};
+					await storageManager.saveSettings(updatedSettings);
+				}
+
+				setIsLoaded(true);
+				console.log("✅ User settings loaded from storage");
+			} catch (error) {
+				console.error("❌ Error loading settings:", error);
+				// Keep default values if loading fails
+				setIsLoaded(true);
+			}
+		}
+
+		loadSettingsFromStorage();
+	}, []);
+
+	// Setting update functions with useCallback for stable references
+	const setApiKey = useCallback(
+		(key: string) => {
+			console.log("🔑 Setting API key:", key ? "[HIDDEN]" : "empty");
+			setApiKeyState(key);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setHuggingFaceApiKey = useCallback(
+		(key: string) => {
+			console.log(
+				"🤗 Setting HuggingFace API key:",
+				key ? "[HIDDEN]" : "empty",
+			);
+			setHuggingFaceApiKeyState(key);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setUserPersona = useCallback(
+		(persona: UserPersona) => {
+			console.log("👤 Setting user persona:", persona.name);
+			setUserPersonaState(persona);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setSelectedModel = useCallback(
+		(model: string) => {
+			console.log("🤖 Setting selected model:", model);
+			setSelectedModelState(model);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setTemperature = useCallback(
+		(temp: number) => {
+			console.log("🌡️ Setting temperature:", temp);
+			setTemperatureState(temp);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setVisualNovelMode = useCallback(
+		(enabled: boolean) => {
+			console.log(
+				"📚 Setting Visual Novel Mode:",
+				enabled ? "enabled" : "disabled",
+			);
+			setVisualNovelModeState(enabled);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	const setGrammarCorrectionMode = useCallback(
+		(mode: GrammarCorrectionMode) => {
+			console.log("✏️ Setting Grammar Correction Mode:", mode);
+			setGrammarCorrectionModeState(mode);
+			// Save after state update in next tick
+			setTimeout(saveCurrentSettings, 0);
+		},
+		[saveCurrentSettings],
+	);
+
+	// Compute derived state
+	const isApiKeySet = useMemo(() => apiKey.trim().length > 0, [apiKey]);
+
+	// Expose the context value
+	const contextValue = useMemo(
+		() => ({
+			apiKey,
+			setApiKey,
+			huggingFaceApiKey,
+			setHuggingFaceApiKey,
+			userPersona,
+			setUserPersona,
+			isApiKeySet,
+			selectedModel,
+			setSelectedModel,
+			temperature,
+			setTemperature,
+			visualNovelMode,
+			setVisualNovelMode,
+			grammarCorrectionMode,
+			setGrammarCorrectionMode,
+		}),
+		[
+			apiKey,
+			setApiKey,
+			huggingFaceApiKey,
+			setHuggingFaceApiKey,
+			userPersona,
+			setUserPersona,
+			isApiKeySet,
+			selectedModel,
+			setSelectedModel,
+			temperature,
+			setTemperature,
+			visualNovelMode,
+			setVisualNovelMode,
+			grammarCorrectionMode,
+			setGrammarCorrectionMode,
+		],
+	);
+
+	// Make settings available globally for components that can't use context
+	useEffect(() => {
+		if (isLoaded) {
+			(globalThis as Record<string, unknown>).__gengoTavernUserSettings = {
+				apiKey,
+				huggingFaceApiKey,
+				userPersona,
+				selectedModel,
+				temperature,
+				visualNovelMode,
+			};
+		}
+	}, [
+		isLoaded,
+		apiKey,
+		huggingFaceApiKey,
+		userPersona,
+		selectedModel,
+		temperature,
+		visualNovelMode,
+	]);
+
+	return (
+		<UserSettingsContext.Provider value={contextValue}>
+			{children}
+		</UserSettingsContext.Provider>
+	);
 };
