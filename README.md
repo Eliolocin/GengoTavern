@@ -2,13 +2,13 @@
 <br />
 <div align="center">
   <a href="https://github.com/Eliolocin/GengoTavern">
-    <img src="img/gticon.png" alt="Logo" width="80" height="80">
+    <img src="img/gt_icon.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">GengoTavern</h3>
 
   <p align="center">
-    A modern AI-powered chat application for language learning and character roleplay
+    SillyTavern-inspired chat application for language learning and user-friendly roleplaying with AI chatbots
     <br />
     <a href="https://github.com/Eliolocin/GengoTavern"><strong>Explore the docs »</strong></a>
     <br />
@@ -19,7 +19,6 @@
   </p>
 </div>
 
-![GengoTavern Interface](img/gt_screenshot.png)
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -53,20 +52,38 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-GengoTavern is a sophisticated chat application that enables users to create and interact with AI-powered characters for language learning and roleplay. Designed as a language learning-focused derivative of SillyTavern, it provides an intuitive interface for practicing conversation with customizable AI companions while offering advanced features like grammar correction, visual novel modes, and group chats.
+GengoTavern is a simple ~~vibe-coded~~ chat application that enables users to create and interact with AI-powered characters for roleplay. Designed as a language learning-focused derivative of SillyTavern, it provides an intuitive interface for practicing conversation with customizable chatbots while offering features like grammar correction, visual novel modes, and group chats.
 
 ### Key Features
 
-* 🤖 **AI-Powered Conversations**: Advanced chat functionality using Google Gemini models
+* 🤖 **AI-Powered Conversations**: Chat functionality using Google Gemini models
 * 🎭 **Character Creation**: Create custom AI personas with unique traits, descriptions, and sample dialogues
-* 🎨 **Visual Novel Mode**: Immersive visual novel-style interface with character sprites and emotion detection
+* 🎨 **Visual Novel Mode**: Visual novel-style interface mode with character sprites and emotion detection
 * 👥 **Group Chats**: Multi-character conversations with probability-based response systems
 * 🖼️ **Image-to-Text Generator**: Auto-generate character profiles from reference images using AI
-* 📚 **Language Learning Tools**: Implicit grammar correction with conversational recasts and narrative suggestions
+* 📚 **Language Learning Tools**: (WIP) Implicit grammar correction with conversational recasts and narrative suggestions
 * 💾 **Advanced Storage**: Dual storage strategy supporting File System Access API and localStorage fallback
 * 📤 **Import/Export**: Share characters as PNG files with embedded metadata
 * 😊 **Emotion Detection**: Multilingual sentiment analysis for dynamic sprite changes
-* 🎮 **Responsive UI**: Mobile-friendly interface with collapsible panels
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- SCREENSHOTS -->
+## Screenshots
+
+### Standard Chat Interface & Implicit Correction
+![GengoTavern Chat Interface](img/gt_screenshot.png)
+*Standard chat interface with character selection, customization panels, and conversation history*
+
+### Visual Novel Mode & Group Chats
+![GengoTavern Visual Novel Mode](img/gt_vn.png)
+*Visual novel mode with character sprites and emotion-based presentation*
+
+### Image-to-Text Generation
+![GengoTavern Character Image Upload](img/gt_ttc1.jpeg)
+![GengoTavern Character Image Results](img/gt_ttc2.jpeg)
+*Easily create new characters compatible with GengoTavern by uploading pictures and extra instructions*
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -76,7 +93,6 @@ GengoTavern is a sophisticated chat application that enables users to create and
 * [![React][React.js]][React-url]
 * [![Vite][Vite.js]][Vite-url]
 * [![Bun][Bun.sh]][Bun-url]
-* [![Google AI][Google.ai]][Google-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -218,18 +234,6 @@ Choose from three correction modes:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- SCREENSHOTS -->
-## Screenshots
-
-### Standard Chat Interface
-![GengoTavern Chat Interface](img/gt_screenshot.png)
-*Standard chat interface with character selection, customization panels, and conversation history*
-
-### Visual Novel Mode
-![GengoTavern Visual Novel Mode](img/gt_vn.png)
-*Immersive visual novel mode with character sprites and emotion-based presentation*
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -254,7 +258,7 @@ See the [open issues](https://github.com/Eliolocin/GengoTavern/issues) for a ful
 <!-- CONTRIBUTING -->
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Any contributions made are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 
@@ -269,7 +273,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the GPL License. See `LICENSE` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -277,7 +281,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## Contact
 
 - Join the [Discord Server](https://discord.gg/whT3mRNAGs) for instant support regarding usage and bugs
-- Visit the [GitHub Repository](https://github.com/Eliolocin/GengoTavern/releases) for updates on new versions
 - Contact head developer [@bredrumb](https://telegram.me/bredrumb) directly on Telegram
 
 Project Link: [https://github.com/Eliolocin/GengoTavern](https://github.com/Eliolocin/GengoTavern)
