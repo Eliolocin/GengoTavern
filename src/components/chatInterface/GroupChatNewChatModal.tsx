@@ -17,6 +17,7 @@ interface GroupChatNewChatModalProps {
 		background: string,
 	) => void;
 	onCancel: () => void;
+	isCreatingChat?: boolean;
 }
 
 const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
@@ -24,6 +25,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 	allCharacters,
 	onSave,
 	onCancel,
+	isCreatingChat = false,
 }) => {
 	const [chatName, setChatName] = useState("New Group Chat");
 	const [scenario, setScenario] = useState("");
@@ -90,6 +92,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 		};
 	}, [background, backgroundPreview]);
 
+
 	// Initialize greetings with defaults only once when memberCharacters are available
 	useEffect(() => {
 		if (memberCharacters.length > 0 && !greetingsInitialized.current) {
@@ -103,7 +106,8 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 	}, [memberCharacters]); // Only run when memberCharacters change and not yet initialized
 
 	// Handle scenario source selection
-	const handleScenarioSourceChange = (characterId: number | null) => {
+	const handleScenarioSourceChange = (characterId: number | null, e?: React.ChangeEvent<HTMLInputElement>) => {
+		if (e) e.preventDefault();
 		setSelectedScenarioSource(characterId);
 		if (characterId === null) {
 			setScenario("");
@@ -121,7 +125,8 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 	};
 
 	// Handle background source selection
-	const handleBackgroundSourceChange = (characterId: number | null) => {
+	const handleBackgroundSourceChange = (characterId: number | null, e?: React.ChangeEvent<HTMLInputElement>) => {
+		if (e) e.preventDefault();
 		setSelectedBackgroundSource(characterId);
 		if (characterId === null) {
 			setBackground("");
@@ -165,10 +170,13 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
+		// Prevent submission during loading
+		if (isCreatingChat) return;
+
 		if (validateForm()) {
 			// Convert greetings to GroupGreeting format
 			const groupGreetings: GroupGreeting[] = Object.entries(greetings)
-				.filter(([_characterId, greeting]) => greeting.trim() !== "")
+				.filter(([, greeting]) => greeting.trim() !== "")
 				.map(([characterId, greeting]) => ({
 					characterId: Number(characterId),
 					greeting: greeting.trim()
@@ -202,6 +210,8 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 			)}
 			<div
 				className="modal-content new-chat-modal"
+				onClick={(e) => e.stopPropagation()}
+				onKeyDown={(e) => e.stopPropagation()}
 				role="document"
 			>
 				<h3>Create New Group Chat</h3>
@@ -226,7 +236,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 									type="radio"
 									name="scenario-source"
 									checked={selectedScenarioSource === null}
-									onChange={() => handleScenarioSourceChange(null)}
+									onChange={(e) => handleScenarioSourceChange(null, e)}
 								/>
 								Custom scenario
 							</label>
@@ -237,7 +247,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 											type="radio"
 											name="scenario-source"
 											checked={selectedScenarioSource === character.id}
-											onChange={() => handleScenarioSourceChange(character.id)}
+											onChange={(e) => handleScenarioSourceChange(character.id, e)}
 										/>
 										Use {character.name}'s default
 									</label>
@@ -294,7 +304,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 									type="radio"
 									name="background-source"
 									checked={selectedBackgroundSource === null}
-									onChange={() => handleBackgroundSourceChange(null)}
+									onChange={(e) => handleBackgroundSourceChange(null, e)}
 								/>
 								Custom background
 							</label>
@@ -305,7 +315,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 											type="radio"
 											name="background-source"
 											checked={selectedBackgroundSource === character.id}
-											onChange={() => handleBackgroundSourceChange(character.id)}
+											onChange={(e) => handleBackgroundSourceChange(character.id, e)}
 										/>
 										Use {character.name}'s default
 									</label>
@@ -322,7 +332,11 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 						<button
 							type="button"
 							className="primary-button"
-							onClick={() => setIsBgManagerOpen(true)}
+							onClick={(e) => {
+								e.preventDefault();
+								if (isCreatingChat) return;
+								setIsBgManagerOpen(true);
+							}}
 							disabled={selectedBackgroundSource !== null}
 						>
 							Select Background
@@ -331,7 +345,9 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 							<button
 								type="button"
 								className="secondary-button"
-								onClick={() => {
+								onClick={(e) => {
+									e.preventDefault();
+									if (isCreatingChat) return;
 									setBackground("");
 									setSelectedBackgroundSource(null);
 								}}
@@ -346,11 +362,29 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 					)}
 
 					<div className="modal-actions">
-						<button type="button" className="cancel-button" onClick={onCancel}>
+						<button 
+							type="button" 
+							className={`cancel-button ${isCreatingChat ? 'loading' : ''}`}
+							onClick={(e) => {
+								e.preventDefault();
+								if (isCreatingChat) return;
+								onCancel();
+							}}
+						>
 							Cancel
 						</button>
-						<button type="submit" className="save-button">
-							Create Group Chat
+						<button 
+							type="submit" 
+							className={`save-button ${isCreatingChat ? 'loading' : ''}`}
+						>
+							{isCreatingChat ? (
+								<div className="loading-text">
+									<div className="loading-spinner"></div>
+									Creating Group Chat...
+								</div>
+							) : (
+								"Create Group Chat"
+							)}
 						</button>
 					</div>
 				</form>

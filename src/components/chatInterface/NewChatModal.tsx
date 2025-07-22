@@ -15,12 +15,14 @@ interface NewChatModalProps {
 		background: string,
 	) => void;
 	onCancel: () => void;
+	isCreatingChat?: boolean;
 }
 
 const NewChatModal: React.FC<NewChatModalProps> = ({
 	character,
 	onSave,
 	onCancel,
+	isCreatingChat = false,
 }) => {
 	const [chatName, setChatName] = useState("New Chat");
 	const [scenario, setScenario] = useState(character.defaultScenario || "");
@@ -236,11 +238,27 @@ const NewChatModal: React.FC<NewChatModalProps> = ({
 					)}
 
 					<div className="modal-actions">
-						<button type="button" className="cancel-button" onClick={onCancel}>
+						<button 
+							type="button" 
+							className="cancel-button" 
+							onClick={onCancel}
+							disabled={isCreatingChat}
+						>
 							Cancel
 						</button>
-						<button type="submit" className="save-button">
-							Create Chat
+						<button 
+							type="submit" 
+							className="save-button"
+							disabled={isCreatingChat}
+						>
+							{isCreatingChat ? (
+								<div className="loading-text">
+									<div className="loading-spinner"></div>
+									Creating Chat...
+								</div>
+							) : (
+								"Create Chat"
+							)}
 						</button>
 					</div>
 				</form>

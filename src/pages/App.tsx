@@ -132,6 +132,10 @@ const AppContent: React.FC = () => {
 		useState<boolean>(false);
 	const [showImageToTextModal, setShowImageToTextModal] =
 		useState<boolean>(false);
+	const [isCreatingIndividualChat, setIsCreatingIndividualChat] =
+		useState<boolean>(false);
+	const [isCreatingGroupChat, setIsCreatingGroupChat] =
+		useState<boolean>(false);
 	const [showGroupChatCreationModal, setShowGroupChatCreationModal] =
 		useState<boolean>(false);
 	const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -246,6 +250,7 @@ const AppContent: React.FC = () => {
 	) => {
 		if (!selectedCharacter) return;
 
+		setIsCreatingIndividualChat(true);
 		try {
 			const newChatId = Date.now();
 			const messages: Message[] = [];
@@ -310,6 +315,8 @@ const AppContent: React.FC = () => {
 			setActiveMessages(messages);
 		} catch (err) {
 			setLocalError(`Failed to create new chat: ${err}`);
+		} finally {
+			setIsCreatingIndividualChat(false);
 		}
 	};
 
@@ -321,6 +328,7 @@ const AppContent: React.FC = () => {
 	) => {
 		if (!selectedCharacter || !isGroupChat(selectedCharacter)) return;
 
+		setIsCreatingGroupChat(true);
 		try {
 			const newChatId = Date.now();
 			const messages: Message[] = [];
@@ -397,6 +405,8 @@ const AppContent: React.FC = () => {
 			setActiveMessages(messages);
 		} catch (err) {
 			setLocalError(`Failed to create new group chat: ${err}`);
+		} finally {
+			setIsCreatingGroupChat(false);
 		}
 	};
 
@@ -2220,6 +2230,8 @@ const AppContent: React.FC = () => {
 					activeChatId={activeChatId}
 					setShowHelpModal={setShowHelpModal}
 					allCharacters={characters}
+					isCreatingIndividualChat={isCreatingIndividualChat}
+					isCreatingGroupChat={isCreatingGroupChat}
 				/>
 
 				{selectedCharacter && selectedCharacter.chats.length === 0 ? (

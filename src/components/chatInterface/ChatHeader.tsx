@@ -15,13 +15,15 @@ interface ChatHeaderProps {
 		scenario: string,
 		greeting: string,
 		background: string,
-	) => void;
+	) => Promise<void>;
 	onNewGroupChat?: (
 		chatName: string,
 		scenario: string,
 		greetings: GroupGreeting[],
 		background: string,
-	) => void;
+	) => Promise<void>;
+	isCreatingIndividualChat?: boolean;
+	isCreatingGroupChat?: boolean;
 	onEditChat: (
 		chatId: number,
 		chatName: string,
@@ -45,6 +47,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 	activeChatId,
 	setShowHelpModal,
 	allCharacters = [],
+	isCreatingIndividualChat = false,
+	isCreatingGroupChat = false,
 }) => {
 	const {
 		apiKey,
@@ -118,6 +122,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 					onEditChat={onEditChat}
 					onDeleteChat={onDeleteChat}
 					allCharacters={allCharacters}
+					isCreatingIndividualChat={isCreatingIndividualChat}
+					isCreatingGroupChat={isCreatingGroupChat}
 				/>
 			)}
 
