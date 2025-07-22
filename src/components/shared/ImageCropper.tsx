@@ -109,9 +109,6 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 		if (!imgRef.current || !completedCrop || !originalImageDimensions) return;
 
 		const canvas = document.createElement("canvas");
-		// @ts-ignore - Will be used in future implementations
-		const image = imgRef.current;
-
 		// Use the original dimensions instead of the displayed dimensions
 		const scaleX = originalImageDimensions.width / 100;
 		const scaleY = originalImageDimensions.height / 100;
@@ -161,10 +158,10 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 	/**
 	 * Handle backdrop click to close modal
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onCancel();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onCancel();
+		// }
 	};
 
 	/**

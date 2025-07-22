@@ -6,7 +6,7 @@ import type { Character } from '../types/interfaces';
 export async function saveCharacterAsJson(character: Character): Promise<void> {
   try {
     // Create a clone of character data (without circular references)
-    const { originalFilename, ...characterData } = character;
+    const { originalFilename: _originalFilename, ...characterData } = character;
     
     // Convert character to formatted JSON string
     const jsonString = JSON.stringify(characterData, null, 2);

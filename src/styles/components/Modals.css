@@ -1602,14 +1602,14 @@
 
 /* Background Manager Modal Overlay - Higher z-index to appear above other modals */
 .background-manager-overlay {
-	z-index: 100001 !important; /* Higher than regular modal overlays */
+	z-index: 300000 !important; /* Much higher to appear above all other modals */
 }
 
 .background-manager-modal {
 	max-width: 600px;
 	width: 90%;
 	max-height: 80vh;
-	z-index: 100002 !important; /* Higher than regular modal content */
+	z-index: 300001 !important; /* Much higher to appear above all other modals */
 }
 
 /* Responsive adjustments for Save As Modal */

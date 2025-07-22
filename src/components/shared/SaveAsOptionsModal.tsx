@@ -25,8 +25,8 @@ const SaveAsOptionsModal: React.FC<SaveAsOptionsModalProps> = ({
   }, [onCancel]);
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal-content save-as-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop">
+      <div className="modal-content save-as-modal">
         <div className="modal-header">
           <h3>Save Character as PNG</h3>
           <button className="close-button" onClick={onCancel}>×</button>

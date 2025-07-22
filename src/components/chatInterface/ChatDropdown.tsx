@@ -12,11 +12,13 @@ interface ChatDropdownProps {
   selectedCharacter: Character | null;
   activeChatId: number | null;
   onSelectChat: (chatId: number) => void;
-  onNewChat: (chatName: string, scenario: string, greeting: string, background: string) => void;
-  onNewGroupChat?: (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => void;
+  onNewChat: (chatName: string, scenario: string, greeting: string, background: string) => Promise<void>;
+  onNewGroupChat?: (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => Promise<void>;
   onEditChat: (chatId: number, chatName: string, scenario: string, background: string) => void;
   onDeleteChat: (chatId: number) => void;
   allCharacters?: Character[];
+  isCreatingIndividualChat?: boolean;
+  isCreatingGroupChat?: boolean;
 }
 
 const ChatDropdown: React.FC<ChatDropdownProps> = ({
@@ -27,7 +29,9 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   onNewGroupChat,
   onEditChat,
   onDeleteChat,
-  allCharacters = []
+  allCharacters = [],
+  isCreatingIndividualChat = false,
+  isCreatingGroupChat = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -104,14 +108,14 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
     }
   };
 
-  const handleNewSubmit = (chatName: string, scenario: string, greeting: string, background: string) => {
-    onNewChat(chatName, scenario, greeting, background);
+  const handleNewSubmit = async (chatName: string, scenario: string, greeting: string, background: string) => {
+    await onNewChat(chatName, scenario, greeting, background);
     setShowNewModal(false);
   };
 
-  const handleNewGroupSubmit = (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => {
+  const handleNewGroupSubmit = async (chatName: string, scenario: string, greetings: GroupGreeting[], background: string) => {
     if (onNewGroupChat) {
-      onNewGroupChat(chatName, scenario, greetings, background);
+      await onNewGroupChat(chatName, scenario, greetings, background);
     }
     setShowNewModal(false);
   };
@@ -209,12 +213,14 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
             allCharacters={allCharacters}
             onSave={handleNewGroupSubmit}
             onCancel={() => setShowNewModal(false)}
+            isCreatingChat={isCreatingGroupChat}
           />
         ) : (
           <NewChatModal
             character={selectedCharacter}
             onSave={handleNewSubmit}
             onCancel={() => setShowNewModal(false)}
+            isCreatingChat={isCreatingIndividualChat}
           />
         )
       )}

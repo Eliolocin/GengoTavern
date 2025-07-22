@@ -16,7 +16,6 @@ async function getRootDirHandle(): Promise<FileSystemDirectoryHandle> {
 
 	try {
 		// Request permission to access the file system
-		// @ts-ignore - FileSystemAccess API might not be recognized
 		rootDirHandle = await window.showDirectoryPicker({
 			id: "gengoTavernRoot",
 			mode: "readwrite",
@@ -222,7 +221,6 @@ export async function loadAllCharacters(): Promise<Character[]> {
 		const dirHandle = await getCharactersDirHandle();
 		const characters: Character[] = [];
 
-		// @ts-ignore - Typescript doesn't recognize entries() yet
 		for await (const [filename, fileHandle] of dirHandle.entries()) {
 			if (
 				fileHandle.kind === "file" &&

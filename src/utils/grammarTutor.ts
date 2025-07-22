@@ -13,6 +13,25 @@ import type {
 	TutorResponse,
 } from "../types/grammarCorrection";
 import type { Character, Chat } from "../types/interfaces";
+import type { UserSettingsContextType } from "../contexts/UserSettingsContext";
+
+// Extend Window interface for global user settings
+declare global {
+	interface Window {
+		__gengoTavernUserSettings?: UserSettingsContextType;
+	}
+}
+
+// Helper function to safely extract error message
+function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message;
+	}
+	if (typeof error === "string") {
+		return error;
+	}
+	return "Unknown error";
+}
 import { replaceNamePlaceholders } from "./promptBuilder";
 
 /**
@@ -88,7 +107,7 @@ function buildTutorResponseSchema(mode: GrammarCorrectionMode) {
 
 	// Add roleplay_mistakes only for narrative mode
 	if (mode === "narrative") {
-		(baseSchema.properties as any).roleplay_mistakes = {
+		(baseSchema.properties as Record<string, unknown>).roleplay_mistakes = {
 			type: "array",
 			description:
 				"Array of roleplay mistake types found (narrative mode only)",
@@ -187,53 +206,55 @@ Roleplay Mistake Types:
 
 	if (mode === "implicit") {
 		// Add mode-specific instructions
-		prompt += `Mode: Implicit Feedback
+		prompt += `Mode: Conversational Recast
 Instructions:
-- If you find grammar mistakes, provide a natural conversational recast
-- The recast should feel like a natural response that subtly demonstrates correct usage
-- As seen in the examples below, you incorporate corrections as a friendly, engaging reply that doesn't explicitly call out errors
+- If you find grammar mistakes, provide a natural conversational recast in the SAME language as the user's message
+- The recast should feel like a natural response that subtly demonstrates correct usage through conversation
+- Incorporate corrections as a friendly, engaging reply that doesn't explicitly call out errors
 - Make sure to incorporate a "corrected" version of the user's message into your response as a form of implicit feedback
 - Examples:
-  - original_text: "I likes tea"
-    system_message: ""I *like* tea" Me too! They're really refreshing."
-  - original_text: "She go to school every day." 
-    system_message: "Ah, she *goes* every day? That’s some real dedication!"
-  - original_text: "He is there yesterday."
-    system_message: "Ohh, he *was* there yesterday too? What a coincidence~"
-  - original_text: "He don't understand." 
-    system_message: "He *doesn’t* understand, huh? Poor guy..."
-  - original_text: "I can plays the piano."
-    system_message: ""I can *play* the piano"? That’s amazing!"
+    - original_text: "I likes tea"
+      system_message: ""I *like* tea too! They're really refreshing."
+    - original_text: "She go to school every day." 
+      system_message: "Ah, she *goes* every day? That's some real dedication!"
+    - original_text: "He is there yesterday."
+      system_message: "Ohh, he *was* there yesterday too? What a coincidence~"
+    - original_text: "私は茶を好きです"
+      system_message: "私も茶*が*好きです！とても美味しいですよね。"
+    - original_text: "彼は昨日そこにいます"
+      system_message: "ああ、彼は昨日もそこに*いました*か？偶然ですね～"
+    - original_text: "Yo puedo tocar el piano"
+      system_message: "¿*Sabes tocar* el piano? ¡Qué increíble!"
 - Be encouraging and conversational, never explicitly mention corrections
+- Always respond in the SAME language as the user's original message for full immersion
 - If no mistakes are found, leave system_message empty
 `;
 		prompt += grammarMistakeDescriptions;
 	} else if (mode === "narrative") {
 		prompt += `Mode: Narrative Suggestion  
 Instructions:
-- Check for both grammar mistakes AND roleplay quality issues
+- Check for both grammar mistakes AND roleplay quality issues in the USER'S message only
 - If mistakes are found, suggest an improved version without explicitly calling out errors, cleverly frame it as a creative writing tip
-- Frame suggestions as creative writing tips, not corrections
+- Frame suggestions as creative writing tips that help the USER improve their roleplay
+- Provide explanations and coaching in English, but show corrected text examples in the user's original language
 - Examples:
-  - original_text: "She don't know I am here *whispering quietly*"
-    system_message: "How about: 'She doesn’t know I’m here... *I whisper quietly, glancing over my shoulder.*' That would let ${character?.name || "the character"} respond with more tension!"
-  - original_text: "*smile* I am happy because she give me flower"
-    system_message: "Maybe try: '*I smile softly.* I’m happy because she gave me a flower.' That way, your mood comes across clearly—and gives ${character?.name || "the character"} room to react warmly."
-  - original_text: "They was walking into cave. *eyes open wide*"
-    system_message: "What if you wrote: 'They were walking into the cave. *My eyes open wide as I follow behind.*' This adds suspense and gives ${character?.name || "the character"} something eerie to build on."
-  - original_text: "*glares furiously* I'm so happy right now!"
-    system_message: "That might confuse ${character?.name || "the character"}! What about: '*She glares furiously.* You ruined everything... I trusted you.' This keeps your emotion and builds drama."
-  - original_text: "We fight the demon then I say hi to princess"
-    system_message: "How about: 'After slaying the demon, I bow before the princess with a grin. “Hello again.”' That might help ${character?.name || "the character"} stay in the scene’s rhythm!"
-  - original_text: "You is ugly!"
-    system_message: "If your character is supposed to be shy, maybe they'd say something more timid like 'Y-you're... um... not very nice...' Or maybe ${userPersona?.name || userName || "the user"} would be too shy to say anything at all?"
-  - original_text: "I want books now please give me it"
-    system_message: "How about: 'U-um... d-do you have any books about legends? I-I'd really like to read one...' That could sound more like someone shy like ${userPersona?.name || userName || "the user"}!"
-  - original_text: "*grabs sword* Let's kill them all!!"
-    system_message: "If you're playing a calm or pacifist character, maybe try: '*She hesitates, hand brushing over the hilt.* There's got to be another way...' That fits the tone better and gives ${character?.name || "the character"} a meaningful choice."
-
-- Focus on making the interaction more engaging and character-appropriate
-- If no mistakes are found, leave system_message empty
+    - original_text: "She don't know I am here *whispering quietly*"
+      system_message: "How about: 'She doesn't know I'm here... *I whisper quietly, glancing over my shoulder.*' That would add more tension to your scene!"
+    - original_text: "*smile* I am happy because she give me flower"
+      system_message: "Maybe try: '*I smile softly.* I'm happy because she gave me a flower.' That way, your emotions come across more clearly!"
+    - original_text: "私は彼女が花をくれたので嬉しいです *笑う*" (unnatural phrasing)
+      system_message: "How about: '私は*そっと微笑む* 彼女が花をくれて、とても嬉しい。' That would make your emotions feel more natural and vivid!"
+    - original_text: "Estoy feliz porque ella me da flor *sonriendo*" (wrong tense)
+      system_message: "What if you tried: '*Sonrío suavemente.* Estoy feliz porque ella me *dio* una flor.' That would make your emotion feel more authentic!"
+    - original_text: "You is ugly!" (user playing as shy character)
+      system_message: "If you're playing a shy character, maybe they'd say something more timid like 'Y-you're... um... not very nice...' That would fit your character better!"
+    - original_text: "I want books now please give me it"
+      system_message: "How about: 'U-um... do you have any books about legends? I-I'd really like to read one...' That sounds more natural for your character!"
+    - original_text: "*grabs sword aggressively* Let's kill them all!!" (user defined as calm/pacifist)
+      system_message: "If you're playing a calm character, maybe try: '*I hesitate, hand brushing over the hilt.* There's got to be another way...' That would match your character's personality better!"
+- Focus on helping the USER create more engaging and character-appropriate responses
+- Never suggest changes to what the character (AI) should say or do - only focus on improving the user's input, both grammatically and roleplay-wise
+- Keep coaching and explanations in English for clarity, but show corrected examples in the user's target language
 - Always consider ${userPersona?.name || userName || "the user"}'s defined persona ${userPersona?.description ? ` (${userPersona.description})` : " (e.g., shy, formal, flirty)"} and suggest corrections for their actions if it is out of their character.
 `;
 
@@ -281,7 +302,7 @@ export async function callTutorLLM(
 	}
 
 	// Get user settings (reuse existing pattern from geminiAPI.ts)
-	const userSettings = (window as any).__gengoTavernUserSettings;
+	const userSettings = window.__gengoTavernUserSettings;
 
 	// Check if API key is set
 	if (!userSettings || !userSettings.apiKey) {
@@ -309,7 +330,7 @@ export async function callTutorLLM(
 			topP: 0.9,
 			maxOutputTokens: 8192, // Smaller limit for structured responses
 			responseMimeType: "application/json",
-			responseSchema: responseSchema as any, // TypeScript workaround for complex schemas
+			responseSchema: responseSchema as unknown, // TypeScript workaround for complex schemas
 		};
 
 		// Build the tutor prompt
@@ -410,8 +431,8 @@ export async function callTutorLLM(
 					errorType: "INVALID_JSON",
 				};
 			}
-		} catch (apiError: any) {
-			const errorMessage = apiError.message || "Unknown API error";
+		} catch (apiError: unknown) {
+			const errorMessage = getErrorMessage(apiError);
 
 			// Handle specific API errors (similar to main geminiAPI.ts)
 			if (errorMessage.includes("timed out")) {
