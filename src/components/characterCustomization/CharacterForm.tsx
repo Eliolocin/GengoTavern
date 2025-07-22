@@ -111,7 +111,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
 				URL.revokeObjectURL(backgroundPreviewUrl);
 			}
 		};
-	}, [character.defaultBackground]);
+	}, [character.defaultBackground, backgroundPreviewUrl]);
 
 	// Load sprite images when component mounts or sprites change
 	useEffect(() => {
@@ -391,7 +391,7 @@ const CharacterForm: FC<CharacterFormProps> = ({
 		}
 	};
 
-	// @ts-ignore Used to export as Json for debugging
+	// @ts-expect-error Used to export as Json for debugging
 	const handleSaveAsJson = async () => {
 		try {
 			await exportCharacterAsJson(character);

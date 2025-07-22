@@ -25,7 +25,7 @@ export const GEMINI_MODELS = {
 	PRO_25_EXP: "gemini-2.5-pro-exp-03-25",
 };
 
-interface UserSettingsContextType {
+export interface UserSettingsContextType {
 	apiKey: string;
 	setApiKey: (key: string) => void;
 	huggingFaceApiKey: string;

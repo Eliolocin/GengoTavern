@@ -77,7 +77,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 					message: "API key is invalid or has insufficient permissions",
 				});
 			}
-		} catch (error) {
+		} catch (_error) {
 			setHfKeyValidation({
 				status: "invalid",
 				message: "Error testing API key - please check your connection",

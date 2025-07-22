@@ -69,7 +69,7 @@ const EditChatModal: React.FC<EditChatModalProps> = ({
 				URL.revokeObjectURL(backgroundPreview);
 			}
 		};
-	}, [background]);
+	}, [background, backgroundPreview]);
 
 	const handleSelectBackground = (filename: string) => {
 		setBackground(filename);

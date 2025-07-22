@@ -37,7 +37,6 @@ const ChatMessages: FC<ChatMessagesProps> = ({
 	character,
 	background,
 	onRegenerateMessage,
-	// @ts-ignore - onContinueMessage will be used in future implementation
 	onContinueMessage, // Keep this prop for future use
 	onDeleteErrorMessage,
 	onEditMessage,

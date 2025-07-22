@@ -1,5 +1,13 @@
 import type { Character, Chat } from '../types/interfaces';
 import { isGroupChat, getOrderedGroupMembers } from './groupChatUtils';
+import type { UserSettingsContextType } from '../contexts/UserSettingsContext';
+
+// Extend Window interface for global user settings
+declare global {
+	interface Window {
+		__gengoTavernUserSettings?: UserSettingsContextType;
+	}
+}
 
 export interface PromptSettings {
   temperature?: number; // Controls randomness (0.0-2.0)
@@ -50,7 +58,7 @@ function buildIndividualPrompt(
   let prompt = '';
   
   // Get user settings including temperature
-  const userSettings = (window as any).__gengoTavernUserSettings;
+  const userSettings = window.__gengoTavernUserSettings;
   const userPersona = userSettings?.userPersona || { 
     name: userName, 
     description: 'A friendly user who wants to chat with you.' 
@@ -120,7 +128,7 @@ function buildGroupChatPrompt(
   let prompt = '';
   
   // Get user settings including temperature
-  const userSettings = (window as any).__gengoTavernUserSettings;
+  const userSettings = window.__gengoTavernUserSettings;
   const userPersona = userSettings?.userPersona || { 
     name: userName, 
     description: 'A friendly user who wants to chat with you.' 

@@ -149,7 +149,6 @@ export class StorageManager {
 		handle: FileSystemDirectoryHandle,
 	): Promise<boolean> {
 		try {
-			// @ts-ignore - queryPermission is not yet in TypeScript definitions
 			const permission = await (handle as any).queryPermission({
 				mode: "readwrite",
 			});
@@ -158,7 +157,6 @@ export class StorageManager {
 			}
 
 			// Try to request permission if not granted
-			// @ts-ignore - requestPermission is not yet in TypeScript definitions
 			const requestedPermission = await (handle as any).requestPermission({
 				mode: "readwrite",
 			});
@@ -449,11 +447,9 @@ export class StorageManager {
 				DIRECTORIES.characters,
 			);
 
-			// @ts-ignore - entries() is not yet in TypeScript types
 			for await (const [name, handle] of charactersDir.entries()) {
 				if (handle.kind === "file" && name.endsWith(".png")) {
 					try {
-						// @ts-ignore - getFile is available on FileSystemFileHandle
 						const file = await (handle as FileSystemFileHandle).getFile();
 						const character = await extractCharacterFromPng(file);
 						character.originalFilename = name;
@@ -490,11 +486,9 @@ export class StorageManager {
 				DIRECTORIES.groupchats,
 			);
 
-			// @ts-ignore - entries() is not yet in TypeScript types  
 			for await (const [name, handle] of groupChatsDir.entries()) {
 				if (handle.kind === "file" && name.endsWith(".json")) {
 					try {
-						// @ts-ignore - getFile is available on FileSystemFileHandle
 						const file = await (handle as FileSystemFileHandle).getFile();
 						const jsonText = await file.text();
 						const groupChat: Character = JSON.parse(jsonText);
@@ -906,7 +900,6 @@ export class StorageManager {
 			for (const dirName of Object.values(DIRECTORIES)) {
 				try {
 					const dir = await this.rootHandle.getDirectoryHandle(dirName);
-					// @ts-ignore - entries() not in types yet
 					for await (const [name, handle] of dir.entries()) {
 						if (handle.kind === "file") {
 							await dir.removeEntry(name);
@@ -1065,7 +1058,6 @@ export class StorageManager {
 				DIRECTORIES.backgrounds,
 			);
 			const filenames: string[] = [];
-			// @ts-ignore - entries() is not yet in TypeScript types
 			for await (const [name, handle] of backgroundsDir.entries()) {
 				if (handle.kind === "file") {
 					filenames.push(name);
@@ -1412,7 +1404,7 @@ export class StorageManager {
 				oldSpritesDirHandle = await this.getCharacterSpritesDirHandle(
 					character.id,
 				);
-			} catch (error) {
+			} catch (_error) {
 				console.log(
 					`No old sprites directory found for ${character.name}, skipping migration`,
 				);
@@ -1532,7 +1524,7 @@ export class StorageManager {
 					sanitizedName,
 					{ create: false },
 				);
-			} catch (error) {
+			} catch (_error) {
 				console.log(
 					`No directory found for character ${character.name}, using existing sprites`,
 				);
@@ -1546,7 +1538,7 @@ export class StorageManager {
 					"sprites",
 					{ create: false },
 				);
-			} catch (error) {
+			} catch (_error) {
 				console.log(
 					`No sprites directory found for character ${character.name}`,
 				);
@@ -1564,7 +1556,6 @@ export class StorageManager {
 
 			// Scan the directory for sprite files
 			try {
-				// @ts-ignore - entries() is not yet in TypeScript types
 				for await (const [filename, fileHandle] of spritesDirHandle.entries()) {
 					if (
 						fileHandle.kind === "file" &&

@@ -168,7 +168,7 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 		if (validateForm()) {
 			// Convert greetings to GroupGreeting format
 			const groupGreetings: GroupGreeting[] = Object.entries(greetings)
-				.filter(([_, greeting]) => greeting.trim() !== "")
+				.filter(([_characterId, greeting]) => greeting.trim() !== "")
 				.map(([characterId, greeting]) => ({
 					characterId: Number(characterId),
 					greeting: greeting.trim()
