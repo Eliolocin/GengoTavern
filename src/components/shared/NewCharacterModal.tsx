@@ -30,10 +30,10 @@ const NewCharacterModal: React.FC<NewCharacterModalProps> = ({
 	 * Handle backdrop click to close modal
 	 * @param e - Click event
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onClose();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onClose();
+		// }
 	};
 
 	/**

@@ -190,7 +190,6 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 	const modalContent = (
 		<div
 			className="modal-overlay new-chat-modal-overlay"
-			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			role="dialog"
 			aria-modal="true"
@@ -203,8 +202,6 @@ const GroupChatNewChatModal: React.FC<GroupChatNewChatModalProps> = ({
 			)}
 			<div
 				className="modal-content new-chat-modal"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
 				role="document"
 			>
 				<h3>Create New Group Chat</h3>

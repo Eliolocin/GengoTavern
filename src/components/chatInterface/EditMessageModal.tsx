@@ -50,8 +50,8 @@ const EditMessageModal: React.FC<EditMessageModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal-content edit-message-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop">
+      <div className="modal-content edit-message-modal">
         <h3>Edit {sender === 'user' ? 'Your' : 'Character'} Message</h3>
         
         <form onSubmit={handleSubmit}>

@@ -211,13 +211,13 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 	};
 
 	/**
-	 * 8. Handle backdrop click to close modal
+	 * 8. Handle backdrop click to close modal - DISABLED for better UX
 	 * @param e - Click event
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			handleClose();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   handleClose();
+		// }
 	};
 
 	/**

@@ -1650,8 +1650,31 @@ const AppContent: React.FC = () => {
 			// Process the response
 			const sanitizedResponse = sanitizeResponse(response.text);
 
+			// Helper function to remove duplicate start from LLM response
+			const removeDuplicateStart = (originalText: string, response: string): string => {
+				const trimmedResponse = response.trim();
+				const trimmedOriginal = originalText.trim();
+				
+				// Check if response starts with the original text (case-insensitive)
+				if (trimmedResponse.toLowerCase().startsWith(trimmedOriginal.toLowerCase())) {
+					// Remove the duplicate part and any extra whitespace
+					const deduplicated = trimmedResponse.substring(trimmedOriginal.length).trim();
+					return deduplicated;
+				}
+				return trimmedResponse;
+			};
+
+			// Remove potential duplicates and create the continued message
+			const originalText = messageToContinue.text;
+			const deduplicatedResponse = removeDuplicateStart(originalText, sanitizedResponse);
+			
+			// Combine original message with continuation (add space if needed)
+			const combinedText = deduplicatedResponse 
+				? `${originalText} ${deduplicatedResponse}`
+				: originalText;
+
 			// Only classify emotion if in Visual Novel mode
-			const combinedText = messageToContinue.text + " " + sanitizedResponse;
+			// Use the combined text for emotion classification
 			const detectedEmotion =
 				visualNovelMode && huggingFaceApiKey
 					? await emotionClassifier.classify(combinedText, huggingFaceApiKey)
@@ -1668,6 +1691,7 @@ const AppContent: React.FC = () => {
 			}
 
 			// First, immediately update with the continued message without emotion
+			// Use the combined text (original + continuation)
 			const initialContinuedMessages = activeMessages.map((msg) => {
 				if (msg.id === messageId) {
 					return {
