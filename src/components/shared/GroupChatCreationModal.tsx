@@ -43,10 +43,10 @@ const GroupChatCreationModal: React.FC<GroupChatCreationModalProps> = ({
 	/**
 	 * Handle backdrop click to close modal
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onClose();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onClose();
+		// }
 	};
 
 	/**

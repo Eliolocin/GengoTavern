@@ -126,7 +126,6 @@ const NewChatModal: React.FC<NewChatModalProps> = ({
 	const modalContent = (
 		<div
 			className="modal-overlay new-chat-modal-overlay"
-			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			role="dialog"
 			aria-modal="true"

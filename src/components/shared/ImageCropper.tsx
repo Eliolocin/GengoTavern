@@ -161,10 +161,10 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 	/**
 	 * Handle backdrop click to close modal
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onCancel();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onCancel();
+		// }
 	};
 
 	/**

@@ -46,8 +46,8 @@ const EditFieldModal: React.FC<EditFieldModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="edit-field-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop">
+      <div className="edit-field-modal">
         <div className="modal-header">
           <h3>{title}</h3>
           <button className="close-button" onClick={onCancel}>×</button>
