@@ -4,6 +4,25 @@ import {
 	type GenerateContentConfig,
 } from "@google/genai";
 import { PromptSettings } from "./promptBuilder";
+import type { UserSettingsContextType } from "../contexts/UserSettingsContext";
+
+// Extend Window interface for global user settings
+declare global {
+	interface Window {
+		__gengoTavernUserSettings?: UserSettingsContextType;
+	}
+}
+
+// Helper function to safely extract error message
+function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message;
+	}
+	if (typeof error === 'string') {
+		return error;
+	}
+	return 'Unknown error';
+}
 
 export interface GeminiResponse {
 	text: string;
@@ -75,7 +94,7 @@ export async function callGeminiAPI(
 	settings: PromptSettings,
 ): Promise<GeminiResponse> {
 	// Get settings from global variable set in UserSettingsContext
-	const userSettings = (window as any).__gengoTavernUserSettings;
+	const userSettings = window.__gengoTavernUserSettings;
 
 	// Check if API key is set
 	if (!userSettings || !userSettings.apiKey) {
@@ -176,8 +195,8 @@ export async function callGeminiAPI(
 			}
 
 			return { text };
-		} catch (apiError: any) {
-			const errorMessage = apiError.message || "Unknown API error";
+		} catch (apiError: unknown) {
+			const errorMessage = getErrorMessage(apiError);
 
 			// Handle timeout error
 			if (errorMessage.includes("timed out")) {
@@ -350,7 +369,7 @@ export async function retrieveExistingCharacterInfo(
 	additionalInstructions?: string,
 ): Promise<CharacterRetrievalResponse> {
 	// Get user settings
-	const userSettings = (window as any).__gengoTavernUserSettings;
+	const userSettings = window.__gengoTavernUserSettings;
 
 	// Check if API key is set
 	if (!userSettings || !userSettings.apiKey) {
@@ -463,8 +482,8 @@ Focus on gathering authentic information that would help create an accurate char
 			console.log(responseText);
 
 			return { characterInfo: responseText.trim() };
-		} catch (apiError: any) {
-			const errorMessage = apiError.message || "Unknown API error";
+		} catch (apiError: unknown) {
+			const errorMessage = getErrorMessage(apiError);
 
 			// Handle specific API errors
 			if (errorMessage.includes("timed out")) {
@@ -550,7 +569,7 @@ export async function generateCharacterFromImage(
 	additionalInstructions?: string,
 ): Promise<CharacterGenerationResponse> {
 	// 1. Get user settings
-	const userSettings = (window as any).__gengoTavernUserSettings;
+	const userSettings = window.__gengoTavernUserSettings;
 
 	// 2. Check if API key is set
 	if (!userSettings || !userSettings.apiKey) {
@@ -796,8 +815,8 @@ Use this information to create an authentic character profile that matches the k
 					errorType: "INVALID_JSON",
 				};
 			}
-		} catch (apiError: any) {
-			const errorMessage = apiError.message || "Unknown API error";
+		} catch (apiError: unknown) {
+			const errorMessage = getErrorMessage(apiError);
 
 			// 19. Handle specific API errors (similar to main callGeminiAPI function)
 			if (errorMessage.includes("timed out")) {

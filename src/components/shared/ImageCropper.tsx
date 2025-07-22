@@ -109,9 +109,6 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 		if (!imgRef.current || !completedCrop || !originalImageDimensions) return;
 
 		const canvas = document.createElement("canvas");
-		// @ts-ignore - Will be used in future implementations
-		const image = imgRef.current;
-
 		// Use the original dimensions instead of the displayed dimensions
 		const scaleX = originalImageDimensions.width / 100;
 		const scaleY = originalImageDimensions.height / 100;

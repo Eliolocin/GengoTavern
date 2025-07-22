@@ -13,6 +13,25 @@ import type {
 	TutorResponse,
 } from "../types/grammarCorrection";
 import type { Character, Chat } from "../types/interfaces";
+import type { UserSettingsContextType } from "../contexts/UserSettingsContext";
+
+// Extend Window interface for global user settings
+declare global {
+	interface Window {
+		__gengoTavernUserSettings?: UserSettingsContextType;
+	}
+}
+
+// Helper function to safely extract error message
+function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message;
+	}
+	if (typeof error === 'string') {
+		return error;
+	}
+	return 'Unknown error';
+}
 import { replaceNamePlaceholders } from "./promptBuilder";
 
 /**
@@ -88,7 +107,7 @@ function buildTutorResponseSchema(mode: GrammarCorrectionMode) {
 
 	// Add roleplay_mistakes only for narrative mode
 	if (mode === "narrative") {
-		(baseSchema.properties as any).roleplay_mistakes = {
+		(baseSchema.properties as Record<string, unknown>).roleplay_mistakes = {
 			type: "array",
 			description:
 				"Array of roleplay mistake types found (narrative mode only)",
@@ -281,7 +300,7 @@ export async function callTutorLLM(
 	}
 
 	// Get user settings (reuse existing pattern from geminiAPI.ts)
-	const userSettings = (window as any).__gengoTavernUserSettings;
+	const userSettings = window.__gengoTavernUserSettings;
 
 	// Check if API key is set
 	if (!userSettings || !userSettings.apiKey) {
@@ -309,7 +328,7 @@ export async function callTutorLLM(
 			topP: 0.9,
 			maxOutputTokens: 8192, // Smaller limit for structured responses
 			responseMimeType: "application/json",
-			responseSchema: responseSchema as any, // TypeScript workaround for complex schemas
+			responseSchema: responseSchema as unknown, // TypeScript workaround for complex schemas
 		};
 
 		// Build the tutor prompt
@@ -410,8 +429,8 @@ export async function callTutorLLM(
 					errorType: "INVALID_JSON",
 				};
 			}
-		} catch (apiError: any) {
-			const errorMessage = apiError.message || "Unknown API error";
+		} catch (apiError: unknown) {
+			const errorMessage = getErrorMessage(apiError);
 
 			// Handle specific API errors (similar to main geminiAPI.ts)
 			if (errorMessage.includes("timed out")) {

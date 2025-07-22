@@ -1907,7 +1907,7 @@ const AppContent: React.FC = () => {
 		}
 	};
 
-	const handleUpdateForm = (field: string, value: any) => {
+	const handleUpdateForm = (field: string, value: unknown) => {
 		if (!selectedCharacter) return;
 
 		// Update character but don't reset active chat
