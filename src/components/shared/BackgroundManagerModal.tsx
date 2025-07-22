@@ -14,7 +14,7 @@ interface BackgroundManagerModalProps {
 const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 	onClose,
 	onSelect,
-	selectedBackground: _,
+	selectedBackground: _selectedBackground,
 }) => {
 	const [backgrounds, setBackgrounds] = useState<string[]>([]);
 	const [backgroundUrls, setBackgroundUrls] = useState<Record<string, string>>(
@@ -105,12 +105,13 @@ const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
 	};
 
 	/**
-	 * Handle backdrop click to close modal
+	 * Handle backdrop click to close modal - DISABLED for better UX
+	 * Users should only close via explicit buttons or escape key
 	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onClose();
-		}
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onClose();
+		// }
 	};
 
 	/**

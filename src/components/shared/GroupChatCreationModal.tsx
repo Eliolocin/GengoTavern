@@ -38,26 +38,6 @@ const GroupChatCreationModal: React.FC<GroupChatCreationModalProps> = ({
 			}));
 	});
 
-	if (!isOpen) return null;
-
-	/**
-	 * Handle backdrop click to close modal
-	 */
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		if (e.target === e.currentTarget) {
-			onClose();
-		}
-	};
-
-	/**
-	 * Handle keyboard events for accessibility
-	 */
-	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Escape') {
-			onClose();
-		}
-	};
-
 	/**
 	 * Toggle character selection
 	 */
@@ -83,6 +63,24 @@ const GroupChatCreationModal: React.FC<GroupChatCreationModalProps> = ({
 			)
 		);
 	}, []);
+
+	/**
+	 * Handle backdrop click to close modal
+	 */
+	const handleBackdropClick = (_e: React.MouseEvent) => {
+		// Disabled: if (e.target === e.currentTarget) {
+		//   onClose();
+		// }
+	};
+
+	/**
+	 * Handle keyboard events for accessibility
+	 */
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			onClose();
+		}
+	};
 
 	/**
 	 * Handle form submission
@@ -117,6 +115,9 @@ const GroupChatCreationModal: React.FC<GroupChatCreationModalProps> = ({
 			prev.map(selection => ({ ...selection, isSelected: false, probability: 50 }))
 		);
 	};
+
+	// Early return after all hooks are defined
+	if (!isOpen) return null;
 
 	const selectedCount = characterSelections.filter(s => s.isSelected).length;
 	const individualCharacters = availableCharacters.filter(isIndividualCharacter);

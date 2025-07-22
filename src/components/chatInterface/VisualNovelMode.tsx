@@ -53,14 +53,14 @@ interface VisualNovelModeProps {
 const VisualNovelMode: React.FC<VisualNovelModeProps> = ({
 	character,
 	message,
-	// @ts-ignore - background will be used in future updates
-	background,
+	// @ts-expect-error - background will be used in future updates
+	_background: background,
 	onRegenerateMessage,
 	onContinueMessage,
-	// @ts-ignore - onEditMessage will be used in future updates
-	onEditMessage,
-	// @ts-ignore - onDeleteMessage will be used in future updates
-	onDeleteMessage,
+	// @ts-expect-error - onEditMessage will be used in future updates
+	_onEditMessage: onEditMessage,
+	// @ts-expect-error - onDeleteMessage will be used in future updates
+	_onDeleteMessage: onDeleteMessage,
 	onStartEditing,
 	onStartDeleting,
 	lastCharacterMessageId,

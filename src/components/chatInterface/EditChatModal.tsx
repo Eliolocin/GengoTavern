@@ -69,7 +69,7 @@ const EditChatModal: React.FC<EditChatModalProps> = ({
 				URL.revokeObjectURL(backgroundPreview);
 			}
 		};
-	}, [background]);
+	}, [background, backgroundPreview]);
 
 	const handleSelectBackground = (filename: string) => {
 		setBackground(filename);
@@ -91,7 +91,6 @@ const EditChatModal: React.FC<EditChatModalProps> = ({
 	return (
 		<div
 			className="modal-overlay"
-			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			role="dialog"
 			aria-modal="true"
@@ -104,8 +103,6 @@ const EditChatModal: React.FC<EditChatModalProps> = ({
 			)}
 			<div
 				className="modal-content edit-chat-modal"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
 				role="document"
 			>
 				<h3>Edit Chat</h3>
