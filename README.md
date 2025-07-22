@@ -8,7 +8,7 @@
 <h3 align="center">GengoTavern</h3>
 
   <p align="center">
-    SillyTavern-inspired chat application for language learning and user-friendly roleplaying with AI chatbots
+    SillyTavern-inspired (singular file) chat application for language learning and user-friendly roleplaying with AI chatbots
     <br />
     <a href="https://github.com/Eliolocin/GengoTavern"><strong>Explore the docs »</strong></a>
     <br />
