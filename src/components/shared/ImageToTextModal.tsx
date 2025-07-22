@@ -288,6 +288,15 @@ const ImageToTextModal: React.FC<ImageToTextModalProps> = ({
 								)}
 							</div>
 
+							<div className="input-hint">
+								<span>
+									The AI will analyze the whole image regardless of the cropping
+									done.
+								</span>
+							</div>
+
+							<br />
+
 							{/* Character Name */}
 							<div className="form-group">
 								<label htmlFor="character-name">Character Name *</label>
