@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/elija/DCIM/Screenshots/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
