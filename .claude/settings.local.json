@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/elija/DCIM/Screenshots/**)"
+      "Read(//c/Users/elija/DCIM/Screenshots/**)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

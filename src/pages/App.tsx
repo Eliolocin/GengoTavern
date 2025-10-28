@@ -582,10 +582,12 @@ const AppContent: React.FC = () => {
 		console.log(
 			`Starting processResponseQueue with queue: [${queue.join(", ")}]`,
 		);
-		
+
 		// CRITICAL: Log coordination state for debugging
 		if (isProcessingTutor) {
-			console.log(`🔄 Note: Tutor processing is active, save queue will coordinate automatically`);
+			console.log(
+				`🔄 Note: Tutor processing is active, save queue will coordinate automatically`,
+			);
 		}
 		console.log(`shouldStopQueue at start: ${shouldStopQueue}`);
 		console.log(`stopQueueRef.current at start: ${stopQueueRef.current}`);
@@ -599,10 +601,13 @@ const AppContent: React.FC = () => {
 
 		// Keep track of the most current messages as we process the queue
 		let workingMessages = currentMessages || activeMessages;
-		
+
 		// Track processed characters to prevent duplicates in this queue
 		const processedCharacters = new Set<number>();
-		console.log(`🛡️ Starting queue with ${processQueue.length} characters:`, processQueue);
+		console.log(
+			`🛡️ Starting queue with ${processQueue.length} characters:`,
+			processQueue,
+		);
 
 		try {
 			for (let i = 0; i < processQueue.length; i++) {
@@ -615,19 +620,21 @@ const AppContent: React.FC = () => {
 				}
 
 				const speakerId = processQueue[i];
-				
+
 				// DUPLICATE PREVENTION: Check if this character has already been processed
 				if (processedCharacters.has(speakerId)) {
-					console.warn(`⚠️ Duplicate character detected - skipping ${speakerId} (already processed)`);
+					console.warn(
+						`⚠️ Duplicate character detected - skipping ${speakerId} (already processed)`,
+					);
 					continue;
 				}
-				
+
 				const speakerCharacter = characters.find((c) => c.id === speakerId);
 				if (!speakerCharacter) {
 					console.warn(`⚠️ Character ${speakerId} not found - skipping`);
 					continue;
 				}
-				
+
 				// Mark this character as processed
 				processedCharacters.add(speakerId);
 
@@ -655,13 +662,17 @@ const AppContent: React.FC = () => {
 					);
 					// Use the updated messages from the response (already saved to storage)
 					workingMessages = updatedMessages;
-					console.log(`📎 Queue stopped - using updated messages: ${workingMessages.length}`);
+					console.log(
+						`📎 Queue stopped - using updated messages: ${workingMessages.length}`,
+					);
 					break;
 				}
 
 				// Update working messages with the response result (already saved to storage)
 				workingMessages = updatedMessages;
-				console.log(`📝 Updated workingMessages from response - now ${workingMessages.length} messages`);
+				console.log(
+					`📝 Updated workingMessages from response - now ${workingMessages.length} messages`,
+				);
 
 				// Check if this character's response triggers additional characters
 				// But only if we got a valid message and queue hasn't been stopped
@@ -677,9 +688,7 @@ const AppContent: React.FC = () => {
 					console.log(
 						`Message from ${speakerCharacter.name}: "${newMessage.text}"`,
 					);
-					console.log(
-						`Last speaker ID being passed: ${newMessage.speakerId}`,
-					);
+					console.log(`Last speaker ID being passed: ${newMessage.speakerId}`);
 
 					const lastSpeaker = {
 						speakerId: newMessage.speakerId,
@@ -720,18 +729,24 @@ const AppContent: React.FC = () => {
 				// CRITICAL: Wait for save operations to complete before next character
 				// This prevents race conditions between characters in the queue
 				await new Promise((resolve) => setTimeout(resolve, 250)); // Increased delay for save completion
-				
+
 				// Log current state for debugging
-				console.log(`🔍 Queue step completed - workingMessages: ${workingMessages.length}, processing next character...`);
+				console.log(
+					`🔍 Queue step completed - workingMessages: ${workingMessages.length}, processing next character...`,
+				);
 			}
 		} finally {
-			console.log(`🏁 Queue processing finished - final message count: ${workingMessages.length}`);
-			
+			console.log(
+				`🏁 Queue processing finished - final message count: ${workingMessages.length}`,
+			);
+
 			// CRITICAL: Update React state with final accumulated messages
 			// This ensures UI reflects all messages processed during the queue
 			setActiveMessages(workingMessages);
-			console.log(`🔄 Updated React state with ${workingMessages.length} final messages`);
-			
+			console.log(
+				`🔄 Updated React state with ${workingMessages.length} final messages`,
+			);
+
 			// Clean up queue state
 			setIsProcessingQueue(false);
 			setCurrentlyTypingCharacter(null);
@@ -751,12 +766,15 @@ const AppContent: React.FC = () => {
 		_userMessage: string,
 		currentMessages: Message[], // Required - use accumulated messages from queue
 	): Promise<{ message: Message | null; updatedMessages: Message[] }> => {
-		if (!selectedCharacter || activeChatId === null) return { message: null, updatedMessages: currentMessages };
+		if (!selectedCharacter || activeChatId === null)
+			return { message: null, updatedMessages: currentMessages };
 
 		try {
 			// Use the provided current messages (no fallback - always use queue state)
 			const messagesToUse = currentMessages;
-			console.log(`🎭 Generating response for ${speakerName} with ${messagesToUse.length} messages in context`);
+			console.log(
+				`🎭 Generating response for ${speakerName} with ${messagesToUse.length} messages in context`,
+			);
 
 			// Get the most current chat state with up-to-date messages
 			// This ensures characters see responses from previous characters in the queue
@@ -833,7 +851,9 @@ const AppContent: React.FC = () => {
 
 			// Create updated messages array using passed currentMessages (not React state)
 			const updatedMessages = [...currentMessages, responseMessage];
-			console.log(`📝 ${speakerName} response added - message count: ${currentMessages.length} → ${updatedMessages.length}`);
+			console.log(
+				`📝 ${speakerName} response added - message count: ${currentMessages.length} → ${updatedMessages.length}`,
+			);
 
 			// Save the updated messages to storage
 			await updateChatMessagesAsync(updatedMessages, false);
@@ -859,7 +879,9 @@ const AppContent: React.FC = () => {
 
 			// Create updated messages with error using passed currentMessages
 			const messagesWithError = [...currentMessages, errorMessage];
-			console.log(`❌ Error message added for ${speakerName} - message count: ${currentMessages.length} → ${messagesWithError.length}`);
+			console.log(
+				`❌ Error message added for ${speakerName} - message count: ${currentMessages.length} → ${messagesWithError.length}`,
+			);
 
 			// Save error message to storage
 			await updateChatMessagesAsync(messagesWithError, false);
@@ -910,7 +932,7 @@ const AppContent: React.FC = () => {
 	) => {
 		try {
 			setIsProcessingTutor(true);
-			
+
 			// Note: Group chat queue coordination was temporarily disabled to prevent conflicts
 
 			// Extract chat history for context
@@ -1113,7 +1135,9 @@ const AppContent: React.FC = () => {
 	const handleSendMessage = async (text: string) => {
 		console.log(`🚀 handleSendMessage called with text: "${text}"`);
 		if (!selectedCharacter || activeChatId === null) {
-			console.error(`❌ Missing selectedCharacter (${!!selectedCharacter}) or activeChatId (${activeChatId})`);
+			console.error(
+				`❌ Missing selectedCharacter (${!!selectedCharacter}) or activeChatId (${activeChatId})`,
+			);
 			return;
 		}
 
@@ -1129,7 +1153,7 @@ const AppContent: React.FC = () => {
 				);
 				// Use the last user message text to trigger responses without storage conflicts
 				const lastUserText = lastUserMessage.text;
-				
+
 				// CRITICAL: Also trigger tutor processing for the last user message (if not already processed)
 				if (shouldProcessWithTutor(lastUserText, grammarCorrectionMode)) {
 					// Check if this message already has tutor data to avoid duplicate processing
@@ -1143,7 +1167,11 @@ const AppContent: React.FC = () => {
 						);
 						// Make this TRULY non-blocking with setTimeout
 						setTimeout(() => {
-							processTutorFeedback(lastUserText, lastUserMessage.id, activeMessages);
+							processTutorFeedback(
+								lastUserText,
+								lastUserMessage.id,
+								activeMessages,
+							);
 						}, 0);
 					}
 				} else {
@@ -1151,7 +1179,7 @@ const AppContent: React.FC = () => {
 						`⏭️ Skipping tutor analysis for last user message (mode: ${grammarCorrectionMode}, message too short: ${lastUserText.length} chars)`,
 					);
 				}
-				
+
 				try {
 					if (isGroupChat(selectedCharacter)) {
 						// For group chats, determine which characters should respond using existing logic
@@ -1159,7 +1187,7 @@ const AppContent: React.FC = () => {
 						const responseQueue = calculateResponseQueue(
 							selectedCharacter,
 							lastUserText, // Use actual last user message
-							true, // isUserMessage = true 
+							true, // isUserMessage = true
 							lastSpeaker.speakerId,
 							characters,
 						);
@@ -1180,8 +1208,11 @@ const AppContent: React.FC = () => {
 							timestamp: Date.now(),
 							isGenerating: true,
 						};
-						
-						const messagesWithGenerating = [...activeMessages, generatingMessage];
+
+						const messagesWithGenerating = [
+							...activeMessages,
+							generatingMessage,
+						];
 						setActiveMessages(messagesWithGenerating);
 
 						// Build the prompt with the current chat state that includes the generating message
@@ -1232,7 +1263,7 @@ const AppContent: React.FC = () => {
 						const finalMessages = messagesWithGenerating.map((msg) =>
 							msg.id === generatingMsgId ? responseMessage : msg,
 						);
-						
+
 						setActiveMessages(finalMessages);
 						await updateChatMessagesAsync(finalMessages, false);
 					}
@@ -1281,15 +1312,19 @@ const AppContent: React.FC = () => {
 				`⏭️ Skipping tutor analysis (mode: ${grammarCorrectionMode}, message too short: ${text.length} chars)`,
 			);
 		}
-		
-		console.log(`🎯 About to start character response - Grammar mode: ${grammarCorrectionMode}`);
+
+		console.log(
+			`🎯 About to start character response - Grammar mode: ${grammarCorrectionMode}`,
+		);
 
 		try {
 			console.log(`🤖 Starting character response logic...`);
-			console.log(`📊 Character type check - isGroupChat: ${isGroupChat(selectedCharacter)}`);
+			console.log(
+				`📊 Character type check - isGroupChat: ${isGroupChat(selectedCharacter)}`,
+			);
 			// Handle group chat vs individual character differently
 			if (isGroupChat(selectedCharacter)) {
-				console.log(`👥 Processing as group chat`);  
+				console.log(`👥 Processing as group chat`);
 				// For group chats, calculate response queue
 				const lastSpeaker = getLastSpeaker(updatedMessages);
 				console.log(`User message: "${text}"`);
@@ -1320,8 +1355,9 @@ const AppContent: React.FC = () => {
 					isGenerating: true,
 				};
 
+				// Use functional setState to preserve tutorData, but keep messagesWithGenerating for prompt
+				setActiveMessages((current) => [...current, generatingMessage]);
 				const messagesWithGenerating = [...updatedMessages, generatingMessage];
-				setActiveMessages(messagesWithGenerating);
 
 				// Build the prompt with the current chat state that includes the new message
 				const currentActiveChat = {
@@ -1339,9 +1375,14 @@ const AppContent: React.FC = () => {
 				);
 
 				// Call the API
-				console.log(`🌐 About to call Gemini API with prompt length: ${prompt.length}`);
+				console.log(
+					`🌐 About to call Gemini API with prompt length: ${prompt.length}`,
+				);
 				const response = await callGeminiAPI(prompt, settings);
-				console.log(`🌐 Gemini API response received:`, response.error ? `ERROR: ${response.error}` : 'SUCCESS');
+				console.log(
+					`🌐 Gemini API response received:`,
+					response.error ? `ERROR: ${response.error}` : "SUCCESS",
+				);
 
 				// Check for errors
 				if (response.error) {
@@ -1394,8 +1435,15 @@ const AppContent: React.FC = () => {
 				};
 
 				// Update messages immediately without waiting for emotion classification
-				const initialMessages = [...updatedMessages, initialResponseMessage];
-				setActiveMessages(initialMessages);
+				// Use functional setState to get latest state (preserves tutorData from async tutor)
+				let initialMessages: Message[] = [];
+				setActiveMessages((current) => {
+					const withoutGenerating = current.filter(
+						(msg) => msg.id !== generatingMsgId,
+					);
+					initialMessages = [...withoutGenerating, initialResponseMessage];
+					return initialMessages;
+				});
 				await updateChatMessagesAsync(initialMessages, false);
 
 				// Then update with emotion once classification is complete
@@ -1405,11 +1453,14 @@ const AppContent: React.FC = () => {
 						emotion: detectedEmotion,
 					};
 
-					const finalMessages = initialMessages.map((msg) =>
-						msg.id === generatingMsgId ? responseWithEmotion : msg,
-					);
-
-					setActiveMessages(finalMessages);
+					// Use functional setState to preserve async updates like tutorData
+					let finalMessages: Message[] = [];
+					setActiveMessages((current) => {
+						finalMessages = current.map((msg) =>
+							msg.id === generatingMsgId ? responseWithEmotion : msg,
+						);
+						return finalMessages;
+					});
 					await updateChatMessagesAsync(finalMessages, false);
 				}
 			}
@@ -1524,7 +1575,7 @@ const AppContent: React.FC = () => {
 			}
 
 			// First, immediately update with the regenerated message without emotion
-			const currentUpdatedMsg = updatedMessages.find((u) => u.id === messageId);
+			// const _currentUpdatedMsg = updatedMessages.find((u) => u.id === messageId);
 
 			const initialRegeneratedMessages = activeMessages.map((msg) => {
 				if (msg.id === messageId) {
@@ -1535,7 +1586,8 @@ const AppContent: React.FC = () => {
 						timestamp: Date.now(),
 						emotion: detectedEmotion || msg.emotion,
 						// Preserve the regenHistory from the updated message
-						regenHistory: currentUpdatedMsg?.regenHistory || [],
+						// Add current text to regenHistory before replacing with new text
+						regenHistory: [...(msg.regenHistory || []), msg.text],
 					};
 				}
 				return msg;
@@ -1661,14 +1713,23 @@ const AppContent: React.FC = () => {
 			const sanitizedResponse = sanitizeResponse(response.text);
 
 			// Helper function to remove duplicate start from LLM response
-			const removeDuplicateStart = (originalText: string, response: string): string => {
+			const removeDuplicateStart = (
+				originalText: string,
+				response: string,
+			): string => {
 				const trimmedResponse = response.trim();
 				const trimmedOriginal = originalText.trim();
-				
+
 				// Check if response starts with the original text (case-insensitive)
-				if (trimmedResponse.toLowerCase().startsWith(trimmedOriginal.toLowerCase())) {
+				if (
+					trimmedResponse
+						.toLowerCase()
+						.startsWith(trimmedOriginal.toLowerCase())
+				) {
 					// Remove the duplicate part and any extra whitespace
-					const deduplicated = trimmedResponse.substring(trimmedOriginal.length).trim();
+					const deduplicated = trimmedResponse
+						.substring(trimmedOriginal.length)
+						.trim();
 					return deduplicated;
 				}
 				return trimmedResponse;
@@ -1676,10 +1737,13 @@ const AppContent: React.FC = () => {
 
 			// Remove potential duplicates and create the continued message
 			const originalText = messageToContinue.text;
-			const deduplicatedResponse = removeDuplicateStart(originalText, sanitizedResponse);
-			
+			const deduplicatedResponse = removeDuplicateStart(
+				originalText,
+				sanitizedResponse,
+			);
+
 			// Combine original message with continuation (add space if needed)
-			const combinedText = deduplicatedResponse 
+			const combinedText = deduplicatedResponse
 				? `${originalText} ${deduplicatedResponse}`
 				: originalText;
 
@@ -1719,8 +1783,10 @@ const AppContent: React.FC = () => {
 
 			// Then update with emotion once classification is complete
 			if (detectedEmotion) {
-				const continuedMessagesWithEmotion = initialContinuedMessages.map(
-					(msg) => {
+				// Use functional setState to preserve async updates like tutorData
+				let continuedMessagesWithEmotion: Message[] = [];
+				setActiveMessages((current) => {
+					continuedMessagesWithEmotion = current.map((msg) => {
 						if (msg.id === messageId) {
 							return {
 								...msg,
@@ -1728,11 +1794,9 @@ const AppContent: React.FC = () => {
 							};
 						}
 						return msg;
-					},
-				);
-
-				// Update the UI with emotion data
-				setActiveMessages(continuedMessagesWithEmotion);
+					});
+					return continuedMessagesWithEmotion;
+				});
 				await updateChatMessagesAsync(continuedMessagesWithEmotion, false);
 			}
 		} catch (err) {
@@ -1844,7 +1908,6 @@ const AppContent: React.FC = () => {
 		}
 	};
 
-
 	// Add this new function for asynchronous chat message updating
 	const updateChatMessagesAsync = async (
 		messages: Message[],
@@ -1856,14 +1919,16 @@ const AppContent: React.FC = () => {
 
 		try {
 			// TEMPORARY: Skip validation to test if this is the blocker
-			console.log(`🔍 Skipping validation temporarily - ${messages.length} messages`);
+			console.log(
+				`🔍 Skipping validation temporarily - ${messages.length} messages`,
+			);
 			// const messageValidation = validateMessageIntegrity(messages);
 			// if (!messageValidation.isValid) {
 			//     console.error(`❌ Message validation failed: ${messageValidation.error}`);
 			//     console.error(`❌ Failed messages:`, messages);
 			//     throw new Error(`Message integrity check failed: ${messageValidation.error}`);
 			// }
-			console.log(`✅ Message validation skipped for testing`); 
+			console.log(`✅ Message validation skipped for testing`);
 			const updatedChats = selectedCharacter.chats.map((chat) => {
 				if (chat.id === activeChatId) {
 					const updatedChat = {
@@ -1890,25 +1955,30 @@ const AppContent: React.FC = () => {
 			console.log(`💾 Starting character update with retry logic...`);
 			let retryCount = 0;
 			const maxRetries = 3;
-			
+
 			while (retryCount < maxRetries) {
 				try {
 					console.log(`🔄 Save attempt ${retryCount + 1}/${maxRetries}`);
-					await updateCharacter(selectedCharacter.id, "chats", updatedChats, true);
+					await updateCharacter(
+						selectedCharacter.id,
+						"chats",
+						updatedChats,
+						true,
+					);
 					console.log(`✅ Chat update successful after ${retryCount} retries`);
 					break; // Success, exit retry loop
 				} catch (saveErr) {
 					retryCount++;
 					console.warn(`⚠️ Save attempt ${retryCount} failed:`, saveErr);
-					
+
 					if (retryCount >= maxRetries) {
 						console.error(`❌ All ${maxRetries} save attempts failed!`);
 						throw saveErr; // Final failure, propagate error
 					}
-					
+
 					// Wait before retry (exponential backoff)
 					console.log(`⏳ Waiting ${retryCount * 500}ms before retry...`);
-					await new Promise(resolve => setTimeout(resolve, retryCount * 500));
+					await new Promise((resolve) => setTimeout(resolve, retryCount * 500));
 				}
 			}
 		} catch (err) {
