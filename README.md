@@ -277,15 +277,6 @@ Distributed under the GPL License. See `LICENSE` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- CONTACT -->
-## Contact
-
-- Join the [Discord Server](https://discord.gg/whT3mRNAGs) for instant support regarding usage and bugs
-- Contact head developer [@bredrumb](https://telegram.me/bredrumb) directly on Telegram
-
-Project Link: [https://github.com/Eliolocin/GengoTavern](https://github.com/Eliolocin/GengoTavern)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [TypeScript.js]: https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
